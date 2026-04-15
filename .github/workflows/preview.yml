@@ -74,7 +74,7 @@ jobs:
               repo: context.repo.repo,
               issue_number: pr,
               body: [
-                '## ðŸ”® Preview Deployment Ready',
+                '## Preview Deployment Ready',
                 '',
                 `| Field | Value |`,
                 `|---|---|`,
@@ -83,4 +83,3 @@ jobs:
                 `| **Branch** | \`${{ github.head_ref }}\` |`,
               ].join('\n')
             });
-
