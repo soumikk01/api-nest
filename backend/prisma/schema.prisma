@@ -1,0 +1,70 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  email     String   @unique
+  password  String
+  name      String?
+  sdkToken  String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  projects Project[]
+  apiCalls ApiCall[]
+}
+
+model Project {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  name        String
+  description String?
+  userId      String   @db.ObjectId
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  apiCalls ApiCall[]
+}
+
+model ApiCall {
+  id        String  @id @default(auto()) @map("_id") @db.ObjectId
+  projectId String  @db.ObjectId
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  userId    String  @db.ObjectId
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Request
+  method         String
+  url            String
+  host           String
+  path           String
+  requestHeaders Json?
+  requestBody    Json?
+  queryParams    Json?
+
+  // Response
+  statusCode      Int?
+  statusText      String?
+  responseHeaders Json?
+  responseBody    Json?
+  responseSize    Int?
+
+  // Timing
+  latency   Int
+  startedAt DateTime
+  endedAt   DateTime
+
+  // SUCCESS | CLIENT_ERROR | SERVER_ERROR | TIMEOUT | PENDING
+  status String @default("PENDING")
+
+  createdAt DateTime @default(now())
+
+  @@index([projectId])
+  @@index([userId])
+}
