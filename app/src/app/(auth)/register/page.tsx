@@ -1,4 +1,2 @@
-﻿import React from 'react';
-export default function RegisterPage() {
-  return <main><h1>Register</h1></main>;
-}
+import RegisterPage from './_components/RegisterPage';
+export default RegisterPage;
