@@ -2,9 +2,9 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import styles from './LoginPage.module.scss';
+import styles from './RegisterPage.module.scss';
 
-/* ── Spring Blossom Background (mirrors LandingPage) ── */
+/* ── Spring Blossom Background (mirrors LandingPage/LoginPage) ── */
 const SpringBackground = () => (
   <div className={styles.springBg} aria-hidden="true">
     {/* Branch top-left */}
@@ -97,7 +97,7 @@ const SpringBackground = () => (
   </div>
 );
 
-export default function LoginPage() {
+export default function RegisterPage() {
   const [dark, setDark] = useState(false);
 
   return (
@@ -152,19 +152,32 @@ export default function LoginPage() {
           <div className={styles.cardHeader}>
             <div className={styles.cardIcon}>
               <svg viewBox="0 0 24 24" fill="none" width="22" height="22">
-                <circle cx="12" cy="8" r="4" stroke="#1A1A1A" strokeWidth="1.8"/>
-                <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" stroke="#1A1A1A" strokeWidth="1.8" strokeLinecap="round"/>
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" stroke="#1A1A1A" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                <circle cx="12" cy="7" r="4" stroke="#1A1A1A" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                <line x1="19" y1="8" x2="19" y2="14" stroke="#1A1A1A" strokeWidth="1.8" strokeLinecap="round"/>
+                <line x1="16" y1="11" x2="22" y2="11" stroke="#1A1A1A" strokeWidth="1.8" strokeLinecap="round"/>
               </svg>
             </div>
-            <h1 className={styles.cardTitle}>Welcome back</h1>
-            <p className={styles.cardSub}>Sign in to your Neural Architect account</p>
+            <h1 className={styles.cardTitle}>Create your account</h1>
+            <p className={styles.cardSub}>Join Neural Architect to monitor your APIs</p>
           </div>
 
           <form className={styles.form} onSubmit={(e) => e.preventDefault()}>
             <div className={styles.field}>
-              <label className={styles.label} htmlFor="login-email">Email</label>
+              <label className={styles.label} htmlFor="register-name">Full Name</label>
               <input
-                id="login-email"
+                id="register-name"
+                className={styles.input}
+                type="text"
+                placeholder="Jane Doe"
+                autoComplete="name"
+              />
+            </div>
+            
+            <div className={styles.field}>
+              <label className={styles.label} htmlFor="register-email">Email</label>
+              <input
+                id="register-email"
                 className={styles.input}
                 type="email"
                 placeholder="you@example.com"
@@ -173,48 +186,21 @@ export default function LoginPage() {
             </div>
 
             <div className={styles.field}>
-              <label className={styles.label} htmlFor="login-password">Password</label>
+              <label className={styles.label} htmlFor="register-password">Password</label>
               <input
-                id="login-password"
+                id="register-password"
                 className={styles.input}
                 type="password"
                 placeholder="••••••••••"
-                autoComplete="current-password"
+                autoComplete="new-password"
               />
             </div>
 
-<<<<<<< Updated upstream
-=======
-<<<<<<< Updated upstream
-            {/* Floating Metadata Panel – left side */}
-            <div style={{
-              position: 'absolute', left: -128, top: '25%',
-              width: 96, display: 'flex', flexDirection: 'column', gap: 16,
-            }}>
-              <div style={{ borderLeft: '1px solid rgba(192,178,248,0.4)', paddingLeft: 8 }}>
-                <p style={{ fontSize: 8, fontFamily: '"JetBrains Mono", monospace', color: '#c0b2f8', marginBottom: 4 }}>LATENCY</p>
-                <div style={{ height: 4, width: '100%', background: 'rgba(192,178,248,0.2)' }}>
-                  <div style={{ height: '100%', width: '66%', background: '#c0b2f8' }} />
-                </div>
-              </div>
-              <div style={{ borderLeft: '1px solid rgba(0,207,252,0.4)', paddingLeft: 8 }}>
-                <p style={{ fontSize: 8, fontFamily: '"JetBrains Mono", monospace', color: '#00cffc', marginBottom: 4 }}>PACKETS</p>
-                <div style={{ display: 'flex', gap: 2 }}>
-                  {[1,1,0,1].map((on, i) => (
-                    <div key={i} style={{ width: 4, height: 12, background: on ? '#00cffc' : 'rgba(0,207,252,0.2)' }} />
-                  ))}
-                </div>
-              </div>
-            </div>
-=======
->>>>>>> Stashed changes
             <Link href="/dashboard" className={styles.submitBtn}>
-              Sign In
+              Create Account
             </Link>
           </form>
 
-<<<<<<< Updated upstream
-=======
           <div className={styles.divider}>
             <span className={styles.dividerLine} />
             <span className={styles.dividerText}>or continue with</span>
@@ -239,16 +225,11 @@ export default function LoginPage() {
             </button>
           </div>
 
->>>>>>> Stashed changes
           <div className={styles.utilLinks}>
-            <a href="#" className={styles.forgotLink}>Forgot password?</a>
-            <Link href="/register" className={styles.registerLink}>
-              Create account →
+            <span className={styles.forgotLink}>Already have an account?</span>
+            <Link href="/login" className={styles.registerLink}>
+              Log in →
             </Link>
-<<<<<<< Updated upstream
-=======
->>>>>>> Stashed changes
->>>>>>> Stashed changes
           </div>
         </div>
       </main>
