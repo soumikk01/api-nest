@@ -3,7 +3,7 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 
 const WS_URL = process.env.NEXT_PUBLIC_WS_URL ?? 'http://localhost:4000';
 
-interface ApiCallEvent {
+export interface ApiCallEvent {
   id: string;
   method: string;
   url: string;

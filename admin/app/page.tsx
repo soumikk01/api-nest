@@ -6,8 +6,8 @@ const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000/api/v1';
 
 export default function AdminLoginPage() {
   const router = useRouter();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState(process.env.NEXT_PUBLIC_DUMMY_EMAIL ?? '');
+  const [password, setPassword] = useState(process.env.NEXT_PUBLIC_DUMMY_PASSWORD ?? '');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 

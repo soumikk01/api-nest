@@ -2,6 +2,8 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/hooks/useAuth';
 import styles from './LoginPage.module.scss';
 
 /* ── Spring Blossom Background (mirrors LandingPage) ── */
@@ -99,6 +101,23 @@ const SpringBackground = () => (
 
 export default function LoginPage() {
   const [dark, setDark] = useState(false);
+  const router = useRouter();
+  const { login, isLoading } = useAuth();
+  
+  const [email, setEmail] = useState(process.env.NEXT_PUBLIC_DUMMY_EMAIL ?? '');
+  const [password, setPassword] = useState(process.env.NEXT_PUBLIC_DUMMY_PASSWORD ?? '');
+  const [error, setError] = useState('');
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    try {
+      await login(email, password);
+      router.push('/dashboard');
+    } catch (err: any) {
+      setError(err.message || 'Login failed');
+    }
+  };
 
   return (
     <div className={`${styles.page}${dark ? ' ' + styles.dark : ''}`}>
@@ -160,7 +179,7 @@ export default function LoginPage() {
             <p className={styles.cardSub}>Sign in to your Neural Architect account</p>
           </div>
 
-          <form className={styles.form} onSubmit={(e) => e.preventDefault()}>
+          <form className={styles.form} onSubmit={handleLogin}>
             <div className={styles.field}>
               <label className={styles.label} htmlFor="login-email">Email</label>
               <input
@@ -168,6 +187,8 @@ export default function LoginPage() {
                 className={styles.input}
                 type="email"
                 placeholder="you@example.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 autoComplete="email"
               />
             </div>
@@ -179,13 +200,21 @@ export default function LoginPage() {
                 className={styles.input}
                 type="password"
                 placeholder="••••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
                 autoComplete="current-password"
               />
             </div>
 
-            <Link href="/dashboard" className={styles.submitBtn}>
-              Sign In
-            </Link>
+            {error && (
+              <div style={{ color: '#ef4444', fontSize: '13px', marginBottom: '12px' }}>
+                {error}
+              </div>
+            )}
+
+            <button type="submit" className={styles.submitBtn} disabled={isLoading}>
+              {isLoading ? 'Signing in...' : 'Sign In'}
+            </button>
           </form>
 
           <div className={styles.divider}>
