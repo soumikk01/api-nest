@@ -1,19 +1,21 @@
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-#  Preview Pipeline â€” api-monitor
-#  Runs on: every PR â†’ deploys a preview URL (not production)
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ─────────────────────────────────────────────────────────────────────────────
+#  CI Pipeline — api-monitor
+#  Runs on: every PR → main or develop
+#  Steps: lint → type-check → build
+# ─────────────────────────────────────────────────────────────────────────────
 
-name: Preview
+name: CI
 
 on:
   pull_request:
     branches: [main, develop]
 
 jobs:
-  preview:
-    name: 🔮 Deploy Preview
+  ci:
+    name: 🔍 Lint, Type-check & Build
     runs-on: ubuntu-latest
 
+<<<<<<< Updated upstream
     env:
       VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
       VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
@@ -21,6 +23,8 @@ jobs:
     permissions:
       pull-requests: write
 
+=======
+>>>>>>> Stashed changes
     defaults:
       run:
         working-directory: app
@@ -45,9 +49,10 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
-      - name: Install Vercel CLI
-        run: bun add -g vercel@latest
+      - name: Lint
+        run: bun run lint
 
+<<<<<<< Updated upstream
       - name: Pull Vercel environment (preview)
         run: vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
 
@@ -81,3 +86,10 @@ jobs:
                 `| **Branch** | \`${{ github.head_ref }}\` |`,
               ].join('\n')
             });
+=======
+      - name: Type-check
+        run: bun run tsc --noEmit
+
+      - name: Build
+        run: bun run build
+>>>>>>> Stashed changes
