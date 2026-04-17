@@ -71,7 +71,7 @@ export default function SettingsPage() {
               <polygon points="10,1 19,6 19,14 10,19 1,14 1,6" stroke="#1A1A1A" strokeWidth="1.5" fill="none"/><circle cx="10" cy="10" r="3" fill="#1A1A1A"/>
             </svg>
           </div>
-          <span className={styles.brandText}>N_ARCH</span>
+          <span className={styles.brandText}>API Nest</span>
         </div>
 
         <nav className={styles.nav}>

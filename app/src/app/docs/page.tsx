@@ -34,7 +34,7 @@ export default function DocsPage() {
               <polygon points="10,1 19,6 19,14 10,19 1,14 1,6" stroke="currentColor" strokeWidth="1.5" fill="none"/><circle cx="10" cy="10" r="3" fill="currentColor"/>
             </svg>
           </div>
-          <span className={styles.brandText}>N_ARCH DOCS</span>
+          <span className={styles.brandText}>API Nest Docs</span>
         </Link>
 
         <nav className={styles.nav}>
@@ -58,12 +58,12 @@ export default function DocsPage() {
           
           <div className={styles.hero}>
             <h1>Technical Documentation</h1>
-            <p>Welcome to the Neural Architect Developer Handbook. Everything you need to securely monitor, query, and integrate your microservices.</p>
+            <p>Welcome to the API Nest Developer Handbook. Everything you need to securely monitor, query, and integrate your microservices.</p>
           </div>
 
           <section id="introduction" className={styles.section}>
             <h2>Introduction</h2>
-            <p>Neural Architect is a highly-scalable, drop-in <strong>Observability SaaS</strong> built for modern monolithic and microservice infrastructures. Unlike traditional loggers that require thousands of lines of boilerplate setup, we engineered a global package that intercepts traffic without modifying your core business logic.</p>
+            <p>API Nest is a highly-scalable, drop-in <strong>Observability SaaS</strong> built for modern monolithic and microservice infrastructures. Unlike traditional loggers that require thousands of lines of boilerplate setup, we engineered a global package that intercepts traffic without modifying your core business logic.</p>
             
             <div className={styles.infoBox}>
               <h4>
@@ -115,7 +115,7 @@ export default function DocsPage() {
 
           <section id="getting-started" className={styles.section}>
             <h2>Quick Start Integration</h2>
-            <p>Integrating Neural Architect into an express server or an existing NestJS repo takes approximately 10 seconds. You do not need to rewrite your network handlers.</p>
+            <p>Integrating API Nest into an express server or an existing NestJS repo takes approximately 10 seconds. You do not need to rewrite your network handlers.</p>
             
             <h3>Step 1: Obtain a Global SDK Token</h3>
             <p>Navigate to the <strong>Settings</strong> page within the main application and locate your unique cryptographic SDK token.</p>
@@ -154,7 +154,7 @@ export default function DocsPage() {
 
           <section id="security" className={styles.section}>
             <h2>Security Vault & Redaction</h2>
-            <p>We absolutely respect PII (Personally Identifiable Information). By default, the Neural Architect interceptor automatically drops payloads exceeding standard chunk limits and purges headers matching the following blacklists before transit:</p>
+            <p>We absolutely respect PII (Personally Identifiable Information). By default, the API Nest interceptor automatically drops payloads exceeding standard chunk limits and purges headers matching the following blacklists before transit:</p>
             <ul>
               <li style={{marginBottom: '0.5rem', color: 'var(--text-muted)'}}>Authentication Headers (Authorization Barer tokens, API Keys)</li>
               <li style={{marginBottom: '0.5rem', color: 'var(--text-muted)'}}>Common Financial Identifiers (SSN, PCI data)</li>

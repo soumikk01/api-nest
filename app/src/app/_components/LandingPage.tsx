@@ -398,7 +398,7 @@ export default function LandingPage() {
               <polygon points="10,1 19,6 19,14 10,19 1,14 1,6" stroke="#1A1A1A" strokeWidth="1.5" fill="none"/>
               <circle cx="10" cy="10" r="3" fill="#1A1A1A"/>
             </svg>
-            <span className={styles.logoMark}>N_ARCH</span>
+            <span className={styles.logoMark}>API Nest</span>
           </div>
           <div className={styles.navLinks}>
             {['Products','Solutions','Pricing','Company','Support','Docs'].map((link, i) => (
@@ -543,7 +543,7 @@ export default function LandingPage() {
         ref={footerRef as React.RefObject<HTMLElement>}
         className={`${styles.footer} ${footerVisible ? styles.fadeUp : styles.hidden}`}
       >
-        <span className={styles.footerCopy}>© 2025 NEURAL_ARCHITECT // CORE_KERNEL_STABLE</span>
+        <span className={styles.footerCopy}>© 2025 API_NEST // CORE_KERNEL_STABLE</span>
         <div className={styles.footerLinks}>
           <a href="#" className={styles.footerLink}>Legal</a>
           <a href="#" className={styles.footerLink}>Docs</a>

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "@/styles/globals.scss";
 
 export const metadata: Metadata = {
-  title: "Neural Architect API ",
+  title: "API Nest ",
   description: "Cyberpunk API Nesting System",
 };
 

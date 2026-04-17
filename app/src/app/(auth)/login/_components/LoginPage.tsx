@@ -159,7 +159,7 @@ export default function LoginPage() {
               <polygon points="10,1 19,6 19,14 10,19 1,14 1,6" stroke="#1A1A1A" strokeWidth="1.5" fill="none"/>
               <circle cx="10" cy="10" r="3" fill="#1A1A1A"/>
             </svg>
-            <span className={styles.logoMark}>N_ARCH</span>
+            <span className={styles.logoMark}>API Nest</span>
           </div>
           <Link href="/" className={styles.backLink}>← Home</Link>
         </nav>
@@ -176,7 +176,7 @@ export default function LoginPage() {
               </svg>
             </div>
             <h1 className={styles.cardTitle}>Welcome back</h1>
-            <p className={styles.cardSub}>Sign in to your Neural Architect account</p>
+            <p className={styles.cardSub}>Sign in to your API Nest account</p>
           </div>
 
           <form className={styles.form} onSubmit={handleLogin}>
