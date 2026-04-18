@@ -13,6 +13,17 @@ import { IngestDto } from './dto/ingest.dto';
 export class IngestController {
   constructor(private ingestService: IngestService) {}
 
+  /**
+   * POST /ingest/setup
+   * Called by `api-nest init` — validates SDK token and auto-creates/returns
+   * a project for the given project name. Returns { projectId, projectName }.
+   */
+  @Post('setup')
+  @HttpCode(HttpStatus.OK)
+  setup(@Body() body: { sdkToken: string; projectName: string }) {
+    return this.ingestService.setup(body.sdkToken, body.projectName);
+  }
+
   @Post()
   @HttpCode(HttpStatus.ACCEPTED)
   ingest(@Body() dto: IngestDto) {

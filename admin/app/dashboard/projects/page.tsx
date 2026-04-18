@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000/api/v1';
-const token = () => typeof window !== 'undefined' ? localStorage.getItem('admin_token') ?? '' : '';
+const token = () => typeof window !== 'undefined' ? localStorage.getItem('access_token') ?? localStorage.getItem('admin_token') ?? '' : '';
 
 interface Project { id: string; name: string; description?: string; createdAt: string; }
 
@@ -13,14 +13,22 @@ export default function ProjectsPage() {
   const [newDesc, setNewDesc] = useState('');
   const [creating, setCreating] = useState(false);
 
-  async function load() {
+  async function reloadProjects() {
     const res = await fetch(`${API}/projects`, { headers: { Authorization: `Bearer ${token()}` } });
-    const data = (await res.json()) as Project[];
-    setProjects(data);
+    const raw = await res.json();
+    setProjects(Array.isArray(raw) ? (raw as Project[]) : []);
     setLoading(false);
   }
 
-  useEffect(() => { void load(); }, []);
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      const res = await fetch(`${API}/projects`, { headers: { Authorization: `Bearer ${token()}` } });
+      const raw = await res.json();
+      if (!cancelled) { setProjects(Array.isArray(raw) ? (raw as Project[]) : []); setLoading(false); }
+    })();
+    return () => { cancelled = true; };
+  }, []);
 
   async function createProject(e: React.FormEvent) {
     e.preventDefault();
@@ -32,13 +40,13 @@ export default function ProjectsPage() {
     });
     setNewName(''); setNewDesc('');
     setCreating(false);
-    void load();
+    void reloadProjects();
   }
 
   async function deleteProject(id: string) {
     if (!confirm('Delete this project and all its API call history?')) return;
     await fetch(`${API}/projects/${id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token()}` } });
-    void load();
+    void reloadProjects();
   }
 
   return (

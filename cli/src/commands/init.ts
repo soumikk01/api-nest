@@ -1,5 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
+import * as http from 'http';
+import * as https from 'https';
 import { saveConfig } from '../config';
 
 interface InitOptions {
@@ -8,69 +10,228 @@ interface InitOptions {
   backend: string;
 }
 
+/** Simple HTTP POST — no axios dependency during init */
+function post<T>(url: string, body: object): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const parsed = new URL(url);
+    const payload = JSON.stringify(body);
+    const mod = parsed.protocol === 'https:' ? https : http;
+    const req = mod.request(
+      {
+        hostname: parsed.hostname,
+        port: parsed.port || (parsed.protocol === 'https:' ? 443 : 80),
+        path: parsed.pathname,
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Content-Length': Buffer.byteLength(payload),
+        },
+      },
+      (res) => {
+        let data = '';
+        res.on('data', (chunk: string) => (data += chunk));
+        res.on('end', () => {
+          try {
+            const json = JSON.parse(data) as T;
+            if ((res.statusCode ?? 0) >= 400) {
+              reject(new Error((json as { message?: string }).message ?? `HTTP ${res.statusCode}`));
+            } else {
+              resolve(json);
+            }
+          } catch {
+            reject(new Error('Invalid JSON from backend'));
+          }
+        });
+      },
+    );
+    req.on('error', reject);
+    req.write(payload);
+    req.end();
+  });
+}
+
 export async function initCommand(options: InitOptions) {
   console.log('\n🔍 API Nest — Initializing...\n');
 
   const cwd = process.cwd();
+
+  // Derive project name from directory name (or use provided --project)
+  const dirName = path.basename(cwd);
+  const projectName = options.project ?? dirName;
+
+  // Contact backend to validate token and auto-create/find the project
+  const setupUrl = `${options.backend}/api/v1/ingest/setup`;
+  console.log(`📡 Connecting to backend: ${options.backend}`);
+
+  let projectId: string;
+  try {
+    const result = await post<{ projectId: string; projectName: string }>(setupUrl, {
+      sdkToken: options.token,
+      projectName,
+    });
+    projectId = result.projectId;
+    console.log(`✅ Project ready: "${result.projectName}" (id: ${projectId})`);
+  } catch (err) {
+    console.error(`\n❌ Failed to connect to API Nest backend at ${options.backend}`);
+    console.error(`   Error: ${(err as Error).message}`);
+    console.error(`   Make sure the backend is running and try again.\n`);
+    process.exit(1);
+  }
+
+  // Save config with the resolved projectId
   const configPath = saveConfig({
     sdkToken: options.token,
-    projectId: options.project,
+    projectId,
     backendUrl: options.backend,
   });
 
   console.log(`✅ Config saved to: ${configPath}`);
 
-  // Inject require hook into package.json scripts or detect entry point
+  // Inject require hook into the project's entry file
   injectRegisterHook(cwd);
 
-  console.log('\n🎉 API Nest is ready!');
-  console.log('   Every HTTP call from your dev server will appear in the dashboard.');
-  console.log(`   Dashboard: ${options.backend.replace('4000', '3000')}/dashboard\n`);
+  console.log('\n🎉 API Nest is active!');
+  console.log(`   Every HTTP call from your dev server will stream to the dashboard.`);
+  console.log(`   Dashboard: ${options.backend.replace(':4000', ':3000')}/dashboard\n`);
 }
 
 /**
- * Inserts `require('api-nest-cli/register')` at the top of the user's main entry file.
- * Supports common patterns: index.js, server.js, app.js, src/index.js, src/main.js
+ * Detects if the project uses ES modules ("type": "module" in package.json).
+ * Checks the given dir AND any subdir package.json files.
  */
-function injectRegisterHook(cwd: string) {
-  const candidates = [
-    'index.js', 'server.js', 'app.js',
-    'src/index.js', 'src/server.js', 'src/app.js',
-    'index.ts', 'server.ts', 'app.ts',
-    'src/index.ts', 'src/server.ts', 'src/app.ts',
-  ];
+function isEsmProject(dir: string): boolean {
+  const pkgPath = path.join(dir, 'package.json');
+  if (!fs.existsSync(pkgPath)) return false;
+  try {
+    const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf-8')) as { type?: string };
+    return pkg.type === 'module';
+  } catch { return false; }
+}
 
-  // Try to find main from package.json
-  let mainFile: string | null = null;
+/**
+ * Parses package.json scripts to find server subdirectories.
+ * e.g. "server": "cd backend && npm run dev" → returns ['backend']
+ */
+function detectServerDirs(cwd: string): string[] {
   const pkgPath = path.join(cwd, 'package.json');
-  if (fs.existsSync(pkgPath)) {
-    try {
-      const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf-8')) as { main?: string };
-      if (pkg.main) mainFile = pkg.main;
-    } catch { /* ignore */ }
-  }
+  if (!fs.existsSync(pkgPath)) return [];
+  try {
+    const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf-8')) as {
+      scripts?: Record<string, string>;
+    };
+    const dirs: string[] = [];
+    for (const script of Object.values(pkg.scripts ?? {})) {
+      // Match: "cd <subdir>" patterns
+      const match = /\bcd\s+([\w\-.]+)/.exec(script);
+      if (match) dirs.push(match[1]);
+    }
+    return [...new Set(dirs)];
+  } catch { return []; }
+}
 
-  const toCheck = mainFile
-    ? [mainFile, ...candidates]
-    : candidates;
+/**
+ * Recursively finds entry files up to maxDepth levels.
+ * Looks for files named index/server/app with .js/.ts extension
+ * that contain server framework keywords.
+ */
+function findEntryRecursive(dir: string, depth = 0, maxDepth = 3): string | null {
+  if (depth > maxDepth || !fs.existsSync(dir)) return null;
+  const entries = fs.readdirSync(dir, { withFileTypes: true });
 
-  for (const candidate of toCheck) {
-    const full = path.join(cwd, candidate);
+  // Check files in this dir first
+  const fileNames = ['index.js', 'server.js', 'app.js', 'index.ts', 'server.ts', 'app.ts', 'main.ts', 'main.js'];
+  for (const name of fileNames) {
+    const full = path.join(dir, name);
     if (fs.existsSync(full)) {
       const content = fs.readFileSync(full, 'utf-8');
-      const hook = `require('api-nest-cli/register'); // [api-nest]\n`;
-      if (content.includes('[api-nest]')) {
-        console.log(`ℹ️  Register hook already present in ${candidate}`);
+      // Must look like a server entry (has express/fastify/http.listen etc.)
+      if (/express|fastify|app\.listen|createServer|NestFactory/.test(content)) {
+        return full;
+      }
+    }
+  }
+
+  // Skip node_modules and hidden dirs
+  for (const e of entries) {
+    if (!e.isDirectory()) continue;
+    if (e.name === 'node_modules' || e.name.startsWith('.') || e.name === 'dist') continue;
+    const found = findEntryRecursive(path.join(dir, e.name), depth + 1, maxDepth);
+    if (found) return found;
+  }
+  return null;
+}
+
+const LOADER_FLAG_ESM = '--import api-nest-cli/dist/register.js';
+const LOADER_FLAG_CJS = '--require api-nest-cli/dist/register';
+const ALREADY_MARKER  = 'api-nest-cli';
+
+/**
+ * Patches the `node` command inside package.json scripts so that the
+ * api-nest interceptor is loaded automatically on every server start —
+ * WITHOUT touching any source files.
+ *
+ * Strategy:
+ *  1. Find the package.json that owns the actual node server scripts
+ *     (searches cwd + any "cd <subdir>" dirs found in monorepo root scripts).
+ *  2. For each script that invokes `node` directly, prepend --import (ESM)
+ *     or --require (CJS) flag so monitoring loads before user code.
+ *  3. Falls back to ts-node / nodemon variants.
+ */
+function injectRegisterHook(cwd: string) {
+  // Collect all directories that might have a package.json with node scripts
+  const serverDirs = detectServerDirs(cwd);
+  const searchRoots = [cwd, ...serverDirs.map(d => path.join(cwd, d))];
+
+  for (const root of searchRoots) {
+    const pkgPath = path.join(root, 'package.json');
+    if (!fs.existsSync(pkgPath)) continue;
+
+    let pkg: { type?: string; scripts?: Record<string, string> };
+    try {
+      pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf-8')) as typeof pkg;
+    } catch { continue; }
+
+    if (!pkg.scripts || Object.keys(pkg.scripts).length === 0) continue;
+
+    const esm  = pkg.type === 'module';
+    const flag = esm ? LOADER_FLAG_ESM : LOADER_FLAG_CJS;
+
+    // Keys we consider as "server start" scripts
+    const scriptKeys = ['dev', 'start', 'serve', 'server', 'start:dev', 'start:prod'];
+    let patched = false;
+
+    for (const key of scriptKeys) {
+      const original = pkg.scripts[key];
+      if (!original) continue;
+
+      // Skip if already patched
+      if (original.includes(ALREADY_MARKER)) {
+        console.log(`ℹ️  Monitor hook already in ${path.relative(cwd, pkgPath)} → ${key}`);
         return;
       }
-      fs.writeFileSync(full, hook + content, 'utf-8');
-      console.log(`✅ Injected monitor hook into: ${candidate}`);
+
+      // Only patch scripts that directly invoke node (not cd/concurrently wrappers)
+      // Matching: "node ...", "node --watch ...", "nodemon ...", "ts-node ..."
+      if (/\bnode\b/.test(original) && !/\bcd\b/.test(original)) {
+        pkg.scripts[key] = original.replace(
+          /\bnode\b/,
+          `node ${flag}`,
+        );
+        console.log(`✅ Patched script "${key}" in ${path.relative(cwd, pkgPath)}`);
+        patched = true;
+      }
+    }
+
+    if (patched) {
+      fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n', 'utf-8');
+      console.log(`✅ Saved: ${path.relative(cwd, pkgPath)}`);
       return;
     }
   }
 
-  // Fallback — just tell the user
-  console.log('\n⚠️  Could not auto-detect your entry file.');
-  console.log('   Manually add this line to the TOP of your main file:');
-  console.log("   require('api-nest-cli/register');\n");
+  // Fallback: couldn't patch automatically
+  console.log('\n⚠️  Could not auto-patch your start script.');
+  console.log('   Add one of these flags to your node command in package.json:');
+  console.log(`   ESM projects:  node ${LOADER_FLAG_ESM} src/index.js`);
+  console.log(`   CJS projects:  node ${LOADER_FLAG_CJS} src/index.js\n`);
 }

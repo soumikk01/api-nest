@@ -20,7 +20,7 @@ interface LiveCall {
 const MAX_FEED = 100; // keep last 100 calls in memory
 
 function token() {
-  return typeof window !== 'undefined' ? localStorage.getItem('admin_token') ?? '' : '';
+  return typeof window !== 'undefined' ? localStorage.getItem('access_token') ?? localStorage.getItem('admin_token') ?? '' : '';
 }
 
 function statusClass(code?: number) {
@@ -48,7 +48,7 @@ export default function LiveFeedPage() {
     fetch(`${API}/projects`, { headers: { Authorization: `Bearer ${token()}` } })
       .then((r) => r.json())
       .then((data) => {
-        const list = data as { id: string; name: string }[];
+        const list = Array.isArray(data) ? (data as { id: string; name: string }[]) : [];
         setProjects(list);
         if (list.length > 0) setSelectedProject(list[0].id);
       })
@@ -135,7 +135,7 @@ export default function LiveFeedPage() {
               <div className="empty-icon">📡</div>
               <div className="empty-title">Waiting for API calls…</div>
               <div className="empty-desc">
-                Make HTTP requests from your monitored dev app and they'll appear here instantly.
+                Make HTTP requests from your monitored dev app and they&apos;ll appear here instantly.
               </div>
             </div>
           ) : (

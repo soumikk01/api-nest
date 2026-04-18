@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useMonitorSocket, ApiCallEvent } from '@/hooks/useMonitorSocket';
 import { useAuth } from '@/hooks/useAuth';
@@ -28,9 +28,23 @@ const SpringBackground = () => (
 export default function OverviewPage() {
   const [dark, setDark] = useState(false);
   const { user } = useAuth();
-  
-  // Connect to the real-time NestJS socket
-  const { connected: isConnected, events: calls } = useMonitorSocket({ projectId: user?.id ?? '' });
+  const [projectId, setProjectId] = useState('');
+
+  // Fetch the user's first project to get the real project ID
+  useEffect(() => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null;
+    if (!token) return;
+    const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000/api/v1';
+    fetch(`${API}/projects`, { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => r.json())
+      .then((projects: { id: string; name: string }[]) => {
+        if (projects.length > 0) setProjectId(projects[0].id);
+      })
+      .catch(() => {/* ignore */});
+  }, [user]);
+
+  // Connect to the real-time NestJS socket with the actual project ID
+  const { connected: isConnected, events: calls } = useMonitorSocket({ projectId });
 
   // Calculate some dummy stats derived from live data
   const totalCalls = calls.length;
@@ -85,6 +99,12 @@ export default function OverviewPage() {
               <rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="14" y="14" width="7" height="7" /><rect x="3" y="14" width="7" height="7" />
             </svg>
             Overview
+          </Link>
+          <Link href="/getting-started" className={styles.navItem}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
+              <circle cx="12" cy="12" r="10" /><polyline points="12 8 12 12 14 14" />
+            </svg>
+            Getting Started
           </Link>
           <Link href="#" className={styles.navItem}>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">

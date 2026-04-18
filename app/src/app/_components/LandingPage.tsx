@@ -167,55 +167,7 @@ function TerminalDemo() {
 ───────────────────────────────────────────── */
 const SpringBackground = () => (
   <div className={styles.springBg} aria-hidden="true">
-    <svg className={styles.branch1} viewBox="0 0 220 180" fill="none">
-      <path d="M10,170 Q50,110 90,85 Q120,65 160,52 Q180,45 210,18" stroke="#7C6050" strokeWidth="3" strokeLinecap="round" fill="none" opacity="0.45"/>
-      <path d="M90,85 Q100,62 118,48" stroke="#7C6050" strokeWidth="2" strokeLinecap="round" fill="none" opacity="0.35"/>
-      <path d="M120,65 Q140,42 158,28" stroke="#7C6050" strokeWidth="1.5" strokeLinecap="round" fill="none" opacity="0.3"/>
-      <g transform="translate(120,46)">
-        <circle cx="0" cy="-7" r="5.5" fill="#FFB7C5" opacity="0.85"/><circle cx="6.6" cy="-2.2" r="5.5" fill="#FFD1DC" opacity="0.8"/>
-        <circle cx="4.1" cy="5.7" r="5.5" fill="#FF8FAB" opacity="0.75"/><circle cx="-4.1" cy="5.7" r="5.5" fill="#FFB7C5" opacity="0.85"/>
-        <circle cx="-6.6" cy="-2.2" r="5.5" fill="#FFD1DC" opacity="0.8"/>
-        <circle cx="0" cy="0" r="4" fill="#FFFACD"/><circle cx="0" cy="0" r="1.8" fill="#F6C800"/>
-      </g>
-      <g transform="translate(93,82)">
-        <circle cx="0" cy="-6" r="4.5" fill="#FFD1DC" opacity="0.9"/><circle cx="5.7" cy="-1.9" r="4.5" fill="#FFB7C5" opacity="0.85"/>
-        <circle cx="3.5" cy="4.9" r="4.5" fill="#FFD1DC" opacity="0.85"/><circle cx="-3.5" cy="4.9" r="4.5" fill="#FF8FAB" opacity="0.75"/>
-        <circle cx="-5.7" cy="-1.9" r="4.5" fill="#FFB7C5" opacity="0.85"/>
-        <circle cx="0" cy="0" r="3.2" fill="#FFFACD"/><circle cx="0" cy="0" r="1.3" fill="#F6C800"/>
-      </g>
-      <g transform="translate(161,50)">
-        <circle cx="0" cy="-5" r="3.5" fill="#FFB7C5" opacity="0.8"/><circle cx="4.7" cy="-1.6" r="3.5" fill="#FFD1DC" opacity="0.85"/>
-        <circle cx="2.9" cy="4.1" r="3.5" fill="#FFB7C5" opacity="0.8"/><circle cx="-2.9" cy="4.1" r="3.5" fill="#FF8FAB" opacity="0.7"/>
-        <circle cx="-4.7" cy="-1.6" r="3.5" fill="#FFD1DC" opacity="0.85"/>
-        <circle cx="0" cy="0" r="2.5" fill="#FFFACD"/><circle cx="0" cy="0" r="1" fill="#F6C800"/>
-      </g>
-      <ellipse cx="140" cy="72" rx="5" ry="3" fill="#FFB7C5" opacity="0.55" transform="rotate(-30 140 72)"/>
-      <ellipse cx="178" cy="40" rx="4" ry="2.5" fill="#FFD1DC" opacity="0.5" transform="rotate(22 178 40)"/>
-    </svg>
-
-    <svg className={styles.branch2} viewBox="0 0 220 180" fill="none">
-      <path d="M210,170 Q170,110 130,85 Q100,65 62,52 Q42,45 12,18" stroke="#7C6050" strokeWidth="3" strokeLinecap="round" fill="none" opacity="0.4"/>
-      <path d="M130,85 Q120,62 103,48" stroke="#7C6050" strokeWidth="2" strokeLinecap="round" fill="none" opacity="0.3"/>
-      <g transform="translate(100,45)">
-        <circle cx="0" cy="-7" r="5.5" fill="#FFD1DC" opacity="0.9"/><circle cx="6.6" cy="-2.2" r="5.5" fill="#FFB7C5" opacity="0.85"/>
-        <circle cx="4.1" cy="5.7" r="5.5" fill="#FFD1DC" opacity="0.85"/><circle cx="-4.1" cy="5.7" r="5.5" fill="#FF8FAB" opacity="0.75"/>
-        <circle cx="-6.6" cy="-2.2" r="5.5" fill="#FFB7C5" opacity="0.85"/>
-        <circle cx="0" cy="0" r="4" fill="#FFFACD"/><circle cx="0" cy="0" r="1.8" fill="#F6C800"/>
-      </g>
-      <g transform="translate(128,82)">
-        <circle cx="0" cy="-6" r="4.5" fill="#FFB7C5" opacity="0.85"/><circle cx="5.7" cy="-1.9" r="4.5" fill="#FFD1DC" opacity="0.9"/>
-        <circle cx="3.5" cy="4.9" r="4.5" fill="#FFB7C5" opacity="0.8"/><circle cx="-3.5" cy="4.9" r="4.5" fill="#FF8FAB" opacity="0.75"/>
-        <circle cx="-5.7" cy="-1.9" r="4.5" fill="#FFD1DC" opacity="0.85"/>
-        <circle cx="0" cy="0" r="3.2" fill="#FFFACD"/><circle cx="0" cy="0" r="1.3" fill="#F6C800"/>
-      </g>
-      <ellipse cx="65" cy="70" rx="4.5" ry="2.8" fill="#FFB7C5" opacity="0.5" transform="rotate(40 65 70)"/>
-    </svg>
-
-    {[styles.petal1,styles.petal2,styles.petal3,styles.petal4,styles.petal5,styles.petal6,styles.petal7].map((p,i) => (
-      <svg key={i} className={`${styles.petal} ${p}`} viewBox="0 0 14 22" fill="none">
-        <ellipse cx="7" cy="11" rx="5" ry="9.5" fill={i%2===0?'#FFB7C5':'#FFD1DC'} opacity="0.65" transform={`rotate(${i*15-20} 7 11)`}/>
-      </svg>
-    ))}
+    {/* Floral branches and petals removed completely */}
 
     {[styles.sp1,styles.sp2,styles.sp3,styles.sp4,styles.sp5,styles.sp6].map((s,i) => (
       <svg key={i} className={`${styles.sparkle} ${s}`} viewBox="0 0 20 20" fill="none">
@@ -223,30 +175,7 @@ const SpringBackground = () => (
       </svg>
     ))}
 
-    <svg className={styles.bloom1} viewBox="0 0 44 44" fill="none">
-      <circle cx="22" cy="8" r="7.5" fill="#FFB7C5" opacity="0.8"/>
-      <circle cx="33.6" cy="15.5" r="7.5" fill="#FFD1DC" opacity="0.75"/>
-      <circle cx="30.2" cy="28.6" r="7.5" fill="#FFB7C5" opacity="0.8"/>
-      <circle cx="13.8" cy="28.6" r="7.5" fill="#FF8FAB" opacity="0.7"/>
-      <circle cx="10.4" cy="15.5" r="7.5" fill="#FFD1DC" opacity="0.75"/>
-      <circle cx="22" cy="22" r="7" fill="#FFFACD"/><circle cx="22" cy="22" r="3" fill="#F6C800"/>
-    </svg>
-    <svg className={styles.bloom2} viewBox="0 0 34 34" fill="none">
-      <circle cx="17" cy="6" r="5.8" fill="#FFD1DC" opacity="0.85"/>
-      <circle cx="26" cy="12" r="5.8" fill="#FFB7C5" opacity="0.8"/>
-      <circle cx="23.2" cy="23" r="5.8" fill="#FF8FAB" opacity="0.75"/>
-      <circle cx="10.8" cy="23" r="5.8" fill="#FFD1DC" opacity="0.85"/>
-      <circle cx="8" cy="12" r="5.8" fill="#FFB7C5" opacity="0.8"/>
-      <circle cx="17" cy="17" r="5.5" fill="#FFFACD"/><circle cx="17" cy="17" r="2.2" fill="#F6C800"/>
-    </svg>
-    <svg className={styles.bloom3} viewBox="0 0 28 28" fill="none">
-      <circle cx="14" cy="5" r="4.5" fill="#FFB7C5" opacity="0.75"/>
-      <circle cx="21.4" cy="10.2" r="4.5" fill="#FFD1DC" opacity="0.8"/>
-      <circle cx="18.7" cy="19.8" r="4.5" fill="#FFB7C5" opacity="0.75"/>
-      <circle cx="9.3" cy="19.8" r="4.5" fill="#FF8FAB" opacity="0.7"/>
-      <circle cx="6.6" cy="10.2" r="4.5" fill="#FFD1DC" opacity="0.8"/>
-      <circle cx="14" cy="14" r="4.5" fill="#FFFACD"/><circle cx="14" cy="14" r="1.8" fill="#F6C800"/>
-    </svg>
+    {/* Standalone blooms removed */}
 
     <svg className={styles.curly1} viewBox="0 0 70 35" fill="none">
       <path d="M5,28 C12,6 22,6 28,18 C34,30 44,30 50,18 C56,6 62,8 66,14" stroke="#1A1A1A" strokeWidth="2.5" strokeLinecap="round" fill="none" opacity="0.18"/>

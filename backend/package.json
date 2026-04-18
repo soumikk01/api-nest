@@ -7,6 +7,7 @@
   "license": "UNLICENSED",
   "scripts": {
     "build": "nest build",
+    "build:clean": "node -e \"const fs=require('fs');const path=require('path');const walk=(d)=>{if(!fs.existsSync(d))return;for(const f of fs.readdirSync(d)){const p=path.join(d,f);if(fs.statSync(p).isDirectory())walk(p);else if(!p.endsWith('.dll.node'))fs.rmSync(p);}}; walk('./dist');\" && nest build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",
     "start:dev": "nest start --watch",

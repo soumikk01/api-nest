@@ -36,6 +36,25 @@ export class IngestService {
     private usersService: UsersService,
   ) {}
 
+  /** Called by CLI init — validates token and returns/creates a project */
+  async setup(sdkToken: string, projectName: string) {
+    const user = await this.usersService.findBySdkToken(sdkToken);
+    if (!user) throw new UnauthorizedException('Invalid SDK token');
+
+    // Find existing project with that name, or create a new one
+    let project = await this.prisma.project.findFirst({
+      where: { userId: user.id, name: projectName },
+    });
+
+    if (!project) {
+      project = await this.prisma.project.create({
+        data: { name: projectName, userId: user.id },
+      });
+    }
+
+    return { projectId: project.id, projectName: project.name, userId: user.id };
+  }
+
   async ingest(dto: IngestDto) {
     // 1. Validate SDK token
     const user = await this.usersService.findBySdkToken(dto.sdkToken);

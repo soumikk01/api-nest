@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000/api/v1';
-const token = () => typeof window !== 'undefined' ? localStorage.getItem('admin_token') ?? '' : '';
+const token = () => typeof window !== 'undefined' ? localStorage.getItem('access_token') ?? localStorage.getItem('admin_token') ?? '' : '';
 
 interface Project { id: string; name: string; }
 interface Summary { total: number; errorRate: number; successRate: number; avgLatency: number; range: string; }
@@ -35,20 +35,33 @@ export default function AnalyticsPage() {
   useEffect(() => {
     fetch(`${API}/projects`, { headers: { Authorization: `Bearer ${token()}` } })
       .then(r => r.json())
-      .then((d) => { const list = d as Project[]; setProjects(list); if (list.length) setSelectedProject(list[0].id); })
+      .then((d) => {
+        const list = Array.isArray(d) ? (d as Project[]) : [];
+        setProjects(list);
+        if (list.length) setSelectedProject(list[0].id);
+        if (!Array.isArray(d)) console.warn('[api-nest] /projects returned non-array:', d);
+      })
       .catch(console.error);
   }, []);
 
   useEffect(() => {
     if (!selectedProject) return;
-    setLoading(true);
-    Promise.all([
-      fetch(`${API}/analytics/summary?projectId=${selectedProject}&range=${range}`, { headers: { Authorization: `Bearer ${token()}` } }).then(r => r.json()),
-      fetch(`${API}/analytics/endpoints?projectId=${selectedProject}`, { headers: { Authorization: `Bearer ${token()}` } }).then(r => r.json()),
-    ])
-      .then(([s, e]) => { setSummary(s as Summary); setEndpoints((e as EndpointStat[]).slice(0, 10)); })
-      .catch(console.error)
-      .finally(() => setLoading(false));
+    let cancelled = false;
+    void (async () => {
+      if (!cancelled) setLoading(true);
+      try {
+        const [s, e] = await Promise.all([
+          fetch(`${API}/analytics/summary?projectId=${selectedProject}&range=${range}`, { headers: { Authorization: `Bearer ${token()}` } }).then(r => r.json()),
+          fetch(`${API}/analytics/endpoints?projectId=${selectedProject}`, { headers: { Authorization: `Bearer ${token()}` } }).then(r => r.json()),
+        ]);
+        if (!cancelled) { setSummary(s as Summary); setEndpoints((e as EndpointStat[]).slice(0, 10)); }
+      } catch (err) {
+        console.error(err);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
   }, [selectedProject, range]);
 
   const maxCalls = Math.max(...endpoints.map(e => e.count), 1);
