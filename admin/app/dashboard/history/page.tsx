@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000/api/v1';
-const token = () => typeof window !== 'undefined' ? localStorage.getItem('admin_token') ?? '' : '';
+const token = () => typeof window !== 'undefined' ? localStorage.getItem('access_token') ?? localStorage.getItem('admin_token') ?? '' : '';
 
 interface ApiCall {
   id: string; method: string; url: string; host: string; path: string;
@@ -24,26 +24,37 @@ export default function HistoryPage() {
   useEffect(() => {
     fetch(`${API}/projects`, { headers: { Authorization: `Bearer ${token()}` } })
       .then(r => r.json())
-      .then((d) => { const list = d as Project[]; setProjects(list); if (list.length) setSelectedProject(list[0].id); })
+      .then((d) => {
+        const list = Array.isArray(d) ? (d as Project[]) : [];
+        setProjects(list);
+        if (list.length) setSelectedProject(list[0].id);
+        if (!Array.isArray(d)) console.warn('[api-nest] /projects returned non-array:', d);
+      })
       .catch(console.error);
   }, []);
 
   useEffect(() => {
     if (!selectedProject) return;
-    setLoading(true);
+    let cancelled = false;
     const params = new URLSearchParams({ projectId: selectedProject, page: String(page), limit: '25' });
     if (statusFilter) params.set('status', statusFilter);
     if (methodFilter) params.set('method', methodFilter);
-    fetch(`${API}/history?${params}`, { headers: { Authorization: `Bearer ${token()}` } })
-      .then(r => r.json())
-      .then((d) => {
+    void (async () => {
+      if (!cancelled) setLoading(true);
+      try {
+        const d = await fetch(`${API}/history?${params}`, { headers: { Authorization: `Bearer ${token()}` } }).then(r => r.json());
+        if (cancelled) return;
         const res = d as { data: ApiCall[]; meta: { total: number; totalPages: number } };
         setCalls(res.data ?? []);
         setTotal(res.meta?.total ?? 0);
         setTotalPages(res.meta?.totalPages ?? 1);
-      })
-      .catch(console.error)
-      .finally(() => setLoading(false));
+      } catch (err) {
+        console.error(err);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
   }, [selectedProject, page, statusFilter, methodFilter]);
 
   const latencyClass = (ms: number) => ms < 200 ? 'latency-fast' : ms < 800 ? 'latency-med' : 'latency-slow';

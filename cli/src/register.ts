@@ -1,14 +1,18 @@
 /**
- * register.ts — This is the file that gets require()'d at the top of the
- * user's app entry point after running `api-nest init`.
+ * register.ts — Activated at the top of the user's app entry point.
  *
- * It activates both the axios and fetch interceptors so every HTTP call
- * made by the user's dev app is captured and sent to the API Nest backend.
+ * Patches THREE layers of HTTP traffic:
+ *  1. Incoming requests to the user's Express/Fastify/Koa server
+ *  2. Outgoing fetch() calls made by the server
+ *  3. Outgoing axios calls made by the server
  */
+import { patchIncomingRequests } from './interceptor/incoming';
 import { patchAxios } from './interceptor/axios';
 import { patchFetch } from './interceptor/fetch';
 
+// Must run BEFORE any http.createServer() call — import hoisting ensures this
+patchIncomingRequests();
 patchAxios();
 patchFetch();
 
-console.log('[api-nest] 🟢 Monitoring active — visit your dashboard to see live calls');
+console.log('[api-nest] 🟢 Monitoring active — incoming + outgoing HTTP captured');

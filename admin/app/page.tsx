@@ -24,6 +24,7 @@ export default function AdminLoginPage() {
       const data = await res.json() as { accessToken?: string; message?: string };
       if (!res.ok) throw new Error(data.message ?? 'Login failed');
       localStorage.setItem('admin_token', data.accessToken!);
+      localStorage.setItem('access_token', data.accessToken!); // needed for WebSocket auth
       router.push('/dashboard');
     } catch (err) {
       setError((err as Error).message);

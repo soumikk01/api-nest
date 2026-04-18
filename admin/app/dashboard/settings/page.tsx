@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000/api/v1';
-const token = () => typeof window !== 'undefined' ? localStorage.getItem('admin_token') ?? '' : '';
+const token = () => typeof window !== 'undefined' ? localStorage.getItem('access_token') ?? localStorage.getItem('admin_token') ?? '' : '';
 
 interface UserProfile { id: string; email: string; name?: string; sdkToken: string; }
 

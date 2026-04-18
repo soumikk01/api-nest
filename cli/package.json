@@ -1,16 +1,44 @@
 {
   "name": "api-nest-cli",
-  "version": "1.0.0",
+  "version": "1.0.7",
   "description": "CLI agent for API Nest — intercepts HTTP calls in your dev project and streams them to the dashboard",
   "main": "dist/index.js",
+  "exports": {
+    ".": "./dist/index.js",
+    "./register": "./dist/register.js",
+    "./register.js": "./dist/register.js",
+    "./dist/register.js": "./dist/register.js"
+  },
   "bin": {
     "api-nest": "dist/index.js"
   },
-  "files": ["dist"],
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "scripts": {
-    "build": "tsc",
-    "dev": "tsc --watch",
-    "prepublishOnly": "bun run build"
+    "build": "npx --no-install tsc",
+    "dev": "npx --no-install tsc --watch"
+  },
+  "keywords": [
+    "api",
+    "monitor",
+    "http",
+    "interceptor",
+    "dashboard",
+    "devtools",
+    "cli",
+    "nest",
+    "axios",
+    "fetch"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/soumikk01/api-monitor"
+  },
+  "engines": {
+    "node": ">=18"
   },
   "dependencies": {
     "axios": "^1.7.2",
