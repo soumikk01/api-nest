@@ -13,6 +13,7 @@ interface Project {
   name: string;
   description?: string;
   createdAt: string;
+  _count?: { apiCalls: number };
 }
 
 type SortKey = 'name' | 'createdAt';
@@ -74,6 +75,13 @@ export default function ProjectsPage() {
   const [createError, setCreateError] = useState('');
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const [openMenu, setOpenMenu] = useState<string | null>(null);
+
+  // Edit (rename) state
+  const [editTarget, setEditTarget] = useState<Project | null>(null);
+  const [editName, setEditName] = useState('');
+  const [editDesc, setEditDesc] = useState('');
+  const [editing, setEditing] = useState(false);
+  const [editError, setEditError] = useState('');
 
   /* ── redirect if not authenticated ── */
   useEffect(() => {
@@ -146,6 +154,32 @@ export default function ProjectsPage() {
       setProjects(prev => prev.filter(p => p.id !== id));
     } catch { /* ignore */ }
     setDeleteTarget(null);
+  };
+
+  /* ── rename / update project ── */
+  const handleEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editTarget || !editName.trim()) return;
+    setEditing(true);
+    setEditError('');
+    const token = localStorage.getItem('access_token');
+    try {
+      const res = await fetch(`${API}/projects/${editTarget.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ name: editName.trim(), description: editDesc.trim() || undefined }),
+      });
+      if (!res.ok) {
+        const d = await res.json() as { message?: string };
+        throw new Error(d.message ?? 'Failed to update project');
+      }
+      setEditTarget(null);
+      await fetchProjects();
+    } catch (err) {
+      setEditError(err instanceof Error ? err.message : 'Something went wrong');
+    } finally {
+      setEditing(false);
+    }
   };
 
   /* ── filtered + sorted list ── */
@@ -340,6 +374,18 @@ export default function ProjectsPage() {
                         Open project
                       </button>
                       <button
+                        className={styles.dropItem}
+                        onClick={() => {
+                          setOpenMenu(null);
+                          setEditTarget(project);
+                          setEditName(project.name);
+                          setEditDesc(project.description ?? '');
+                          setEditError('');
+                        }}
+                      >
+                        Rename
+                      </button>
+                      <button
                         className={`${styles.dropItem} ${styles.dropItemDanger}`}
                         onClick={() => { setOpenMenu(null); setDeleteTarget(project.id); }}
                       >
@@ -357,7 +403,14 @@ export default function ProjectsPage() {
                   <span className={styles.cardMeta}>
                     Created {new Date(project.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                   </span>
-                  <div className={styles.cardInitials}>{initials(project.name)}</div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    {project._count !== undefined && (
+                      <span style={{ fontSize: '0.75rem', color: '#6B6B6B', background: 'rgba(0,0,0,0.06)', padding: '2px 8px', borderRadius: '99px' }}>
+                        {project._count.apiCalls} calls
+                      </span>
+                    )}
+                    <div className={styles.cardInitials}>{initials(project.name)}</div>
+                  </div>
                 </div>
               </div>
             ))}
@@ -403,6 +456,51 @@ export default function ProjectsPage() {
                 <button type="button" className={styles.cancelBtn} onClick={() => setShowModal(false)}>Cancel</button>
                 <button id="create-project-submit" type="submit" className={styles.createBtn} disabled={creating || !newName.trim()}>
                   {creating ? 'Creating…' : 'Create project'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ── EDIT / RENAME MODAL ── */}
+      {editTarget && (
+        <div className={styles.overlay} onClick={() => setEditTarget(null)}>
+          <div className={styles.modal} onClick={e => e.stopPropagation()}>
+            <div className={styles.modalHeader}>
+              <h2>Rename project</h2>
+              <button className={styles.closeBtn} onClick={() => setEditTarget(null)}><CloseIcon /></button>
+            </div>
+            <form onSubmit={e => void handleEdit(e)} className={styles.modalForm}>
+              <div className={styles.field}>
+                <label htmlFor="edit-name" className={styles.fieldLabel}>Project name <span className={styles.required}>*</span></label>
+                <input
+                  id="edit-name"
+                  className={styles.fieldInput}
+                  placeholder="e.g. my-backend-api"
+                  value={editName}
+                  onChange={e => setEditName(e.target.value)}
+                  autoFocus
+                  maxLength={80}
+                />
+              </div>
+              <div className={styles.field}>
+                <label htmlFor="edit-desc" className={styles.fieldLabel}>Description <span className={styles.optional}>(optional)</span></label>
+                <textarea
+                  id="edit-desc"
+                  className={styles.fieldTextarea}
+                  placeholder="What does this project monitor?"
+                  value={editDesc}
+                  onChange={e => setEditDesc(e.target.value)}
+                  rows={3}
+                  maxLength={300}
+                />
+              </div>
+              {editError && <p className={styles.modalError}>{editError}</p>}
+              <div className={styles.modalActions}>
+                <button type="button" className={styles.cancelBtn} onClick={() => setEditTarget(null)}>Cancel</button>
+                <button type="submit" className={styles.createBtn} disabled={editing || !editName.trim()}>
+                  {editing ? 'Saving…' : 'Save changes'}
                 </button>
               </div>
             </form>
