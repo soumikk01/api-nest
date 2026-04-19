@@ -8,23 +8,7 @@ import { useAuth } from '@/features/auth/hooks/useAuth';
 import styles from './OverviewPage.module.scss';
 
 /* ── Spring Blossom Background (shared with auth, dialed back) ── */
-const SpringBackground = () => (
-  <div className={styles.springBg} aria-hidden="true">
-    <svg className={styles.branch1} viewBox="0 0 220 180" fill="none">
-      <path d="M10,170 Q50,110 90,85 Q120,65 160,52 Q180,45 210,18" stroke="#7C6050" strokeWidth="3" strokeLinecap="round" fill="none" opacity="0.45"/>
-      <path d="M90,85 Q100,62 118,48" stroke="#7C6050" strokeWidth="2" strokeLinecap="round" fill="none" opacity="0.35"/>
-      <g transform="translate(120,46)"><circle cx="0" cy="-7" r="5.5" fill="#FFB7C5" opacity="0.85"/><circle cx="6.6" cy="-2.2" r="5.5" fill="#FFD1DC" opacity="0.8"/></g>
-    </svg>
-    <svg className={styles.branch2} viewBox="0 0 220 180" fill="none">
-      <path d="M210,170 Q170,110 130,85 Q100,65 62,52 Q42,45 12,18" stroke="#7C6050" strokeWidth="3" strokeLinecap="round" fill="none" opacity="0.4"/>
-      <g transform="translate(100,45)"><circle cx="0" cy="-7" r="5.5" fill="#FFD1DC" opacity="0.9"/><circle cx="-6.6" cy="-2.2" r="5.5" fill="#FFB7C5" opacity="0.85"/></g>
-    </svg>
-    <svg className={`${styles.petal} ${styles.petal1}`} viewBox="0 0 14 22" fill="none"><ellipse cx="7" cy="11" rx="5.5" ry="10" fill="#FFB7C5" opacity="0.7" transform="rotate(-20 7 11)"/></svg>
-    <svg className={`${styles.petal} ${styles.petal2}`} viewBox="0 0 14 22" fill="none"><ellipse cx="7" cy="11" rx="5" ry="9.5" fill="#FFD1DC" opacity="0.65" transform="rotate(15 7 11)"/></svg>
-    <svg className={`${styles.petal} ${styles.petal3}`} viewBox="0 0 14 22" fill="none"><ellipse cx="7" cy="11" rx="4.5" ry="9" fill="#FF8FAB" opacity="0.55" transform="rotate(-35 7 11)"/></svg>
-    <svg className={`${styles.petal} ${styles.petal4}`} viewBox="0 0 14 22" fill="none"><ellipse cx="7" cy="11" rx="5" ry="9" fill="#FFB7C5" opacity="0.6" transform="rotate(25 7 11)"/></svg>
-  </div>
-);
+const SpringBackground = () => null;
 
 export default function OverviewPage() {
   const [dark, setDark] = useState(false);
@@ -73,6 +57,7 @@ export default function OverviewPage() {
   return (
     <div className={`${styles.page}${dark ? ' ' + styles.dark : ''}`}>
       <div className={styles.noiseOverlay} />
+      <div className={styles.dotPattern} />
       <SpringBackground />
 
       {/* ── THEME TOGGLE ── */}

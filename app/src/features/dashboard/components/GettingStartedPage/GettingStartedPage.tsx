@@ -47,13 +47,8 @@ export default function GettingStartedPage() {
   return (
     <div className={`${styles.page}${dark ? ' ' + styles.dark : ''}`}>
       <div className={styles.noiseOverlay} />
+      <div className={styles.dotPattern} />
 
-      {/* Floating petals */}
-      <div className={styles.petals} aria-hidden="true">
-        {[...Array(6)].map((_, i) => (
-          <div key={i} className={`${styles.petal} ${styles[`petal${i + 1}`]}`} />
-        ))}
-      </div>
 
       {/* Theme toggle */}
       <button className={styles.themeToggle} onClick={() => setDark(!dark)} aria-label="Toggle theme">

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import styles from './ProjectsPage.module.scss';
 
@@ -16,6 +17,9 @@ interface Project {
 
 type SortKey = 'name' | 'createdAt';
 type ViewMode = 'grid' | 'list';
+
+/* ── Spring Blossom Background (shared with auth, dialed back) ── */
+const SpringBackground = () => null;
 
 /* ── Icon helpers ── */
 const GridIcon = () => (
@@ -52,54 +56,12 @@ const CloseIcon = () => (
     <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
   </svg>
 );
-const FolderIcon = () => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" width="28" height="28">
-    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
-  </svg>
-);
-
-/* ── Sidebar nav icons ── */
-const SideIcons = {
-  users: () => (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" width="18" height="18">
-      <circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/>
-      <path d="M16 3.13a4 4 0 0 1 0 7.75"/><path d="M21 21v-2a4 4 0 0 0-3-3.87"/>
-    </svg>
-  ),
-  activity: () => (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" width="18" height="18">
-      <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
-    </svg>
-  ),
-  chart: () => (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" width="18" height="18">
-      <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/>
-      <line x1="6" y1="20" x2="6" y2="14"/><line x1="2" y1="20" x2="22" y2="20"/>
-    </svg>
-  ),
-  folder: () => (
-    <svg viewBox="0 0 24 24" fill="currentColor" stroke="none" width="18" height="18">
-      <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" opacity="0.9"/>
-    </svg>
-  ),
-  settings: () => (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" width="18" height="18">
-      <circle cx="12" cy="12" r="3"/>
-      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
-    </svg>
-  ),
-  logout: () => (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" width="18" height="18">
-      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-      <polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
-    </svg>
-  ),
-};
 
 export default function ProjectsPage() {
   const router = useRouter();
-  const { user, logout, isLoading: authLoading } = useAuth();
-
+  const { user, isLoading: authLoading } = useAuth();
+  
+  const [dark, setDark] = useState(false);
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -205,49 +167,84 @@ export default function ProjectsPage() {
   }
 
   return (
-    <div className={styles.page}>
+    <div className={`${styles.page}${dark ? ' ' + styles.dark : ''}`}>
+      <div className={styles.noiseOverlay} />
+      <div className={styles.dotPattern} />
+      <SpringBackground />
+
+      {/* ── THEME TOGGLE ── */}
+      <button
+        className={styles.themeToggle}
+        onClick={() => setDark(!dark)}
+        aria-label="Toggle theme"
+      >
+        {dark ? (
+          <svg viewBox="0 0 24 24" fill="none" width="18" height="18">
+            <circle cx="12" cy="12" r="4.5" stroke="currentColor" strokeWidth="2"/>
+            <line x1="12" y1="2" x2="12" y2="5" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+            <line x1="12" y1="19" x2="12" y2="22" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+            <line x1="2" y1="12" x2="5" y2="12" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+            <line x1="19" y1="12" x2="22" y2="12" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+            <line x1="4.93" y1="4.93" x2="7.05" y2="7.05" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+            <line x1="16.95" y1="16.95" x2="19.07" y2="19.07" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+            <line x1="4.93" y1="19.07" x2="7.05" y2="16.95" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+            <line x1="16.95" y1="7.05" x2="19.07" y2="4.93" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+          </svg>
+        ) : (
+          <svg viewBox="0 0 24 24" fill="none" width="18" height="18">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        )}
+      </button>
+
       {/* ── SIDEBAR ── */}
       <aside className={styles.sidebar}>
-        <div className={styles.sidebarTop}>
-          <div className={styles.logo}>
-            <svg viewBox="0 0 20 20" fill="none" width="16" height="16">
-              <polygon points="10,1 19,6 19,14 10,19 1,14 1,6" stroke="currentColor" strokeWidth="1.5" fill="none"/>
-              <circle cx="10" cy="10" r="3" fill="currentColor"/>
+        <div className={styles.brand}>
+          <div className={styles.brandIcon}>
+            <svg viewBox="0 0 20 20" fill="none" width="18" height="18">
+              <polygon points="10,1 19,6 19,14 10,19 1,14 1,6" stroke="#1A1A1A" strokeWidth="1.5" fill="none"/>
+              <circle cx="10" cy="10" r="3" fill="#1A1A1A"/>
             </svg>
           </div>
+          <span className={styles.brandText}>API Nest</span>
         </div>
 
-        <nav className={styles.sideNav}>
-          <button className={styles.sideBtn} title="Team" onClick={() => router.push('/overview')}>
-            <SideIcons.users />
-          </button>
-          <button className={styles.sideBtn} title="Activity" onClick={() => router.push('/overview')}>
-            <SideIcons.activity />
-          </button>
-          <button className={styles.sideBtn} title="Analytics" onClick={() => router.push('/overview')}>
-            <SideIcons.chart />
-          </button>
-          <button className={`${styles.sideBtn} ${styles.sideBtnActive}`} title="Projects">
-            <SideIcons.folder />
-          </button>
-          <button className={styles.sideBtn} title="Settings" onClick={() => router.push('/settings')}>
-            <SideIcons.settings />
-          </button>
+        <nav className={styles.nav}>
+          <Link href="/projects" className={`${styles.navItem} ${styles.active}`} style={{ marginBottom: '0.5rem' }}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+              <polyline points="15 18 9 12 15 6" />
+            </svg>
+            Projects
+          </Link>
+          <Link href="/overview" className={styles.navItem}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
+              <rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="14" y="14" width="7" height="7" /><rect x="3" y="14" width="7" height="7" />
+            </svg>
+            Overview
+          </Link>
+          <Link href="/getting-started" className={styles.navItem}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
+              <circle cx="12" cy="12" r="10" /><polyline points="12 8 12 12 14 14" />
+            </svg>
+            Getting Started
+          </Link>
+          <Link href="#" className={styles.navItem}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
+              <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+            </svg>
+            Live Activity
+          </Link>
+          <Link href="/settings" className={styles.navItem}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
+              <circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+            </svg>
+            Settings
+          </Link>
         </nav>
-
-        <div className={styles.sidebarBottom}>
-          <button
-            className={styles.avatarBtn}
-            title={user?.name || user?.email}
-            onClick={() => { logout(); router.push('/login'); }}
-          >
-            {(user?.name || user?.email || 'U').slice(0, 1).toUpperCase()}
-          </button>
-        </div>
       </aside>
 
-      {/* ── MAIN ── */}
-      <main className={styles.main}>
+      {/* ── MAIN AREA ── */}
+      <main className={styles.content}>
         {/* Header */}
         <div className={styles.header}>
           <h1 className={styles.title}>Projects</h1>
@@ -258,24 +255,19 @@ export default function ProjectsPage() {
               <input
                 id="project-search"
                 className={styles.searchInput}
-                placeholder="Search for a project"
+                placeholder="Search projects"
                 value={search}
                 onChange={e => setSearch(e.target.value)}
               />
             </div>
 
-            {/* Status / Sort */}
-            <div className={styles.filterGroup}>
-              <button className={styles.filterBtn}>
-                Status <span className={styles.caret}>▾</span>
-              </button>
-              <button
-                className={styles.filterBtn}
-                onClick={() => setSort(s => s === 'name' ? 'createdAt' : 'name')}
-              >
-                {sort === 'name' ? 'Sorted by name' : 'Sorted by date'} <span className={styles.caret}>▾</span>
-              </button>
-            </div>
+            {/* Sort */}
+            <button
+              className={styles.filterBtn}
+              onClick={() => setSort(s => s === 'name' ? 'createdAt' : 'name')}
+            >
+              {sort === 'name' ? 'Sorted by name' : 'Sorted by date'} <span className={styles.caret}>▾</span>
+            </button>
 
             {/* View toggle */}
             <div className={styles.viewToggle}>
@@ -310,7 +302,6 @@ export default function ProjectsPage() {
           </div>
         ) : filtered.length === 0 ? (
           <div className={styles.emptyState}>
-            <div className={styles.emptyIcon}><FolderIcon /></div>
             <p className={styles.emptyTitle}>
               {search ? 'No projects match your search' : 'No projects yet'}
             </p>

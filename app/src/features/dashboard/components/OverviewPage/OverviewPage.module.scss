@@ -32,6 +32,15 @@ $r-md:   16px;
   opacity: 0.035;
 }
 
+.dotPattern {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background-image: radial-gradient(rgba(0, 0, 0, 0.09) 1.5px, transparent 1.5px);
+  background-size: 24px 24px;
+}
+
 // ══════════════════════════════════════════════
 //  SPRING BACKGROUND (Subtle for Dashboard)
 // ══════════════════════════════════════════════
@@ -318,6 +327,7 @@ $dm-glass:  rgba(255, 255, 255, 0.03);
   }
 
   .springBg { opacity: 0.1; }
+  .dotPattern { background-image: radial-gradient(rgba(255, 255, 255, 0.05) 1.5px, transparent 1.5px); }
 
   .sidebar {
     background: rgba(18, 18, 20, 0.6);

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import styles from './TopNavbar.module.scss';
 
@@ -15,16 +15,16 @@ interface Project {
 
 export default function TopNavbar() {
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const isProjectsPage = pathname === '/projects';
   const { user, logout } = useAuth();
 
-  const [projects, setProjects] = useState<Project[]>([]);
   const [activeProject, setActiveProject] = useState<Project | null>(null);
-  const [showProjectDrop, setShowProjectDrop] = useState(false);
   const [showUserDrop, setShowUserDrop] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchVal, setSearchVal] = useState('');
 
-  const projectRef = useRef<HTMLDivElement>(null);
   const userRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
 
@@ -38,13 +38,14 @@ export default function TopNavbar() {
       });
       if (!res.ok) return;
       const data = await res.json() as Project[];
-      setProjects(data);
-      // restore last selected project from storage
-      const saved = localStorage.getItem('activeProjectId');
-      const found = data.find(p => p.id === saved) ?? data[0] ?? null;
+      // Prefer projectId from URL, then localStorage, then first project
+      const urlId = searchParams.get('projectId');
+      const savedId = localStorage.getItem('activeProjectId');
+      const targetId = urlId ?? savedId;
+      const found = data.find(p => p.id === targetId) ?? data[0] ?? null;
       setActiveProject(found);
     } catch { /* ignore */ }
-  }, []);
+  }, [searchParams]);
 
   useEffect(() => {
     if (!user) return;
@@ -69,19 +70,12 @@ export default function TopNavbar() {
   /* ── click outside dropdowns ── */
   useEffect(() => {
     const handler = (e: MouseEvent) => {
-      if (projectRef.current && !projectRef.current.contains(e.target as Node)) setShowProjectDrop(false);
       if (userRef.current && !userRef.current.contains(e.target as Node)) setShowUserDrop(false);
     };
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
-  const selectProject = (p: Project) => {
-    setActiveProject(p);
-    localStorage.setItem('activeProjectId', p.id);
-    setShowProjectDrop(false);
-    router.push(`/overview?projectId=${p.id}`);
-  };
 
   const handleLogout = () => {
     logout();
@@ -103,84 +97,46 @@ export default function TopNavbar() {
             </svg>
           </span>
           <span className={styles.brandText}>API NEST</span>
-          <span className={styles.freeBadge}>FREE</span>
         </Link>
 
-        <span className={styles.sep} />
+        {!isProjectsPage && (
+          <>
+            <span className={styles.sep} />
 
-        {/* Project selector */}
-        <div className={styles.dropWrap} ref={projectRef}>
-          <button
-            id="project-selector-btn"
-            className={styles.selectorBtn}
-            onClick={() => setShowProjectDrop(s => !s)}
-            title="Switch project"
-          >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" width="14" height="14">
-              <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
-            </svg>
-            <span className={styles.selectorLabel}>{activeProject?.name ?? 'Select project'}</span>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="12" height="12" className={`${styles.caret} ${showProjectDrop ? styles.caretOpen : ''}`}>
-              <polyline points="6 9 12 15 18 9"/>
-            </svg>
-          </button>
+            {/* Active project name — static display only */}
+            <span className={styles.selectorBtn} style={{ cursor: 'default', pointerEvents: 'none' }}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" width="14" height="14">
+                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+              </svg>
+              <span className={styles.selectorLabel}>{activeProject?.name ?? 'No project'}</span>
+            </span>
 
-          {showProjectDrop && (
-            <div className={styles.drop}>
-              <div className={styles.dropHeader}>Projects</div>
-              {projects.length === 0 && (
-                <div className={styles.dropEmpty}>No projects yet</div>
-              )}
-              {projects.map(p => (
-                <button
-                  key={p.id}
-                  className={`${styles.dropItem} ${p.id === activeProject?.id ? styles.dropItemActive : ''}`}
-                  onClick={() => selectProject(p)}
-                >
-                  <span className={styles.dropItemDot}/>
-                  {p.name}
-                  {p.id === activeProject?.id && (
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="13" height="13" className={styles.dropItemCheck}>
-                      <polyline points="20 6 9 17 4 12"/>
-                    </svg>
-                  )}
-                </button>
-              ))}
-              <div className={styles.dropDivider}/>
-              <button className={styles.dropAction} onClick={() => { setShowProjectDrop(false); router.push('/projects'); }}>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="13" height="13">
-                  <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-                </svg>
-                New project
-              </button>
-            </div>
-          )}
-        </div>
+            <span className={styles.sep} />
 
-        <span className={styles.sep} />
+            {/* Environment badge */}
+            <button className={styles.envBtn} title="Environment: Production">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" width="13" height="13">
+                <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+              </svg>
+              <span>main</span>
+              <span className={styles.prodBadge}>PRODUCTION</span>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="11" height="11">
+                <polyline points="6 9 12 15 18 9"/>
+              </svg>
+            </button>
 
-        {/* Environment badge */}
-        <button className={styles.envBtn} title="Environment: Production">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" width="13" height="13">
-            <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
-          </svg>
-          <span>main</span>
-          <span className={styles.prodBadge}>PRODUCTION</span>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="11" height="11">
-            <polyline points="6 9 12 15 18 9"/>
-          </svg>
-        </button>
+            <span className={styles.sep} />
 
-        <span className={styles.sep} />
-
-        {/* Connect */}
-        <Link href="/getting-started" className={styles.connectBtn} title="Connect your backend">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="13" height="13">
-            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
-            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
-          </svg>
-          Connect
-        </Link>
+            {/* Connect */}
+            <Link href="/getting-started" className={styles.connectBtn} title="Connect your backend">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="13" height="13">
+                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+              </svg>
+              Connect
+            </Link>
+          </>
+        )}
       </div>
 
       {/* ══ RIGHT ══ */}

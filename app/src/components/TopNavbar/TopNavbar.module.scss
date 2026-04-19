@@ -1,15 +1,16 @@
 // ════════════════════════════════════════════
-//  Top Navbar — dark bar, matches screenshot
+//  Top Navbar — Light Glassmorphic Style
 // ════════════════════════════════════════════
 
-$bg:        #0f1117;
-$border:    rgba(255, 255, 255, 0.08);
-$border2:   rgba(255, 255, 255, 0.14);
-$text:      #e2e2e2;
-$muted:     #888;
+$bg:        rgba(255, 255, 255, 0.72);
+$border:    rgba(0, 0, 0, 0.08);
+$border2:   rgba(0, 0, 0, 0.15);
+$text:      #1A1A1A;
+$muted:     #6B6B6B;
 $green:     #1ed760;
+$green-text: #16a34a;
 $orange:    #f97316;
-$r:         7px;
+$r:         8px;
 $h:         46px;
 
 // ── Bar ──
@@ -21,6 +22,8 @@ $h:         46px;
   height: $h;
   z-index: 1000;
   background: $bg;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   border-bottom: 1px solid $border;
   display: flex;
   align-items: center;
@@ -28,14 +31,15 @@ $h:         46px;
   padding: 0 16px;
   gap: 8px;
   font-family: 'Inter', sans-serif;
-  font-size: 0.82rem;
+  font-size: 0.85rem;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.02);
 }
 
 // ── Sides ──
 .left, .right {
   display: flex;
   align-items: center;
-  gap: 2px;
+  gap: 4px;
 }
 
 // ── Separator ──
@@ -59,23 +63,25 @@ $h:         46px;
   padding: 4px 6px;
   border-radius: $r;
   transition: background 0.15s;
-  &:hover { background: rgba(255,255,255,0.05); }
+  &:hover { background: rgba(0,0,0,0.04); }
 }
 
 .brandIcon {
   width: 24px;
   height: 24px;
-  background: $green;
+  background: rgba(168, 216, 255, 0.35);
   border-radius: 5px;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #051a0a;
+  color: $text;
   flex-shrink: 0;
+  svg polygon { stroke: $text; }
+  svg circle { fill: $text; }
 }
 
 .brandText {
-  font-size: 0.78rem;
+  font-size: 0.8rem;
   font-weight: 800;
   letter-spacing: 0.1em;
   color: $text;
@@ -85,8 +91,8 @@ $h:         46px;
   font-size: 0.6rem;
   font-weight: 700;
   letter-spacing: 0.08em;
-  background: rgba(255,255,255,0.08);
-  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(0,0,0,0.05);
+  border: 1px solid rgba(0,0,0,0.08);
   color: $muted;
   padding: 1px 6px;
   border-radius: 4px;
@@ -102,15 +108,15 @@ $h:         46px;
   background: transparent;
   border: none;
   color: $text;
-  font-size: 0.82rem;
+  font-size: 0.85rem;
   font-family: inherit;
-  font-weight: 500;
+  font-weight: 600;
   padding: 5px 8px;
   border-radius: $r;
   cursor: pointer;
   transition: background 0.15s;
   white-space: nowrap;
-  &:hover { background: rgba(255,255,255,0.06); }
+  &:hover { background: rgba(0,0,0,0.04); }
 }
 
 .selectorLabel {
@@ -132,9 +138,9 @@ $h:         46px;
   font-size: 0.6rem;
   font-weight: 800;
   letter-spacing: 0.1em;
-  background: rgba(249, 115, 22, 0.18);
-  border: 1px solid rgba(249, 115, 22, 0.35);
-  color: $orange;
+  background: rgba(249, 115, 22, 0.12);
+  border: 1px solid rgba(249, 115, 22, 0.25);
+  color: #c2410c;
   padding: 2px 7px;
   border-radius: 4px;
 }
@@ -144,18 +150,20 @@ $h:         46px;
   display: flex;
   align-items: center;
   gap: 5px;
-  background: rgba(255,255,255,0.05);
+  background: #FFF;
   border: 1px solid $border;
   border-radius: $r;
   color: $text;
-  font-size: 0.82rem;
+  font-size: 0.85rem;
   font-family: inherit;
-  font-weight: 500;
-  padding: 4px 10px;
+  font-weight: 600;
+  padding: 5px 12px;
   cursor: pointer;
   text-decoration: none;
-  transition: background 0.15s, border-color 0.15s;
-  &:hover { background: rgba(255,255,255,0.09); border-color: $border2; }
+  transition: all 0.15s;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  &:hover { background: #F9F9F9; border-color: $border2; transform: translateY(-1px); }
+  &:active { transform: translateY(0); box-shadow: none; }
 }
 
 // ════════════════════════════════════════════
@@ -165,15 +173,15 @@ $h:         46px;
   background: transparent;
   border: none;
   color: $muted;
-  font-size: 0.82rem;
+  font-size: 0.85rem;
   font-family: inherit;
   font-weight: 500;
-  padding: 5px 8px;
+  padding: 5px 10px;
   border-radius: $r;
   cursor: pointer;
   text-decoration: none;
-  transition: color 0.15s, background 0.15s;
-  &:hover { color: $text; background: rgba(255,255,255,0.05); }
+  transition: all 0.15s;
+  &:hover { color: $text; background: rgba(0,0,0,0.04); }
 }
 
 // ── Search ──
@@ -181,21 +189,22 @@ $h:         46px;
   display: flex;
   align-items: center;
   gap: 6px;
-  background: rgba(255,255,255,0.04);
+  background: rgba(0,0,0,0.03);
   border: 1px solid $border;
-  border-radius: $r;
-  padding: 4px 8px;
+  border-radius: 100px; // pill shape match
+  padding: 5px 12px;
   cursor: pointer;
-  transition: border-color 0.15s, width 0.25s, background 0.15s;
-  width: 130px;
+  transition: all 0.25s;
+  width: 140px;
   overflow: hidden;
-  &:hover { border-color: $border2; background: rgba(255,255,255,0.07); }
+  &:hover { background: #FFF; border-color: rgba(0,0,0,0.15); box-shadow: 0 2px 6px rgba(0,0,0,0.04); }
 }
 
 .searchOpen {
-  width: 220px;
-  border-color: rgba(30, 215, 96, 0.35) !important;
-  background: rgba(255,255,255,0.05) !important;
+  width: 240px;
+  background: #FFF !important;
+  border-color: rgba(0,0,0,0.2) !important;
+  box-shadow: 0 0 0 3px rgba(0,0,0,0.05);
 }
 
 .searchIco { color: $muted; flex-shrink: 0; }
@@ -205,7 +214,7 @@ $h:         46px;
   border: none;
   outline: none;
   color: $text;
-  font-size: 0.82rem;
+  font-size: 0.85rem;
   font-family: inherit;
   width: 100%;
   &::placeholder { color: $muted; }
@@ -220,21 +229,22 @@ $h:         46px;
 }
 
 .kbd {
-  font-size: 0.68rem;
+  font-size: 0.65rem;
   color: $muted;
-  background: rgba(255,255,255,0.07);
-  border: 1px solid $border;
+  background: rgba(0,0,0,0.05);
+  border: 1px solid rgba(0,0,0,0.1);
   border-radius: 4px;
-  padding: 1px 5px;
+  padding: 2px 6px;
   font-family: inherit;
+  font-weight: 600;
   white-space: nowrap;
   user-select: none;
 }
 
 // ── Icon buttons ──
 .iconBtn {
-  width: 30px;
-  height: 30px;
+  width: 32px;
+  height: 32px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -243,52 +253,53 @@ $h:         46px;
   border-radius: $r;
   color: $muted;
   cursor: pointer;
-  transition: background 0.15s, color 0.15s;
-  &:hover { background: rgba(255,255,255,0.07); color: $text; }
+  transition: all 0.15s;
+  &:hover { background: rgba(0,0,0,0.05); color: $text; }
 }
 
 // ── Upgrade ──
 .upgradeBtn {
   display: flex;
   align-items: center;
-  background: $green;
-  color: #051a0a;
-  font-size: 0.78rem;
-  font-weight: 800;
+  background: $text;
+  color: #FFF;
+  font-size: 0.8rem;
+  font-weight: 700;
   font-family: inherit;
-  padding: 5px 12px;
-  border-radius: $r;
+  padding: 6px 14px;
+  border-radius: 100px;
   border: none;
   cursor: pointer;
   text-decoration: none;
   white-space: nowrap;
-  transition: background 0.15s, transform 0.1s;
+  transition: all 0.15s;
   margin-left: 4px;
-  &:hover { background: lighten($green, 8%); }
+  &:hover { background: #333; transform: translateY(-1px); box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+  &:active { transform: translateY(0); }
 }
 
 // ── Avatar ──
 .avatar {
-  width: 28px;
-  height: 28px;
+  width: 30px;
+  height: 30px;
   border-radius: 50%;
-  background: rgba(30, 215, 96, 0.2);
-  border: 1.5px solid rgba(30, 215, 96, 0.4);
-  color: $green;
-  font-size: 0.75rem;
+  background: #E8F5E9;
+  border: 1.5px solid #81C784;
+  color: #2E7D32;
+  font-size: 0.8rem;
   font-weight: 800;
   font-family: inherit;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-left: 4px;
-  transition: border-color 0.15s, transform 0.15s;
-  &:hover { border-color: $green; transform: scale(1.08); }
+  margin-left: 6px;
+  transition: all 0.15s;
+  &:hover { border-color: #4CAF50; transform: scale(1.05); }
 }
 
 // ════════════════════════════════════════════
-//  DROPDOWN
+//  DROPDOWN (Light theme)
 // ════════════════════════════════════════════
 @keyframes dropIn {
   from { opacity: 0; transform: translateY(-6px) scale(0.97); }
@@ -301,14 +312,15 @@ $h:         46px;
   position: absolute;
   top: calc(100% + 8px);
   left: 0;
-  min-width: 200px;
-  background: #1a1a1f;
-  border: 1px solid $border2;
-  border-radius: 10px;
-  box-shadow: 0 12px 40px rgba(0,0,0,0.6);
+  min-width: 220px;
+  background: #FFF;
+  border: 1px solid rgba(0,0,0,0.1);
+  border-radius: 12px;
+  box-shadow: 0 12px 32px rgba(0,0,0,0.1);
   z-index: 500;
-  animation: dropIn 0.15s ease;
+  animation: dropIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   overflow: hidden;
+  padding: 6px;
 }
 
 .dropRight { left: auto; right: 0; }
@@ -323,7 +335,7 @@ $h:         46px;
 }
 
 .dropUser {
-  font-size: 0.88rem;
+  font-size: 0.9rem;
   font-weight: 600;
   color: $text;
   text-transform: none;
@@ -332,7 +344,7 @@ $h:         46px;
 }
 
 .dropEmail {
-  font-size: 0.78rem;
+  font-size: 0.8rem;
   color: $muted;
   font-weight: 400;
   text-transform: none;
@@ -341,13 +353,13 @@ $h:         46px;
 
 .dropDivider {
   height: 1px;
-  background: $border;
-  margin: 2px 0;
+  background: rgba(0,0,0,0.06);
+  margin: 4px 0;
 }
 
 .dropEmpty {
   padding: 10px 14px;
-  font-size: 0.82rem;
+  font-size: 0.85rem;
   color: $muted;
 }
 
@@ -356,19 +368,21 @@ $h:         46px;
   align-items: center;
   gap: 8px;
   width: 100%;
-  padding: 9px 14px;
+  padding: 10px 14px;
   border: none;
+  border-radius: 6px;
   background: transparent;
   color: $text;
   font-size: 0.85rem;
+  font-weight: 500;
   font-family: inherit;
   text-align: left;
   cursor: pointer;
-  transition: background 0.12s;
-  &:hover { background: rgba(255,255,255,0.06); }
+  transition: background 0.15s;
+  &:hover { background: rgba(0,0,0,0.04); }
 }
 
-.dropItemActive { color: $green; }
+.dropItemActive { color: $green-text; background: #F0FDF4; &:hover { background: #DCFCE7; } }
 
 .dropItemDot {
   width: 6px;
@@ -378,11 +392,11 @@ $h:         46px;
   flex-shrink: 0;
 }
 
-.dropItemCheck { margin-left: auto; color: $green; }
+.dropItemCheck { margin-left: auto; color: $green-text; }
 
 .dropItemDanger {
-  color: #f87171;
-  &:hover { background: rgba(248,113,113,0.08); }
+  color: #ef4444;
+  &:hover { background: #FEF2F2; }
 }
 
 .dropAction {
@@ -390,14 +404,16 @@ $h:         46px;
   align-items: center;
   gap: 8px;
   width: 100%;
-  padding: 9px 14px;
+  padding: 10px 14px;
   border: none;
+  border-radius: 6px;
   background: transparent;
-  color: $green;
+  color: $text;
   font-size: 0.85rem;
+  font-weight: 600;
   font-family: inherit;
   text-align: left;
   cursor: pointer;
-  transition: background 0.12s;
-  &:hover { background: rgba(30, 215, 96, 0.08); }
+  transition: background 0.15s;
+  &:hover { background: rgba(0,0,0,0.04); }
 }
