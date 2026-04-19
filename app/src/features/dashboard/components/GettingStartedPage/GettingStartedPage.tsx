@@ -7,13 +7,6 @@ import styles from './GettingStartedPage.module.scss';
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000/api/v1';
 
-interface Step {
-  num: number;
-  title: string;
-  desc: string;
-  content: React.ReactNode;
-}
-
 export default function GettingStartedPage() {
   const { user } = useAuth();
   const [sdkToken, setSdkToken] = useState<string>('');
