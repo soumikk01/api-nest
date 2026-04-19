@@ -18,7 +18,7 @@ const SpringBackground = () => (
 );
 
 export default function RegisterPage() {
-  const [dark, setDark] = useState(false);
+  const [dark] = useState(true);
   const router = useRouter();
   const { register, isLoading } = useAuth();
 
@@ -26,12 +26,16 @@ export default function RegisterPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [isShaking, setIsShaking] = useState(false);
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setIsShaking(false);
     if (password.length < 8) {
       setError('Password must be at least 8 characters.');
+      setIsShaking(true);
+      setTimeout(() => setIsShaking(false), 600);
       return;
     }
     try {
@@ -39,6 +43,8 @@ export default function RegisterPage() {
       router.push('/dashboard');
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
+      setIsShaking(true);
+      setTimeout(() => setIsShaking(false), 600);
     }
   };
 
@@ -50,6 +56,20 @@ export default function RegisterPage() {
         <div className={styles.leftPane}>
           <div className={styles.patternOverlay} />
           
+          {/* ── CENTER COPY ── */}
+          <div className={styles.rightCopy}>
+            <div className={styles.introIcon}>
+              <svg viewBox="0 0 24 24" fill="none" width="32" height="32">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                <circle cx="12" cy="7" r="4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                <line x1="19" y1="8" x2="19" y2="14" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
+                <line x1="16" y1="11" x2="22" y2="11" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
+              </svg>
+            </div>
+            <h1 className={styles.introTitle}>Create your account</h1>
+            <p className={styles.introSub}>Join API Nest to monitor your APIs</p>
+          </div>
+
           <header className={styles.navWrap}>
             <nav className={styles.nav}>
               <div className={styles.logo}>
@@ -62,6 +82,14 @@ export default function RegisterPage() {
               <Link href="/" className={styles.backLink}>← Home</Link>
             </nav>
           </header>
+
+          {/* ── BOTTOM LINKS ── */}
+          <div className={styles.rightUtilLinks}>
+            <span className={styles.rightForgotLink}>Already have an account?</span>
+            <Link href="/login" className={styles.rightRegisterLink}>
+              Log in →
+            </Link>
+          </div>
         </div>
 
         {/* ── RIGHT VIEW (Form & Sparkles) ── */}
@@ -69,49 +97,9 @@ export default function RegisterPage() {
           <div className={styles.noiseOverlay} />
           <SpringBackground />
 
-          {/* ── THEME TOGGLE ── */}
-          <button
-            id="theme-toggle"
-            className={styles.themeToggle}
-            onClick={() => setDark((d) => !d)}
-            aria-label={dark ? 'Switch to light mode' : 'Switch to dark mode'}
-            title={dark ? 'Light mode' : 'Dark mode'}
-          >
-            {dark ? (
-              <svg viewBox="0 0 24 24" fill="none" width="18" height="18">
-                <circle cx="12" cy="12" r="4.5" stroke="currentColor" strokeWidth="2"/>
-                <line x1="12" y1="2" x2="12" y2="5" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-                <line x1="12" y1="19" x2="12" y2="22" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-                <line x1="2" y1="12" x2="5" y2="12" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-                <line x1="19" y1="12" x2="22" y2="12" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-                <line x1="4.93" y1="4.93" x2="7.05" y2="7.05" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-                <line x1="16.95" y1="16.95" x2="19.07" y2="19.07" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-                <line x1="4.93" y1="19.07" x2="7.05" y2="16.95" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-                <line x1="16.95" y1="7.05" x2="19.07" y2="4.93" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-              </svg>
-            ) : (
-              <svg viewBox="0 0 24 24" fill="none" width="18" height="18">
-                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            )}
-          </button>
-
           {/* ── MAIN ── */}
           <main className={styles.main}>
             <div className={styles.card}>
-              <div className={styles.cardHeader}>
-                <div className={styles.cardIcon}>
-                  <svg viewBox="0 0 24 24" fill="none" width="22" height="22">
-                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" stroke="#1A1A1A" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-                    <circle cx="12" cy="7" r="4" stroke="#1A1A1A" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-                    <line x1="19" y1="8" x2="19" y2="14" stroke="#1A1A1A" strokeWidth="1.8" strokeLinecap="round"/>
-                    <line x1="16" y1="11" x2="22" y2="11" stroke="#1A1A1A" strokeWidth="1.8" strokeLinecap="round"/>
-                  </svg>
-                </div>
-                <h1 className={styles.cardTitle}>Create your account</h1>
-                <p className={styles.cardSub}>Join API Nest to monitor your APIs</p>
-              </div>
-
               <form className={styles.form} onSubmit={handleRegister}>
                 <div className={styles.field}>
                   <label className={styles.label} htmlFor="register-name">Full Name</label>
@@ -144,7 +132,7 @@ export default function RegisterPage() {
                   <label className={styles.label} htmlFor="register-password">Password</label>
                   <input
                     id="register-password"
-                    className={styles.input}
+                    className={`${styles.input} ${isShaking ? styles.inputError : ''}`}
                     type="password"
                     placeholder="Min. 8 characters"
                     value={password}
@@ -190,12 +178,6 @@ export default function RegisterPage() {
                 </button>
               </div>
 
-              <div className={styles.utilLinks}>
-                <span className={styles.forgotLink}>Already have an account?</span>
-                <Link href="/login" className={styles.registerLink}>
-                  Log in →
-                </Link>
-              </div>
             </div>
           </main>
         </div>

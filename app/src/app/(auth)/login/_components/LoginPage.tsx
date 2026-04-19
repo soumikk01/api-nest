@@ -20,22 +20,26 @@ const SpringBackground = () => (
 );
 
 export default function LoginPage() {
-  const [dark, setDark] = useState(false);
+  const [dark] = useState(true);
   const router = useRouter();
   const { login, isLoading } = useAuth();
   
   const [email, setEmail] = useState(process.env.NEXT_PUBLIC_DUMMY_EMAIL ?? '');
   const [password, setPassword] = useState(process.env.NEXT_PUBLIC_DUMMY_PASSWORD ?? '');
   const [error, setError] = useState('');
+  const [isShaking, setIsShaking] = useState(false);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setIsShaking(false);
     try {
       await login(email, password);
       router.push('/dashboard');
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
+      setIsShaking(true);
+      setTimeout(() => setIsShaking(false), 600);
     }
   };
 
@@ -46,49 +50,9 @@ export default function LoginPage() {
           <div className={styles.noiseOverlay} />
           <SpringBackground />
 
-      {/* ── THEME TOGGLE (moon / sun) ── */}
-      <button
-        id="theme-toggle"
-        className={styles.themeToggle}
-        onClick={() => setDark((d) => !d)}
-        aria-label={dark ? 'Switch to light mode' : 'Switch to dark mode'}
-        title={dark ? 'Light mode' : 'Dark mode'}
-      >
-        {dark ? (
-          <svg viewBox="0 0 24 24" fill="none" width="18" height="18">
-            <circle cx="12" cy="12" r="4.5" stroke="currentColor" strokeWidth="2"/>
-            <line x1="12" y1="2" x2="12" y2="5" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-            <line x1="12" y1="19" x2="12" y2="22" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-            <line x1="2" y1="12" x2="5" y2="12" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-            <line x1="19" y1="12" x2="22" y2="12" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-            <line x1="4.93" y1="4.93" x2="7.05" y2="7.05" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-            <line x1="16.95" y1="16.95" x2="19.07" y2="19.07" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-            <line x1="4.93" y1="19.07" x2="7.05" y2="16.95" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-            <line x1="16.95" y1="7.05" x2="19.07" y2="4.93" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-          </svg>
-        ) : (
-          <svg viewBox="0 0 24 24" fill="none" width="18" height="18">
-            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-          </svg>
-        )}
-      </button>
-
-
-
       {/* ── MAIN ── */}
       <main className={styles.main}>
         <div className={styles.card}>
-          <div className={styles.cardHeader}>
-            <div className={styles.cardIcon}>
-              <svg viewBox="0 0 24 24" fill="none" width="22" height="22">
-                <circle cx="12" cy="8" r="4" stroke="#1A1A1A" strokeWidth="1.8"/>
-                <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" stroke="#1A1A1A" strokeWidth="1.8" strokeLinecap="round"/>
-              </svg>
-            </div>
-            <h1 className={styles.cardTitle}>Welcome back</h1>
-            <p className={styles.cardSub}>Sign in to your API Nest account</p>
-          </div>
-
           <form className={styles.form} onSubmit={handleLogin}>
             <div className={styles.field}>
               <label className={styles.label} htmlFor="login-email">Email</label>
@@ -107,13 +71,16 @@ export default function LoginPage() {
               <label className={styles.label} htmlFor="login-password">Password</label>
               <input
                 id="login-password"
-                className={styles.input}
+                className={`${styles.input} ${isShaking ? styles.inputError : ''}`}
                 type="password"
                 placeholder="••••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 autoComplete="current-password"
               />
+              <div style={{ textAlign: 'right', marginTop: '2px' }}>
+                <Link href="/login/forgot-password" className={styles.forgotLinkInline}>Forgot password?</Link>
+              </div>
             </div>
 
             {error && (
@@ -151,12 +118,6 @@ export default function LoginPage() {
             </button>
           </div>
 
-          <div className={styles.utilLinks}>
-            <a href="#" className={styles.forgotLink}>Forgot password?</a>
-            <Link href="/register" className={styles.registerLink}>
-              Create account →
-            </Link>
-          </div>
           </div>
         </main>
       </div>
@@ -165,6 +126,18 @@ export default function LoginPage() {
       <div className={styles.rightPane}>
         <div className={styles.patternOverlay} />
         
+        {/* ── CENTER COPY ── */}
+        <div className={styles.rightCopy}>
+          <div className={styles.introIcon}>
+            <svg viewBox="0 0 24 24" fill="none" width="32" height="32">
+              <circle cx="12" cy="8" r="4" stroke="currentColor" strokeWidth="1.8"/>
+              <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
+            </svg>
+          </div>
+          <h1 className={styles.introTitle}>Welcome back</h1>
+          <p className={styles.introSub}>Sign in to your API Nest account</p>
+        </div>
+
         {/* ── NAVBAR ── */}
         <header className={styles.navWrap}>
           <nav className={styles.nav}>
@@ -178,6 +151,14 @@ export default function LoginPage() {
             <Link href="/" className={styles.backLink}>← Home</Link>
           </nav>
         </header>
+
+        {/* ── BOTTOM LINKS ── */}
+        <div className={styles.rightUtilLinks}>
+          <span className={styles.rightForgotLink}>New to API Nest?</span>
+          <Link href="/register" className={styles.rightRegisterLink}>
+            Create account →
+          </Link>
+        </div>
 
       </div>
     </div>
