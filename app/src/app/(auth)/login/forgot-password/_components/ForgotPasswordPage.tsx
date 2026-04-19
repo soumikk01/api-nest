@@ -18,24 +18,45 @@ const SpringBackground = () => (
 );
 
 export default function ForgotPasswordPage() {
-  const [dark] = useState(true);
+  // dark mode is always on — no toggle needed
+  const dark = true;
   const router = useRouter();
-  
+
   const [step, setStep] = useState<1 | 2>(1);
   const [email, setEmail] = useState('');
   const [otp, setOtp] = useState('');
+  const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleSendOtp = (e: React.FormEvent) => {
+  const handleSendOtp = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (email) setStep(2);
+    setError('');
+    setIsLoading(true);
+    try {
+      // TODO: Replace with real API call when backend endpoint is ready
+      // await fetch(`${API}/auth/forgot-password`, { method: 'POST', body: JSON.stringify({ email }) });
+      await new Promise(r => setTimeout(r, 600)); // simulate network
+      setStep(2);
+    } catch {
+      setError('Failed to send OTP. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleVerifyOtp = (e: React.FormEvent) => {
+  const handleVerifyOtp = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (otp) {
-      // In a real app, this would verify OTP and allow resetting password.
-      // For now, redirect to login.
+    setError('');
+    setIsLoading(true);
+    try {
+      // TODO: Replace with real API call when backend endpoint is ready
+      // await fetch(`${API}/auth/verify-otp`, { method: 'POST', body: JSON.stringify({ email, otp }) });
+      await new Promise(r => setTimeout(r, 600)); // simulate network
       router.push('/login');
+    } catch {
+      setError('Invalid or expired OTP. Please try again.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -66,7 +87,9 @@ export default function ForgotPasswordPage() {
           <div className={styles.topCopy}>
             <div className={styles.introIcon}>
               <svg viewBox="0 0 24 24" fill="none" width="32" height="32">
-                <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                {/* Lock icon — appropriate for password recovery */}
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
             </div>
             <h1 className={styles.introTitle}>Recover account</h1>
@@ -91,8 +114,12 @@ export default function ForgotPasswordPage() {
                   />
                 </div>
 
-                <button type="submit" className={styles.submitBtn}>
-                  Send Verification OTP
+                {error && (
+                  <div role="alert" aria-live="polite" style={{ color: '#ef4444', fontSize: '13px' }}>{error}</div>
+                )}
+
+                <button type="submit" className={styles.submitBtn} disabled={isLoading}>
+                  {isLoading ? 'Sending...' : 'Send Verification OTP'}
                 </button>
               </form>
             ) : (
@@ -111,8 +138,12 @@ export default function ForgotPasswordPage() {
                   />
                 </div>
 
-                <button type="submit" className={styles.submitBtn}>
-                  Verify OTP
+                {error && (
+                  <div role="alert" aria-live="polite" style={{ color: '#ef4444', fontSize: '13px' }}>{error}</div>
+                )}
+
+                <button type="submit" className={styles.submitBtn} disabled={isLoading}>
+                  {isLoading ? 'Verifying...' : 'Verify OTP'}
                 </button>
               </form>
             )}
