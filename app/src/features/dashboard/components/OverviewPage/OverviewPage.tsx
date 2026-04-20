@@ -2,9 +2,10 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
-import { useMonitorSocket, ApiCallEvent } from '@/features/monitor/hooks/useMonitorSocket';
-import { useAuth } from '@/features/auth/hooks/useAuth';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useMonitorSocket, ApiCallEvent } from '@/hooks/useMonitorSocket';
+import { useAuth } from '@/hooks/useAuth';
+import { useTheme } from '@/hooks/useTheme';
 import styles from './OverviewPage.module.scss';
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000/api/v1';
@@ -34,8 +35,9 @@ interface DbCall {
 }
 
 export default function OverviewPage() {
-  const [dark, setDark] = useState(false);
+  const { dark } = useTheme();
   const { user } = useAuth();
+  const router = useRouter();
   const searchParams = useSearchParams();
   const [projectId, setProjectId] = useState('');
   const [projectName, setProjectName] = useState('');
@@ -125,31 +127,6 @@ export default function OverviewPage() {
       <div className={styles.dotPattern} />
       <SpringBackground />
 
-      {/* ── THEME TOGGLE ── */}
-      <button
-        className={styles.themeToggle}
-        onClick={() => setDark(!dark)}
-        aria-label="Toggle theme"
-      >
-        {dark ? (
-          <svg viewBox="0 0 24 24" fill="none" width="18" height="18">
-            <circle cx="12" cy="12" r="4.5" stroke="currentColor" strokeWidth="2"/>
-            <line x1="12" y1="2" x2="12" y2="5" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-            <line x1="12" y1="19" x2="12" y2="22" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-            <line x1="2" y1="12" x2="5" y2="12" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-            <line x1="19" y1="12" x2="22" y2="12" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-            <line x1="4.93" y1="4.93" x2="7.05" y2="7.05" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-            <line x1="16.95" y1="16.95" x2="19.07" y2="19.07" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-            <line x1="4.93" y1="19.07" x2="7.05" y2="16.95" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-            <line x1="16.95" y1="7.05" x2="19.07" y2="4.93" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-          </svg>
-        ) : (
-          <svg viewBox="0 0 24 24" fill="none" width="18" height="18">
-            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-          </svg>
-        )}
-      </button>
-
       {/* ── SIDEBAR ── */}
       <aside className={styles.sidebar}>
         <div className={styles.brand}>
@@ -174,12 +151,6 @@ export default function OverviewPage() {
               <rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="14" y="14" width="7" height="7" /><rect x="3" y="14" width="7" height="7" />
             </svg>
             Overview
-          </Link>
-          <Link href="/getting-started" className={styles.navItem}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
-              <circle cx="12" cy="12" r="10" /><polyline points="12 8 12 12 14 14" />
-            </svg>
-            Getting Started
           </Link>
           <Link href="/history" className={styles.navItem}>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">

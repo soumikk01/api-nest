@@ -2,14 +2,15 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import { useAuth } from '@/features/auth/hooks/useAuth';
+import { useAuth } from '@/hooks/useAuth';
 import { useRouter } from 'next/navigation';
+import { useTheme } from '@/hooks/useTheme';
 import styles from './SettingsPage.module.scss';
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000/api/v1';
 
 export default function SettingsPage() {
-  const [dark, setDark] = useState(false);
+  const { dark } = useTheme();
   const [copied, setCopied] = useState(false);
   const [regenerating, setRegenerating] = useState(false);
   const [cliCommand, setCliCommand] = useState<{ command: string; token: string; instructions: string } | null>(null);
@@ -58,21 +59,6 @@ export default function SettingsPage() {
       <div className={styles.noiseOverlay} />
       <div className={styles.dotPattern} />
 
-      {/* ── THEME TOGGLE ── */}
-      <button className={styles.themeToggle} onClick={() => setDark(!dark)} aria-label="Toggle theme">
-        {dark ? (
-          <svg viewBox="0 0 24 24" fill="none" width="18" height="18">
-            <circle cx="12" cy="12" r="4.5" stroke="currentColor" strokeWidth="2"/>
-            <line x1="12" y1="2" x2="12" y2="5" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-            <line x1="12" y1="19" x2="12" y2="22" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-          </svg>
-        ) : (
-          <svg viewBox="0 0 24 24" fill="none" width="18" height="18">
-            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-          </svg>
-        )}
-      </button>
-
       {/* ── SIDEBAR ── */}
       <aside className={styles.sidebar}>
         <div className={styles.brand}>
@@ -98,12 +84,6 @@ export default function SettingsPage() {
               <rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
             </svg>
             Overview
-          </Link>
-          <Link href="/getting-started" className={styles.navItem}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
-              <circle cx="12" cy="12" r="10"/><polyline points="12 8 12 12 14 14"/>
-            </svg>
-            Getting Started
           </Link>
           <Link href="/settings" className={`${styles.navItem} ${styles.active}`}>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">

@@ -19,7 +19,9 @@ export class CacheService implements OnModuleDestroy {
         // Stop retrying after 3 failed attempts — prevents log spam
         retryStrategy: (times: number) => {
           if (times > 3) {
-            this.logger.warn('Redis gave up after 3 attempts — running without cache');
+            this.logger.warn(
+              'Redis gave up after 3 attempts — running without cache',
+            );
             this.client?.disconnect();
             return null; // stop retrying
           }
@@ -37,7 +39,9 @@ export class CacheService implements OnModuleDestroy {
         this.logger.warn('Redis connect failed — running without cache');
       });
     } else {
-      this.logger.warn('REDIS_URL not set — caching disabled (app still works)');
+      this.logger.warn(
+        'REDIS_URL not set — caching disabled (app still works)',
+      );
       this.enabled = false;
     }
   }
@@ -58,7 +62,9 @@ export class CacheService implements OnModuleDestroy {
     if (!this.enabled || !this.client) return;
     try {
       await this.client.setex(key, ttlSeconds, JSON.stringify(value));
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
   }
 
   /** Delete a cache key (call after mutations). */
@@ -66,7 +72,9 @@ export class CacheService implements OnModuleDestroy {
     if (!this.enabled || !this.client || keys.length === 0) return;
     try {
       await this.client.del(...keys);
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
   }
 
   /** Delete all keys matching a pattern (e.g. "stats:*" for a project). */
@@ -75,7 +83,9 @@ export class CacheService implements OnModuleDestroy {
     try {
       const keys = await this.client.keys(pattern);
       if (keys.length) await this.client.del(...keys);
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
   }
 
   async onModuleDestroy() {

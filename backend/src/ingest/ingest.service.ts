@@ -54,7 +54,11 @@ export class IngestService {
       });
     }
 
-    return { projectId: project.id, projectName: project.name, userId: user.id };
+    return {
+      projectId: project.id,
+      projectName: project.name,
+      userId: user.id,
+    };
   }
 
   async ingest(dto: IngestDto) {
@@ -66,7 +70,8 @@ export class IngestService {
     const project = await this.prisma.project.findFirst({
       where: { id: dto.projectId, userId: user.id },
     });
-    if (!project) throw new UnauthorizedException('Project not found or access denied');
+    if (!project)
+      throw new UnauthorizedException('Project not found or access denied');
 
     // 3. Persist each event and broadcast via WebSocket
     const saved: unknown[] = [];
@@ -77,7 +82,10 @@ export class IngestService {
       // Broadcast to all dashboard clients watching this project
       this.eventsService.emitApiCall(project.id, record);
 
-      if (record.status === 'CLIENT_ERROR' || record.status === 'SERVER_ERROR') {
+      if (
+        record.status === 'CLIENT_ERROR' ||
+        record.status === 'SERVER_ERROR'
+      ) {
         this.eventsService.emitApiError(project.id, {
           id: record.id,
           error: `${record.statusCode} ${record.statusText ?? ''}`,
@@ -132,8 +140,7 @@ export class IngestService {
     const errors = calls.filter(
       (c) => c.status === 'CLIENT_ERROR' || c.status === 'SERVER_ERROR',
     ).length;
-    const avgLatency =
-      calls.reduce((sum, c) => sum + c.latency, 0) / total;
+    const avgLatency = calls.reduce((sum, c) => sum + c.latency, 0) / total;
 
     this.eventsService.emitStats(projectId, {
       total,
