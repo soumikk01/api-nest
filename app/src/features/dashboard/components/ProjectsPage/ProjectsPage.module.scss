@@ -284,10 +284,10 @@ $dark-glass:     rgba(30, 30, 35, 0.75);
   position: relative;
   z-index: 10;
   flex: 1;
-  margin-left: 260px;
-  margin-top: 46px;
+  margin: 46px auto 0 auto; /* Top: 46px, Horizontal: auto */
   min-height: calc(100vh - 46px);
   padding: 2.5rem 3rem;
+  max-width: 1400px;
 }
 
 // ── Header ──

@@ -210,9 +210,25 @@ export default function TopNavbar() {
           {showUserDrop && (
             <div className={`${styles.drop} ${styles.dropRight}`}>
               <div className={styles.dropHeader}>
+                <div className={styles.dropAvatar}>
+                  <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" className={styles.dropAvatarSvg}>
+                    {/* head */}
+                    <circle cx="32" cy="22" r="12" fill="rgba(255,255,255,0.9)"/>
+                    {/* shoulders / body */}
+                    <path d="M8 68c0-13.255 10.745-24 24-24s24 10.745 24 24" fill="rgba(255,255,255,0.75)"/>
+                  </svg>
+                </div>
                 <div className={styles.dropUser}>{user?.name || 'Account'}</div>
                 <div className={styles.dropEmail}>{user?.email}</div>
               </div>
+              <div className={styles.dropDivider}/>
+              <button className={styles.dropItem} onClick={() => { setShowUserDrop(false); router.push('/projects/account'); }}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14" style={{ marginRight: '8px', opacity: 0.7 }}>
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                  <circle cx="12" cy="7" r="4"/>
+                </svg>
+                Account
+              </button>
               <div className={styles.dropDivider}/>
               <button className={styles.dropItem} onClick={() => { setShowUserDrop(false); router.push('/settings'); }}>
                 Settings
