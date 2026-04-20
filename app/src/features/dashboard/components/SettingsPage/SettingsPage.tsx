@@ -85,12 +85,6 @@ export default function SettingsPage() {
             </svg>
             Overview
           </Link>
-          <Link href="/getting-started" className={styles.navItem}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
-              <circle cx="12" cy="12" r="10"/><polyline points="12 8 12 12 14 14"/>
-            </svg>
-            Getting Started
-          </Link>
           <Link href="/settings" className={`${styles.navItem} ${styles.active}`}>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
               <circle cx="12" cy="12" r="3"/>

@@ -1,5 +1,6 @@
 import React, { Suspense } from 'react';
 import TopNavbar from '@/components/TopNavbar/TopNavbar';
+import ConnectPanel from '@/components/ConnectPanel/ConnectPanel';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -11,6 +12,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <div style={{ paddingTop: '46px', minHeight: '100vh', boxSizing: 'border-box' }}>
         {children}
       </div>
+      {/* Right-side Getting Started panel — shown when ?panel=getting-started */}
+      <ConnectPanel />
     </>
   );
 }

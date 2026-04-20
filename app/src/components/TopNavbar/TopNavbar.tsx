@@ -129,14 +129,22 @@ export default function TopNavbar() {
 
             <span className={styles.sep} />
 
-            {/* Connect */}
-            <Link href="/getting-started" className={styles.connectBtn} title="Connect your backend">
+            {/* Connect — opens Getting Started right-side panel */}
+            <button
+              className={styles.connectBtn}
+              title="Connect your backend"
+              onClick={() => {
+                const params = new URLSearchParams(searchParams.toString());
+                params.set('panel', 'getting-started');
+                router.push(`${pathname}?${params.toString()}`, { scroll: false });
+              }}
+            >
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="13" height="13">
                 <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
                 <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
               </svg>
               Connect
-            </Link>
+            </button>
           </>
         )}
       </div>
@@ -233,7 +241,12 @@ export default function TopNavbar() {
               <button className={styles.dropItem} onClick={() => { setShowUserDrop(false); router.push('/settings'); }}>
                 Settings
               </button>
-              <button className={styles.dropItem} onClick={() => { setShowUserDrop(false); router.push('/getting-started'); }}>
+              <button className={styles.dropItem} onClick={() => {
+                setShowUserDrop(false);
+                const params = new URLSearchParams(searchParams.toString());
+                params.set('panel', 'getting-started');
+                router.push(`${pathname}?${params.toString()}`, { scroll: false });
+              }}>
                 Getting Started
               </button>
               <div className={styles.dropDivider}/>
