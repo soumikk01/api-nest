@@ -29,10 +29,22 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [isShaking, setIsShaking] = useState(false);
 
+  const handleInvalid = () => {
+    setIsShaking(true);
+    setTimeout(() => setIsShaking(false), 600);
+  };
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setIsShaking(false);
+
+    if (!email.trim() || !password.trim()) {
+      setError('Please fill in all fields.');
+      handleInvalid();
+      return;
+    }
+
     try {
       await login(email, password);
       router.push('/projects');
@@ -53,12 +65,12 @@ export default function LoginPage() {
       {/* ── MAIN ── */}
       <main className={styles.main}>
         <div className={styles.card}>
-          <form className={styles.form} onSubmit={handleLogin}>
+          <form className={styles.form} onSubmit={handleLogin} noValidate>
             <div className={styles.field}>
               <label className={styles.label} htmlFor="login-email">Email</label>
               <input
                 id="login-email"
-                className={styles.input}
+                className={`${styles.input} ${isShaking ? styles.inputError : ''}`}
                 type="email"
                 placeholder="you@example.com"
                 value={email}

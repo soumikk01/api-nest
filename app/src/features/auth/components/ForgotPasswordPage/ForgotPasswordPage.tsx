@@ -27,10 +27,23 @@ export default function ForgotPasswordPage() {
   const [otp, setOtp] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isShaking, setIsShaking] = useState(false);
+
+  const handleInvalid = () => {
+    setIsShaking(true);
+    setTimeout(() => setIsShaking(false), 600);
+  };
 
   const handleSendOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+
+    if (!email.trim()) {
+      setError('Please enter your account email.');
+      handleInvalid();
+      return;
+    }
+
     setIsLoading(true);
     try {
       // TODO: Replace with real API call when backend endpoint is ready
@@ -39,6 +52,8 @@ export default function ForgotPasswordPage() {
       setStep(2);
     } catch {
       setError('Failed to send OTP. Please try again.');
+      setIsShaking(true);
+      setTimeout(() => setIsShaking(false), 600);
     } finally {
       setIsLoading(false);
     }
@@ -47,6 +62,13 @@ export default function ForgotPasswordPage() {
   const handleVerifyOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+
+    if (!otp.trim()) {
+      setError('Please enter the verification OTP.');
+      handleInvalid();
+      return;
+    }
+
     setIsLoading(true);
     try {
       // TODO: Replace with real API call when backend endpoint is ready
@@ -55,6 +77,8 @@ export default function ForgotPasswordPage() {
       router.push('/login');
     } catch {
       setError('Invalid or expired OTP. Please try again.');
+      setIsShaking(true);
+      setTimeout(() => setIsShaking(false), 600);
     } finally {
       setIsLoading(false);
     }
@@ -99,12 +123,12 @@ export default function ForgotPasswordPage() {
           {/* ── CARD ── */}
           <div className={styles.card}>
             {step === 1 ? (
-              <form className={styles.form} onSubmit={handleSendOtp}>
+              <form className={styles.form} onSubmit={handleSendOtp} noValidate>
                 <div className={styles.field}>
                   <label className={styles.label} htmlFor="forgot-email">Account Email</label>
                   <input
                     id="forgot-email"
-                    className={styles.input}
+                    className={`${styles.input} ${isShaking ? styles.inputError : ''}`}
                     type="email"
                     placeholder="you@example.com"
                     value={email}
@@ -123,12 +147,12 @@ export default function ForgotPasswordPage() {
                 </button>
               </form>
             ) : (
-              <form className={styles.form} onSubmit={handleVerifyOtp}>
+              <form className={styles.form} onSubmit={handleVerifyOtp} noValidate>
                 <div className={styles.field}>
                   <label className={styles.label} htmlFor="forgot-otp">Verification OTP</label>
                   <input
                     id="forgot-otp"
-                    className={styles.input}
+                    className={`${styles.input} ${isShaking ? styles.inputError : ''}`}
                     type="text"
                     placeholder="Enter the code sent to your email"
                     value={otp}

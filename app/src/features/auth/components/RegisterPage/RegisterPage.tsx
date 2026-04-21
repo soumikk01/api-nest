@@ -29,10 +29,22 @@ export default function RegisterPage() {
   const [error, setError] = useState('');
   const [isShaking, setIsShaking] = useState(false);
 
+  const handleInvalid = () => {
+    setIsShaking(true);
+    setTimeout(() => setIsShaking(false), 600);
+  };
+
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setIsShaking(false);
+
+    if (!name.trim() || !email.trim() || !password.trim()) {
+      setError('Please fill in all fields.');
+      handleInvalid();
+      return;
+    }
+
     if (password.length < 8) {
       setError('Password must be at least 8 characters.');
       setIsShaking(true);
@@ -101,12 +113,12 @@ export default function RegisterPage() {
           {/* ── MAIN ── */}
           <main className={styles.main}>
             <div className={styles.card}>
-              <form className={styles.form} onSubmit={handleRegister}>
+              <form className={styles.form} onSubmit={handleRegister} noValidate>
                 <div className={styles.field}>
                   <label className={styles.label} htmlFor="register-name">Full Name</label>
                   <input
                     id="register-name"
-                    className={styles.input}
+                    className={`${styles.input} ${isShaking ? styles.inputError : ''}`}
                     type="text"
                     placeholder="Jane Doe"
                     value={name}
@@ -119,7 +131,7 @@ export default function RegisterPage() {
                   <label className={styles.label} htmlFor="register-email">Email</label>
                   <input
                     id="register-email"
-                    className={styles.input}
+                    className={`${styles.input} ${isShaking ? styles.inputError : ''}`}
                     type="email"
                     placeholder="you@example.com"
                     value={email}
