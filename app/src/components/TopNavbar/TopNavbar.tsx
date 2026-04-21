@@ -4,6 +4,7 @@ import { authStorage } from '@/lib/fetchWithAuth';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
+import { Moon, Sun, LogOut, User } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useTheme } from '@/hooks/useTheme';
 import styles from './TopNavbar.module.scss';
@@ -88,7 +89,7 @@ export default function TopNavbar() {
   const userInitial = (user?.name || user?.email || 'U').slice(0, 1).toUpperCase();
 
   return (
-    <nav className={styles.navbar} id="top-navbar">
+    <nav className={`${styles.navbar}${dark ? ' ' + styles.dark : ''}`} id="top-navbar">
       {/* ══ LEFT ══ */}
       <div className={styles.left}>
         {/* Logo */}
@@ -232,24 +233,10 @@ export default function TopNavbar() {
               </div>
               <div className={styles.dropDivider}/>
               <button className={styles.dropItem} onClick={() => { setShowUserDrop(false); router.push('/projects/account'); }}>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14" style={{ marginRight: '8px', opacity: 0.7 }}>
-                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-                  <circle cx="12" cy="7" r="4"/>
-                </svg>
+                <User size={14} style={{ marginRight: '8px', opacity: 0.7 }} />
                 Account
               </button>
-              <div className={styles.dropDivider}/>
-              <button className={styles.dropItem} onClick={() => { setShowUserDrop(false); router.push(activeProject ? `/settings?projectId=${activeProject.id}` : '/settings'); }}>
-                Settings
-              </button>
-              <button className={styles.dropItem} onClick={() => {
-                setShowUserDrop(false);
-                const params = new URLSearchParams(searchParams.toString());
-                params.set('panel', 'getting-started');
-                router.push(`${pathname}?${params.toString()}`, { scroll: false });
-              }}>
-                Getting Started
-              </button>
+
               <div className={styles.dropDivider}/>
               <button 
                 className={styles.dropItem} 
@@ -257,10 +244,15 @@ export default function TopNavbar() {
                   toggleTheme();
                 }}
               >
-                {dark ? 'Light mode' : 'Dark mode'}
+                {dark ? (
+                  <><Sun size={14} style={{ marginRight: '8px', opacity: 0.7 }} /> Light mode</>
+                ) : (
+                  <><Moon size={14} style={{ marginRight: '8px', opacity: 0.7 }} /> Dark mode</>
+                )}
               </button>
               <div className={styles.dropDivider}/>
               <button className={`${styles.dropItem} ${styles.dropItemDanger}`} onClick={handleLogout}>
+                <LogOut size={14} style={{ marginRight: '8px', opacity: 0.7 }} />
                 Sign out
               </button>
             </div>
