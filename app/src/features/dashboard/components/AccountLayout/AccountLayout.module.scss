@@ -13,7 +13,10 @@ $dark-glass:     rgba(30, 30, 35, 0.75);
 .layout {
   position: relative;
   min-height: 100vh;
-  background: linear-gradient(160deg, $bg-top 0%, $bg-bot 100%);
+  background-image: linear-gradient(rgba(247, 243, 234, 0.7), rgba(241, 236, 226, 0.8)), url('/account_bg.png');
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
   color: $text-main;
   font-family: 'Inter', sans-serif;
   display: flex;
@@ -27,15 +30,6 @@ $dark-glass:     rgba(30, 30, 35, 0.75);
   pointer-events: none;
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
   opacity: 0.035;
-}
-
-.dotPattern {
-  position: fixed;
-  inset: 0;
-  z-index: 1;
-  pointer-events: none;
-  background-image: radial-gradient(rgba(0, 0, 0, 0.09) 1.5px, transparent 1.5px);
-  background-size: 24px 24px;
 }
 
 // ── Sidebar ──────────────────────────────────
@@ -103,10 +97,9 @@ $dark-glass:     rgba(30, 30, 35, 0.75);
 
 // ── Dark Mode ─────────────────────────────────
 .dark {
-  background: linear-gradient(160deg, $dark-bg-top 0%, $dark-bg-bot 100%);
+  background-image: linear-gradient(rgba(22, 22, 26, 0.85), rgba(13, 13, 15, 0.95)), url('/account_bg.png');
   color: $dark-text-main;
 
-  .dotPattern { background-image: radial-gradient(rgba(255, 255, 255, 0.05) 1.5px, transparent 1.5px); }
   .sidebar { background: $dark-glass; border-color: rgba(255,255,255,0.06); }
   .navItem { color: $dark-text-muted; &:hover { background: rgba(255,255,255,0.05); color: $dark-text-main; } }
   .activeNavItem { background: rgba(255, 255, 255, 0.1); color: $dark-text-main; }

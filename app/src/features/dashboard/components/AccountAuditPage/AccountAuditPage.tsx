@@ -75,7 +75,7 @@ export default function AccountAuditPage() {
   const dateRangeStr = `${format(new Date(Date.now() - 86400000), 'dd MMM, HH:mm')} - ${format(new Date(), 'dd MMM, HH:mm')}`;
 
   return (
-    <div className={`${styles.content}${dark ? ' ' + 'dark' : ''}`}>
+    <div className={`${styles.content}${dark ? ' ' + styles.dark : ''}`}>
       <div className={styles.header}>
         <h1>Audit Logs</h1>
         <p>View a detailed history of account activities and security events.</p>

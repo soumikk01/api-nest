@@ -173,58 +173,57 @@ $dark-bg-glass: rgba(30, 30, 35, 0.75);
 }
 
 // ── Dark Mode ─────────────────────────────────
-:global(.dark) {
-  .content {
-    .header h1 { color: $dark-text-main; }
-    .header p { color: $dark-text-muted; }
-    
-    .panel {
-      background: $dark-bg-glass;
-      border-color: rgba(255, 255, 255, 0.08);
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
-    }
+// .dark is applied directly to .content element
+.dark {
+  .header h1 { color: $dark-text-main; }
+  .header p  { color: $dark-text-muted; }
 
-    .filterSelect {
-      background: rgba(0, 0, 0, 0.2);
-      border-color: rgba(255, 255, 255, 0.1);
-      color: $dark-text-main;
-      option { background: #1a1a1a; }
-    }
-
-    .filterText { color: $dark-text-muted; }
-    
-    .refreshBtn {
-      color: $dark-text-muted;
-      border-color: rgba(255, 255, 255, 0.1);
-      &:hover {
-        background: rgba(255, 255, 255, 0.05);
-        color: $dark-text-main;
-      }
-    }
-
-    .tableWrapper {
-      background: rgba(0, 0, 0, 0.2);
-      border-color: rgba(255, 255, 255, 0.05);
-    }
-    
-    .table {
-      th {
-        background: rgba(255, 255, 255, 0.02);
-        border-color: rgba(255, 255, 255, 0.05);
-        color: $dark-text-muted;
-      }
-      td {
-        border-color: rgba(255, 255, 255, 0.03);
-        color: $dark-text-main;
-      }
-      tbody tr:hover {
-        background: rgba(255, 255, 255, 0.02);
-      }
-    }
-    
-    .actionCell strong { color: $dark-text-main; }
-    .targetCell { color: rgba(255, 255, 255, 0.6); }
-    .dateCell { color: $dark-text-muted; }
-    .emptyState { color: $dark-text-muted; }
+  .panel {
+    background: $dark-bg-glass;
+    border-color: rgba(255, 255, 255, 0.08);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
   }
+
+  .filterSelect {
+    background: rgba(0, 0, 0, 0.2);
+    border-color: rgba(255, 255, 255, 0.1);
+    color: $dark-text-main;
+    option { background: #1a1a1a; }
+  }
+
+  .filterText { color: $dark-text-muted; }
+
+  .refreshBtn {
+    color: $dark-text-muted;
+    border-color: rgba(255, 255, 255, 0.1);
+    &:hover {
+      background: rgba(255, 255, 255, 0.05);
+      color: $dark-text-main;
+    }
+  }
+
+  .tableWrapper {
+    background: rgba(0, 0, 0, 0.2);
+    border-color: rgba(255, 255, 255, 0.05);
+  }
+
+  .table {
+    th {
+      background: rgba(255, 255, 255, 0.02);
+      border-color: rgba(255, 255, 255, 0.05);
+      color: $dark-text-muted;
+    }
+    td {
+      border-color: rgba(255, 255, 255, 0.03);
+      color: $dark-text-main;
+    }
+    tbody tr:hover {
+      background: rgba(255, 255, 255, 0.02);
+    }
+  }
+
+  .actionCell strong { color: $dark-text-main; }
+  .targetCell        { color: rgba(255, 255, 255, 0.6); }
+  .dateCell          { color: $dark-text-muted; }
+  .emptyState        { color: $dark-text-muted; }
 }

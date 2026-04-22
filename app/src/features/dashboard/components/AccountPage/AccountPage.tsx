@@ -74,7 +74,7 @@ export default function AccountPage() {
   };
 
   return (
-    <main className={styles.content}>
+    <main className={`${styles.content}${dark ? ' ' + styles.dark : ''}`}>
       <div className={styles.header}>
         <h1>My Account</h1>
         <p>Manage your profile, API token, and account preferences.</p>

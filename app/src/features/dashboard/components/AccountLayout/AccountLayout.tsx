@@ -13,7 +13,6 @@ export default function AccountLayout({ children }: { children: React.ReactNode 
   return (
     <div className={`${styles.layout}${dark ? ' ' + styles.dark : ''}`}>
       <div className={styles.noiseOverlay} />
-      <div className={styles.dotPattern} />
 
       {/* ── SIDEBAR ── */}
       <aside className={styles.sidebar}>
