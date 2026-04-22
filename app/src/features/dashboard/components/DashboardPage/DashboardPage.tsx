@@ -7,7 +7,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useTheme } from '@/hooks/useTheme';
 import ProjectSidebar from '@/components/ProjectSidebar/ProjectSidebar';
 import styles from './DashboardPage.module.scss';
-import { ChevronDown, Copy, Database, GitBranch, Box } from 'lucide-react';
+import { ChevronDown, Database, GitBranch, Box } from 'lucide-react';
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000/api/v1';
 

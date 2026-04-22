@@ -2,11 +2,9 @@
 import { authStorage } from '@/lib/fetchWithAuth';
 
 import { useState, useCallback, useEffect } from 'react';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { useTheme } from '@/hooks/useTheme';
-import { Key, Shield, ClipboardList } from 'lucide-react';
 import styles from './AccountPage.module.scss';
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000/api/v1';

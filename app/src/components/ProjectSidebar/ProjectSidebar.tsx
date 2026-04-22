@@ -13,14 +13,14 @@ type SidebarState = 'expanded' | 'collapsed' | 'hover';
 
 export default function ProjectSidebar({ projectId }: Props) {
   const pathname = usePathname();
-  const [sidebarState, setSidebarState] = useState<SidebarState>('hover');
+  const [sidebarState, setSidebarState] = useState<SidebarState>(() => {
+    if (typeof window !== 'undefined') {
+      return (localStorage.getItem('sidebarState') as SidebarState) || 'hover';
+    }
+    return 'hover';
+  });
   const [showCtrl, setShowCtrl] = useState(false);
   const ctrlRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const saved = localStorage.getItem('sidebarState') as SidebarState;
-    if (saved) setSidebarState(saved);
-  }, []);
 
   useEffect(() => {
     document.body.style.setProperty('--sidebar-width', sidebarState === 'expanded' ? '220px' : '64px');
