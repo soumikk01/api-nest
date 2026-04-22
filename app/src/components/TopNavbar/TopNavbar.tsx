@@ -109,13 +109,13 @@ export default function TopNavbar() {
           <>
             <span className={styles.sep} />
 
-            {/* Active project name — static display only */}
-            <span className={styles.selectorBtn} style={{ cursor: 'default', pointerEvents: 'none' }}>
+            {/* Active project name — Click to go to projects */}
+            <Link href="/projects" className={styles.selectorBtn} title="Back to Projects">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" width="14" height="14">
                 <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
               </svg>
               <span className={styles.selectorLabel}>{activeProject?.name ?? 'No project'}</span>
-            </span>
+            </Link>
 
             <span className={styles.sep} />
 
