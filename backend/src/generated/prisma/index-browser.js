@@ -134,6 +134,14 @@ exports.Prisma.ProjectScalarFieldEnum = {
   updatedAt: 'updatedAt'
 };
 
+exports.Prisma.ProjectMemberScalarFieldEnum = {
+  id: 'id',
+  projectId: 'projectId',
+  userId: 'userId',
+  role: 'role',
+  createdAt: 'createdAt'
+};
+
 exports.Prisma.EnvironmentScalarFieldEnum = {
   id: 'id',
   name: 'name',
@@ -208,6 +216,7 @@ exports.Prisma.QueryMode = {
 exports.Prisma.ModelName = {
   User: 'User',
   Project: 'Project',
+  ProjectMember: 'ProjectMember',
   Environment: 'Environment',
   ApiCall: 'ApiCall',
   AlertRule: 'AlertRule',

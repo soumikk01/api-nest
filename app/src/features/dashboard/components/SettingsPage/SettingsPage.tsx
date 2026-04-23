@@ -4,9 +4,11 @@ import { authStorage } from '@/lib/fetchWithAuth';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
+import { AlertTriangle, X } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useTheme } from '@/hooks/useTheme';
 import ProjectSidebar from '@/components/ProjectSidebar/ProjectSidebar';
+import ProjectSettingsSidebar from '@/components/ProjectSettingsSidebar/ProjectSettingsSidebar';
 import { Shimmer, ShimmerBlock } from '@/components/Shimmer/Shimmer';
 import styles from './SettingsPage.module.scss';
 
@@ -24,6 +26,44 @@ export default function SettingsPage() {
   const [saveStatus, setSaveStatus] = useState<'idle' | 'success' | 'error'>('idle');
   // 'loading' = still fetching, 'empty' = no projects exist, 'ready' = project loaded
   const [loadState, setLoadState] = useState<'loading' | 'empty' | 'ready'>('loading');
+
+  // Modal state
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState('');
+
+  // Tab state
+  const [activeSection, setActiveSection] = useState('general');
+
+  // Invite & Members state
+  const [inviteInput, setInviteInput] = useState('');
+  const [isInviting, setIsInviting] = useState(false);
+  const [inviteError, setInviteError] = useState('');
+  const [members, setMembers] = useState<{user: {id: string; email: string; name: string | null}, role: string}[]>([]);
+  const [membersLoaded, setMembersLoaded] = useState(false);
+
+  const fetchMembers = async (pid: string, token: string) => {
+    try {
+      const res = await fetch(`${API}/projects/${pid}/members`, { headers: { Authorization: `Bearer ${token}` } });
+      if (res.ok) {
+        setMembers(await res.json());
+      }
+    } catch { /* ignore */ } finally {
+      setMembersLoaded(true);
+    }
+  };
+
+  useEffect(() => {
+    const handleHashChange = () => {
+      const hash = window.location.hash.replace('#', '');
+      if (hash) setActiveSection(hash);
+      else setActiveSection('general');
+      // Clear invite error when switching tabs
+      setInviteError('');
+    };
+    window.addEventListener('hashchange', handleHashChange);
+    handleHashChange(); // initial
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, []);
 
   // ── Resolve active project from URL param or localStorage ──
   useEffect(() => {
@@ -45,6 +85,7 @@ export default function SettingsPage() {
             setEditName(p.name);
             localStorage.setItem('activeProjectId', p.id);
             setLoadState('ready');
+            void fetchMembers(p.id, token);
             return;
           }
         } catch { /* ignore */ }
@@ -61,6 +102,7 @@ export default function SettingsPage() {
           setEditName(projects[0].name);
           localStorage.setItem('activeProjectId', projects[0].id);
           setLoadState('ready');
+          void fetchMembers(projects[0].id, token);
         } else {
           setLoadState('empty');
         }
@@ -93,9 +135,44 @@ export default function SettingsPage() {
     }
   };
 
+  const handleAddMember = async () => {
+    if (!projectId || !inviteInput.trim()) return;
+    setIsInviting(true);
+    setInviteError('');
+    const token = authStorage.getAccessToken();
+    try {
+      const res = await fetch(`${API}/projects/${projectId}/members`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ emailOrId: inviteInput.trim() }),
+      });
+      if (res.ok) {
+        setInviteInput('');
+        await fetchMembers(projectId, token!);
+      } else {
+        let data: { message?: string };
+        try {
+          data = await res.json() as { message?: string };
+        } catch {
+          data = { message: 'Server error occurred' };
+        }
+        
+        let errorMessage = data.message || 'Failed to add member';
+        // Sanitize raw Express/NestJS route leak messages
+        if (typeof errorMessage === 'string' && errorMessage.startsWith('Cannot POST')) {
+          errorMessage = 'The invitation service is currently unavailable. Please try again later.';
+        }
+        setInviteError(errorMessage);
+      }
+    } catch {
+      setInviteError('Network error occurred');
+    } finally {
+      setIsInviting(false);
+    }
+  };
+
   const handleDelete = async () => {
     if (!projectId) return;
-    if (!confirm(`Are you absolutely sure? This will permanently delete "${projectName}" and all its data. This action cannot be undone.`)) return;
     const token = authStorage.getAccessToken();
     try {
       await fetch(`${API}/projects/${projectId}`, {
@@ -113,6 +190,11 @@ export default function SettingsPage() {
         <div className={styles.noiseOverlay} />
         <div className={styles.dotPattern} />
         <ProjectSidebar projectId={undefined} />
+        <ProjectSettingsSidebar 
+          projectId={undefined} 
+          activeSection={activeSection} 
+          onSectionChange={setActiveSection} 
+        />
         <main className={styles.content}>
           <ShimmerBlock>
             {/* Page header */}
@@ -142,6 +224,11 @@ export default function SettingsPage() {
         <div className={styles.noiseOverlay} />
         <div className={styles.dotPattern} />
         <ProjectSidebar projectId={undefined} />
+        <ProjectSettingsSidebar 
+          projectId={undefined} 
+          activeSection={activeSection} 
+          onSectionChange={setActiveSection} 
+        />
         <main className={styles.content}>
           <div className={styles.emptyState}>
             <div className={styles.emptyIcon}>
@@ -165,8 +252,13 @@ export default function SettingsPage() {
       <div className={styles.noiseOverlay} />
       <div className={styles.dotPattern} />
 
-      {/* ── SIDEBAR — shared, always passes correct projectId ── */}
+      {/* ── SIDEBARS — primary and settings specific ── */}
       <ProjectSidebar projectId={projectId ?? undefined} />
+      <ProjectSettingsSidebar 
+        projectId={projectId ?? undefined} 
+        activeSection={activeSection} 
+        onSectionChange={setActiveSection} 
+      />
 
       {/* ── MAIN AREA ── */}
       <main className={styles.content}>
@@ -176,155 +268,245 @@ export default function SettingsPage() {
         </div>
 
         {/* ── General Settings ── */}
-        <div className={styles.panel}>
-          <div className={styles.panelHeader}>
-            <h3>General Settings</h3>
-          </div>
-          <div className={styles.panelBody}>
-            <div className={styles.formGroup}>
-              <label>Project name</label>
-              <input
-                className={styles.input}
-                value={editName}
-                onChange={e => setEditName(e.target.value)}
-                placeholder="e.g. my-backend-api"
-              />
-              <p className={styles.helperText}>Displayed throughout the dashboard.</p>
+        {activeSection === 'general' && (
+          <div className={styles.panel} id="general">
+            <div className={styles.panelHeader}>
+              <h3>General Settings</h3>
             </div>
+            <div className={styles.panelBody}>
+              <div className={styles.formGroup}>
+                <label>Project name</label>
+                <input
+                  className={styles.input}
+                  value={editName}
+                  onChange={e => setEditName(e.target.value)}
+                  placeholder="e.g. my-backend-api"
+                />
+                <p className={styles.helperText}>Displayed throughout the dashboard.</p>
+              </div>
 
-            <div className={styles.formGroup}>
-              <label>Project ID</label>
-              <input
-                className={`${styles.input} ${styles.readOnly}`}
-                value={projectId ?? 'Loading...'}
-                readOnly
-              />
-              <p className={styles.helperText}>Reference used in APIs and URLs.</p>
+              <div className={styles.formGroup}>
+                <label>Project ID</label>
+                <input
+                  className={`${styles.input} ${styles.readOnly}`}
+                  value={projectId ?? 'Loading...'}
+                  readOnly
+                />
+                <p className={styles.helperText}>Reference used in APIs and URLs.</p>
+              </div>
+            </div>
+            <div className={styles.panelFooter}>
+              {saveStatus === 'success' && (
+                <span style={{ fontSize: '0.85rem', color: '#16a34a', marginRight: '1rem' }}>✓ Saved successfully</span>
+              )}
+              {saveStatus === 'error' && (
+                <span style={{ fontSize: '0.85rem', color: '#ef4444', marginRight: '1rem' }}>✗ Failed to save</span>
+              )}
+              <button
+                className={styles.primaryBtn}
+                onClick={() => void handleSaveGeneral()}
+                disabled={isSaving || !editName.trim() || editName.trim() === projectName}
+              >
+                {isSaving ? 'Saving...' : 'Save changes'}
+              </button>
             </div>
           </div>
-          <div className={styles.panelFooter}>
-            {saveStatus === 'success' && (
-              <span style={{ fontSize: '0.85rem', color: '#16a34a', marginRight: '1rem' }}>✓ Saved successfully</span>
-            )}
-            {saveStatus === 'error' && (
-              <span style={{ fontSize: '0.85rem', color: '#ef4444', marginRight: '1rem' }}>✗ Failed to save</span>
-            )}
-            <button
-              className={styles.primaryBtn}
-              onClick={() => void handleSaveGeneral()}
-              disabled={isSaving || !editName.trim() || editName.trim() === projectName}
-            >
-              {isSaving ? 'Saving...' : 'Save changes'}
-            </button>
-          </div>
-        </div>
+        )}
 
         {/* ── Project Access ── */}
-        <div className={styles.panel}>
-          <div className={styles.panelHeader}>
-            <h3>Project access</h3>
-          </div>
-          <div className={styles.panelBody}>
-            <h4>Organization-wide access</h4>
-            <p style={{ marginTop: '0.25rem' }}>All 1 organization members can access this project.</p>
+        {activeSection === 'access' && (
+          <div className={styles.panel} id="access">
+            <div className={styles.panelHeader}>
+              <h3>Project access</h3>
+            </div>
+            <div className={styles.panelBody}>
+              <h4>Organization-wide access</h4>
+              <p style={{ marginTop: '0.25rem' }}>All 1 organization members can access this project.</p>
 
-            <button className={styles.secondaryBtn} style={{ marginTop: '1rem' }}>Manage members</button>
-
-            <div className={styles.tableBlock} style={{ marginTop: '1.5rem' }}>
-              <div className={styles.tableHeader}>
-                <div className={styles.colName}>Member</div>
-                <div className={styles.colRole}>Role</div>
+              <div className={styles.addMemberRow}>
+                <input 
+                  type="text"
+                  className={styles.input}
+                  placeholder="Enter User ID or Email address"
+                  value={inviteInput}
+                  onChange={(e) => setInviteInput(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && void handleAddMember()}
+                />
+                <button 
+                  className={styles.secondaryBtn} 
+                  disabled={!inviteInput.trim() || isInviting}
+                  onClick={() => void handleAddMember()}
+                >
+                  {isInviting ? 'Adding...' : 'Add member'}
+                </button>
               </div>
-              <div className={styles.tableRow}>
-                <div className={styles.colName}>
-                  <div style={{ fontWeight: 600, fontSize: '0.875rem' }}>{user?.email || '—'}</div>
-                  <div style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: '1px' }}>You</div>
+              {inviteError && <div style={{ color: '#ef4444', fontSize: '0.85rem', marginTop: '0.5rem' }}>{inviteError}</div>}
+
+              <div className={styles.tableBlock} style={{ marginTop: '1.5rem' }}>
+                <div className={styles.tableHeader}>
+                  <div className={styles.colName}>Member</div>
+                  <div className={styles.colRole}>Role</div>
                 </div>
-                <div className={styles.colRole}>Owner</div>
+                {membersLoaded ? (
+                  members.length > 0 ? members.map((member) => (
+                    <div className={styles.tableRow} key={member.user.id}>
+                      <div className={styles.colName}>
+                        <div style={{ fontWeight: 600, fontSize: '0.875rem' }}>{member.user.email}</div>
+                        <div style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: '1px' }}>
+                          {member.user.email === user?.email ? 'You' : member.user.name || 'Member'}
+                        </div>
+                      </div>
+                      <div className={styles.colRole}>{member.role}</div>
+                    </div>
+                  )) : (
+                    <div className={styles.tableRow}>
+                      <div className={styles.colName}>
+                        <div style={{ fontSize: '0.875rem', color: '#6b7280' }}>No members yet. Add one above.</div>
+                      </div>
+                    </div>
+                  )
+                ) : (
+                  <div className={styles.tableRow}>
+                    <div className={styles.colName}>
+                      <div style={{ fontSize: '0.875rem', color: '#6b7280' }}>Loading members...</div>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
-        </div>
+        )}
 
         {/* ── Project Availability ── */}
-        <div className={styles.panel}>
-          <div className={styles.panelHeader}>
-            <h3>Project availability</h3>
-          </div>
-          <div className={styles.panelBody}>
-            <p>Restart or pause your project when performing maintenance.</p>
-
-            <div className={styles.actionRow} style={{ marginTop: '1.5rem' }}>
-              <div>
-                <h4>Restart project</h4>
-                <p style={{ marginTop: '0.25rem' }}>Your project will not be available for a few minutes.</p>
-              </div>
-              <button className={styles.secondaryBtn}>Restart project</button>
+        {activeSection === 'availability' && (
+          <div className={styles.panel} id="availability">
+            <div className={styles.panelHeader}>
+              <h3>Project availability</h3>
             </div>
+            <div className={styles.panelBody}>
+              <p>Restart or pause your project when performing maintenance.</p>
 
-            <hr className={styles.divider} />
-
-            <div className={styles.actionRow}>
-              <div>
-                <h4>Pause project</h4>
-                <p style={{ marginTop: '0.25rem' }}>Your project will not be accessible while it is paused.</p>
+              <div className={styles.actionRow} style={{ marginTop: '1.5rem' }}>
+                <div>
+                  <h4>Restart project</h4>
+                  <p style={{ marginTop: '0.25rem' }}>Your project will not be available for a few minutes.</p>
+                </div>
+                <button className={styles.secondaryBtn}>Restart project</button>
               </div>
-              <button className={styles.secondaryBtn}>Pause project</button>
+
+              <hr className={styles.divider} />
+
+              <div className={styles.actionRow}>
+                <div>
+                  <h4>Pause project</h4>
+                  <p style={{ marginTop: '0.25rem' }}>Your project will not be accessible while it is paused.</p>
+                </div>
+                <button className={styles.secondaryBtn}>Pause project</button>
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
         {/* ── Custom Domains ── */}
-        <div className={styles.panel}>
-          <div className={styles.panelHeader}>
-            <h3>Custom domains</h3>
+        {activeSection === 'domains' && (
+          <div className={styles.panel} id="domains">
+            <div className={styles.panelHeader}>
+              <h3>Custom domains</h3>
+            </div>
+            <div className={styles.panelBody}>
+              <p>Present a branded experience to your users.</p>
+              <div className={styles.infoBox} style={{ marginTop: '1.25rem' }}>
+                <h4>Custom domains are a Pro Plan add-on</h4>
+                <p style={{ marginTop: '0.35rem' }}>Paid Plans come with free vanity subdomains or Custom Domains for an additional $10/month per domain.</p>
+                <button className={styles.secondaryBtn} style={{ marginTop: '1rem' }}>Upgrade to Pro</button>
+              </div>
+            </div>
           </div>
-          <div className={styles.panelBody}>
-            <p>Present a branded experience to your users.</p>
-            <div className={styles.infoBox} style={{ marginTop: '1.25rem' }}>
-              <h4>Custom domains are a Pro Plan add-on</h4>
-              <p style={{ marginTop: '0.35rem' }}>Paid Plans come with free vanity subdomains or Custom Domains for an additional $10/month per domain.</p>
-              <button className={styles.secondaryBtn} style={{ marginTop: '1rem' }}>Upgrade to Pro</button>
+        )}
+
+        {/* ── Advanced / Danger Zone ── */}
+        {activeSection === 'advanced' && (
+          <>
+            <div className={`${styles.panel} ${styles.dangerPanel}`} id="advanced">
+              <div className={styles.panelHeader}>
+                <h3>Transfer project</h3>
+              </div>
+              <div className={styles.panelBody}>
+                <p>Transfer this project to another organization or account.</p>
+                <p className={styles.helperText} style={{ marginTop: '0.5rem' }}>
+                  To transfer projects, the owner must be a member of both the source and target organizations.
+                </p>
+              </div>
+              <div className={styles.panelFooter}>
+                <button className={styles.secondaryBtn}>Transfer project</button>
+              </div>
+            </div>
+
+            <div className={`${styles.panel} ${styles.dangerPanel}`}>
+              <div className={styles.panelHeader}>
+                <h3>Delete project</h3>
+              </div>
+              <div className={styles.panelBody}>
+                <p>Permanently remove your project and all of its data.</p>
+                <p className={styles.helperText} style={{ marginTop: '0.5rem' }}>
+                  This action is irreversible. All API call logs, configurations, and project data will be deleted
+                  permanently. Make a backup if needed.
+                </p>
+              </div>
+              <div className={`${styles.panelFooter} ${styles.dangerFooter}`}>
+                <button className={styles.dangerBtn} onClick={() => { setDeleteConfirmText(''); setShowDeleteModal(true); }}>
+                  Delete project
+                </button>
+              </div>
+            </div>
+          </>
+        )}
+
+      </main>
+
+      {/* ── Delete Confirmation Modal ── */}
+      {showDeleteModal && (
+        <div className={styles.modalOverlay}>
+          <div className={styles.modalContent}>
+            <div className={styles.modalHeader}>
+              <h2>Confirm deletion of {projectName}</h2>
+              <button className={styles.closeBtn} onClick={() => setShowDeleteModal(false)}>
+                <X size={20} />
+              </button>
+            </div>
+            
+            <div className={styles.modalBody}>
+              <div className={styles.warningBanner}>
+                <AlertTriangle size={18} />
+                <span>This action cannot be undone.</span>
+              </div>
+              
+              <p className={styles.modalText}>
+                This will permanently delete the <strong>{projectName}</strong> project and all of its data.
+              </p>
+
+              <div className={styles.confirmSection}>
+                <label>Type <strong>{projectName}</strong> to confirm.</label>
+                <input 
+                  type="text" 
+                  className={styles.input} 
+                  value={deleteConfirmText}
+                  onChange={e => setDeleteConfirmText(e.target.value)}
+                  placeholder="Type the project name in here"
+                  autoFocus
+                />
+                <button 
+                  className={styles.dangerBtnFull} 
+                  disabled={deleteConfirmText !== projectName}
+                  onClick={() => void handleDelete()}
+                >
+                  I understand, delete this project
+                </button>
+              </div>
             </div>
           </div>
         </div>
-
-        {/* ── Transfer Project ── */}
-        <div className={`${styles.panel} ${styles.dangerPanel}`}>
-          <div className={styles.panelHeader}>
-            <h3>Transfer project</h3>
-          </div>
-          <div className={styles.panelBody}>
-            <p>Transfer this project to another organization or account.</p>
-            <p className={styles.helperText} style={{ marginTop: '0.5rem' }}>
-              To transfer projects, the owner must be a member of both the source and target organizations.
-            </p>
-          </div>
-          <div className={styles.panelFooter}>
-            <button className={styles.secondaryBtn}>Transfer project</button>
-          </div>
-        </div>
-
-        {/* ── Delete Project ── */}
-        <div className={`${styles.panel} ${styles.dangerPanel}`}>
-          <div className={styles.panelHeader}>
-            <h3>Delete project</h3>
-          </div>
-          <div className={styles.panelBody}>
-            <p>Permanently remove your project and all of its data.</p>
-            <p className={styles.helperText} style={{ marginTop: '0.5rem' }}>
-              This action is irreversible. All API call logs, configurations, and project data will be deleted
-              permanently. Make a backup if needed.
-            </p>
-          </div>
-          <div className={`${styles.panelFooter} ${styles.dangerFooter}`}>
-            <button className={styles.dangerBtn} onClick={() => void handleDelete()}>
-              Delete project
-            </button>
-          </div>
-        </div>
-
-      </main>
+      )}
     </div>
   );
 }
