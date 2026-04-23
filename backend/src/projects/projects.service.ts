@@ -2,6 +2,7 @@ import {
   Injectable,
   NotFoundException,
   ForbiddenException,
+  BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CacheService } from '../cache/cache.service';
@@ -22,13 +23,29 @@ export class ProjectsService {
 
   /** List all projects for a user, including API call count */
   async list(userId: string) {
-    return this.prisma.project.findMany({
-      where: { userId },
-      orderBy: { createdAt: 'desc' },
-      include: {
-        _count: { select: { apiCalls: true } },
-      },
-    });
+    try {
+      return await this.prisma.project.findMany({
+        where: {
+          OR: [
+            { userId },
+            { members: { some: { userId } } },
+          ],
+        },
+        orderBy: { createdAt: 'desc' },
+        include: {
+          _count: { select: { apiCalls: true } },
+        },
+      });
+    } catch {
+      // Fallback to simple query if members relation is not yet available
+      return this.prisma.project.findMany({
+        where: { userId },
+        orderBy: { createdAt: 'desc' },
+        include: {
+          _count: { select: { apiCalls: true } },
+        },
+      });
+    }
   }
 
   /** Create a new project */
@@ -51,20 +68,43 @@ export class ProjectsService {
       description: string | null;
       createdAt: Date;
       updatedAt: Date;
+      members?: { userId: string; role: string }[];
     }>(cacheKey);
+    
     if (cached) {
-      if (cached.userId !== userId) throw new ForbiddenException();
+      const isOwner = cached.userId === userId;
+      const isMember = cached.members?.some((m) => m.userId === userId) ?? false;
+      if (!isOwner && !isMember) throw new ForbiddenException();
       return cached;
     }
 
-    const project = await this.prisma.project.findUnique({
-      where: { id: projectId },
-    });
-    if (!project) throw new NotFoundException('Project not found');
-    if (project.userId !== userId) throw new ForbiddenException();
+    // First try with members included (new schema)
+    try {
+      const project = await this.prisma.project.findUnique({
+        where: { id: projectId },
+        include: { members: { select: { userId: true, role: true } } },
+      });
+      
+      if (!project) throw new NotFoundException('Project not found');
+      
+      const isOwner = project.userId === userId;
+      const isMember = project.members.some((m) => m.userId === userId);
+      if (!isOwner && !isMember) throw new ForbiddenException();
 
-    await this.cache.set(cacheKey, project, PROJECT_TTL);
-    return project;
+      await this.cache.set(cacheKey, project, PROJECT_TTL);
+      return project;
+    } catch (err) {
+      // If it's already a NestJS exception, rethrow it
+      if (err instanceof NotFoundException || err instanceof ForbiddenException) {
+        throw err;
+      }
+      // Fallback: query without members (old Prisma client)
+      const project = await this.prisma.project.findUnique({ where: { id: projectId } });
+      if (!project) throw new NotFoundException('Project not found');
+      if (project.userId !== userId) throw new ForbiddenException();
+      await this.cache.set(cacheKey, project, PROJECT_TTL);
+      return project;
+    }
   }
 
   /** Update project name / description */
@@ -182,5 +222,62 @@ export class ProjectsService {
 
     await this.cache.set(cacheKey, calls, CALLS_TTL);
     return calls;
+  }
+
+  /** Add a new member to the project */
+  async addMember(projectId: string, ownerId: string, emailOrId: string) {
+    const project = await this.findOne(projectId, ownerId);
+    if (project.userId !== ownerId) {
+      throw new ForbiddenException('Only the project owner can add members');
+    }
+
+    // Try finding by email first, or fallback to exact ID if it's 24 chars
+    const targetUser = await this.prisma.user.findFirst({
+      where: {
+        OR: [
+          { email: emailOrId },
+          { id: emailOrId.length === 24 ? emailOrId : '000000000000000000000000' }
+        ]
+      }
+    });
+
+    if (!targetUser) throw new NotFoundException('User not found');
+    if (targetUser.id === ownerId) throw new BadRequestException('Cannot add yourself to the project');
+
+    const existing = await this.prisma.projectMember.findUnique({
+      where: { projectId_userId: { projectId, userId: targetUser.id } }
+    });
+    if (existing) throw new BadRequestException('User is already a member');
+
+    await this.prisma.projectMember.create({
+      data: { projectId, userId: targetUser.id, role: 'MEMBER' }
+    });
+
+    await this.cache.del(`project:${projectId}`);
+    return { message: 'Member added successfully' };
+  }
+
+  /** Get all members for a project */
+  async getMembers(projectId: string, userId: string) {
+    await this.findOne(projectId, userId); // Check permissions
+
+    const project = await this.prisma.project.findUnique({
+      where: { id: projectId },
+      include: {
+        user: { select: { id: true, email: true, name: true } },
+        members: {
+          include: {
+            user: { select: { id: true, email: true, name: true } }
+          }
+        }
+      }
+    });
+
+    if (!project) throw new NotFoundException('Project not found');
+
+    return [
+      { user: project.user, role: 'OWNER' },
+      ...project.members.map(m => ({ user: m.user, role: m.role }))
+    ];
   }
 }

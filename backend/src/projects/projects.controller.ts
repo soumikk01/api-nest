@@ -83,4 +83,20 @@ export class ProjectsController {
       limit ? parseInt(limit, 10) : 50,
     );
   }
+
+  /** GET /projects/:id/members — get all members of a project */
+  @Get(':id/members')
+  getMembers(@Param('id') id: string, @Request() req: AuthRequest) {
+    return this.projectsService.getMembers(id, req.user.userId);
+  }
+
+  /** POST /projects/:id/members — add a member to the project */
+  @Post(':id/members')
+  addMember(
+    @Param('id') id: string,
+    @Request() req: AuthRequest,
+    @Body('emailOrId') emailOrId: string,
+  ) {
+    return this.projectsService.addMember(id, req.user.userId, emailOrId);
+  }
 }
