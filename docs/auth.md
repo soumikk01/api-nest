@@ -28,10 +28,11 @@ Splitting auth into its own app:
 ```
 apps/auth/
 ├── next.config.ts          ← Same config as apps/web
-├── tsconfig.json           ← extends @api-monitor/typescript-config/nextjs.json
+├── tsconfig.json
 └── src/
     ├── app/
     │   ├── layout.tsx              ← Root layout (fonts, globals — minimal)
+    │   ├── page.tsx                ← / → redirects to /login
     │   ├── login/
     │   │   └── page.tsx            ← /login
     │   ├── register/
@@ -40,7 +41,7 @@ apps/auth/
     │       └── page.tsx            ← /forgot-password
     │
     ├── features/
-    │   └── auth/                   ← Extracted from apps/web
+    │   └── auth/                   ← Extracted from apps/web during migration
     │       ├── components/
     │       │   ├── LoginPage/
     │       │   │   ├── LoginPage.tsx
@@ -52,12 +53,18 @@ apps/auth/
     │       │       ├── ForgotPasswordPage.tsx
     │       │       └── ForgotPasswordPage.module.scss
     │       ├── hooks/
-    │       │   └── useAuth.ts
+    │       │   └── useAuth.ts     ← Auth state hook (copied from apps/web)
     │       ├── services.ts         ← API calls to backend auth endpoints
     │       └── types.ts
     │
+    ├── components/
+    │   └── ButtonLogoSpinner/     ← Shared spinner (copied from apps/web)
+    │
+    ├── lib/
+    │   └── fetchWithAuth.ts       ← Authenticated fetch (copied from apps/web)
+    │
     └── styles/
-        └── globals.scss            ← Shared with apps/web (copy or symlink)
+        └── globals.scss            ← Design tokens (copied from apps/web)
 ```
 
 ---
@@ -95,29 +102,29 @@ bun run dev      # starts on http://localhost:3001
 
 1. User visits `http://localhost:3001/login`
 2. Submits email + password form
-3. `services.ts` calls `POST http://localhost:4000/api/v1/auth/login`
+3. `useAuth.login()` calls `POST http://localhost:4000/api/v1/auth/login`
 4. Backend returns `{ accessToken, refreshToken }`
-5. Tokens stored in `localStorage`
-6. User redirected to `http://localhost:3000/dashboard`
+5. Tokens stored in `sessionStorage` (per-tab — each tab has an isolated session)
+6. User redirected to `http://localhost:3000/projects` via `window.location.href`
 
 ### Register
 
 1. User visits `http://localhost:3001/register`
 2. Submits name + email + password
 3. `POST http://localhost:4000/api/v1/auth/register`
-4. Same token flow as login
+4. Same token + redirect flow as login
 
 ### Forgot Password
 
 1. User visits `http://localhost:3001/forgot-password`
-2. Email submitted
-3. Backend sends reset email (implementation pending)
+2. Email submitted → OTP sent (backend implementation pending)
+3. OTP verified → redirected to `/login`
 
 ### Token Refresh
 
-- `fetchWithAuth.ts` (from `@api-monitor/shared`) automatically refreshes tokens
+- `fetchWithAuth.ts` (in `apps/auth/src/lib/`) automatically refreshes tokens
 - If `access_token` is expired, calls `POST /api/v1/auth/refresh` with `refresh_token`
-- On refresh failure → clears tokens → redirects to `/login`
+- On refresh failure → clears sessionStorage → redirects to `http://localhost:3001/login`
 
 ---
 
@@ -135,10 +142,11 @@ bun run dev      # starts on http://localhost:3001
 
 | Scenario | Destination |
 |---|---|
-| Successful login | `http://localhost:3000/dashboard` |
-| Already logged in → visit `/login` | `http://localhost:3000/dashboard` |
+| Successful login | `http://localhost:3000/projects` |
+| Successful register | `http://localhost:3000/projects` |
 | Logout from dashboard | `http://localhost:3001/login` |
 | Token expired + refresh fails | `http://localhost:3001/login` |
+| Visit `/` (root) | Redirect to `/login` |
 
 ---
 
@@ -147,12 +155,17 @@ bun run dev      # starts on http://localhost:3001
 ```json
 {
   "dependencies": {
-    "@api-monitor/shared": "*",
     "next": "16.2.2",
     "react": "19.2.4",
     "react-dom": "19.2.4"
+  },
+  "devDependencies": {
+    "@api-monitor/typescript-config": "*",
+    "sass": "^1.99.0",
+    "typescript": "^5"
   }
 }
 ```
 
-Deliberately minimal — no Socket.io, no charting libraries, no dashboard code.
+Deliberately minimal — no Socket.io, no charting libraries, no dashboard code.  
+`useAuth`, `fetchWithAuth`, and `ButtonLogoSpinner` are **copied** from `apps/web` at migration time, not imported from a shared package (to keep the bundle independent).

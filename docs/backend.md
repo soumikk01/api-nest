@@ -69,8 +69,11 @@ JWT_EXPIRY=15m
 JWT_REFRESH_SECRET=another-secret-key
 JWT_REFRESH_EXPIRY=7d
 
-# Allowed frontend origin for CORS
-FRONTEND_URL=http://localhost:3000
+# Allowed CORS origins per app (override in production)
+FRONTEND_URL=http://localhost:3000   # web app
+AUTH_URL=http://localhost:3001       # auth app
+DOCS_URL=http://localhost:3002       # docs app
+ADMIN_URL=http://localhost:3003      # admin app
 ```
 
 ---
@@ -78,13 +81,21 @@ FRONTEND_URL=http://localhost:3000
 ## Running Locally
 
 ```bash
-# From repo root
+# From repo root — all apps including backend
+bun turbo dev
+
+# From repo root — backend only
 bun turbo dev --filter=@api-monitor/backend
+
+# Run BullMQ worker separately (different terminal)
+bun run dev:worker
 
 # Or from apps/backend directly
 cd apps/backend
-bun run start:dev          # Watch mode (auto-restart on change)
-bun run start:prod:bun     # Run compiled production build
+bun run dev                # Watch mode — API server on port 4000
+bun run start:prod:bun     # Production: run compiled dist/main
+bun run start:prod2:bun    # Production: second instance on PORT=4001
+bun run worker:bun         # Production: run compiled dist/worker
 ```
 
 ---

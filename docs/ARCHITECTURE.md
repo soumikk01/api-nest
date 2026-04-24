@@ -151,11 +151,11 @@ Cache is busted by the BullMQ worker via `CacheService.del()` after each batch. 
 │                                                       │
 │  JWT Access Token  (15 min expiry)                    │
 │  ├── Used for: All dashboard API calls                │
-│  └── Stored in: localStorage (access_token)           │
+│  └── Stored in: sessionStorage (per-tab isolation)    │
 │                                                       │
 │  JWT Refresh Token (7 days expiry)                    │
 │  ├── Used for: Rotating access tokens                 │
-│  └── Stored in: localStorage (refresh_token)          │
+│  └── Stored in: sessionStorage (per-tab isolation)    │
 │                                                       │
 │  SDK Token  (sdk_<48 hex chars>, never expires)       │
 │  ├── Used for: CLI → backend ingest                   │

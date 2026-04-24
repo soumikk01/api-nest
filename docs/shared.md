@@ -1,7 +1,7 @@
 # Shared Package — `packages/shared`
 
 > **Internal package — never published to npm**  
-> Shared TypeScript utilities, API client, and type definitions used across `apps/web`, `apps/auth`, and `apps/docs`.
+> Shared TypeScript constants and type definitions used across `apps/web`, `apps/auth`, and `apps/docs`.
 
 ---
 
@@ -26,14 +26,17 @@ packages/shared/
 ├── package.json
 ├── tsconfig.json           ← extends @api-monitor/typescript-config/base.json
 └── src/
-    ├── index.ts            ← Barrel export (export everything from here)
-    ├── api.ts              ← Base fetch wrapper (NEXT_PUBLIC_API_URL)
-    ├── fetchWithAuth.ts    ← Authenticated fetch (auto-attaches + auto-refreshes JWT)
-    ├── constants.ts        ← App-wide constants (API base URL key, localStorage keys)
-    ├── helpers.ts          ← Utility functions (formatDate, classifyStatus, etc.)
+    ├── index.ts            ← Barrel export
+    ├── constants.ts        ← URL constants (AUTH_APP_URL, BACKEND_URL, APP_URL)
     └── types/
         └── index.ts        ← Shared TypeScript interfaces (User, Project, ApiCall, etc.)
 ```
+
+> **Note**: `fetchWithAuth.ts`, `api.ts`, and `helpers.ts` are **NOT** in `packages/shared`.
+> They live locally inside each app that needs them:
+> - `apps/web/src/lib/fetchWithAuth.ts`
+> - `apps/auth/src/lib/fetchWithAuth.ts`
+> This is intentional — each app manages its own auth flow independently.
 
 ---
 
@@ -41,42 +44,8 @@ packages/shared/
 
 ```ts
 // packages/shared/src/index.ts
-export * from './api';
-export * from './fetchWithAuth';
 export * from './constants';
-export * from './helpers';
 export * from './types';
-```
-
----
-
-## `api.ts` — Base Fetch Wrapper
-
-```ts
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
-
-export async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
-  const res = await fetch(`${BASE_URL}${path}`, options);
-  if (!res.ok) throw new Error(res.statusText);
-  return res.json();
-}
-```
-
----
-
-## `fetchWithAuth.ts` — Authenticated Fetch
-
-Wraps `apiFetch` with:
-1. Reads `access_token` from `localStorage`
-2. Attaches as `Authorization: Bearer <token>` header
-3. On 401 → calls `POST /api/v1/auth/refresh` with `refresh_token`
-4. Retries the original request with new token
-5. On second failure → clears tokens, redirects to `http://localhost:3001/login`
-
-```ts
-import { fetchWithAuth } from '@api-monitor/shared';
-
-const data = await fetchWithAuth<Project[]>('/api/v1/projects');
 ```
 
 ---
@@ -92,15 +61,14 @@ export const STORAGE_KEYS = {
 export const AUTH_APP_URL   = process.env.NEXT_PUBLIC_AUTH_URL  ?? 'http://localhost:3001';
 export const BACKEND_URL    = process.env.NEXT_PUBLIC_API_URL   ?? 'http://localhost:4000';
 export const APP_URL        = process.env.NEXT_PUBLIC_APP_URL   ?? 'http://localhost:3000';
+export const DOCS_URL       = process.env.NEXT_PUBLIC_DOCS_URL  ?? 'http://localhost:3002';
 ```
 
 ---
 
-## Shared Types
+## Shared Types (`types/index.ts`)
 
 ```ts
-// packages/shared/src/types/index.ts
-
 export interface User {
   id: string;
   email: string;
@@ -150,3 +118,13 @@ export interface ApiStats {
 3. Use in any app: `import { yourUtil } from '@api-monitor/shared'`
 
 No build step needed — Bun resolves TypeScript directly via `workspaces`.
+
+---
+
+## What Does NOT Belong Here
+
+| Utility | Reason | Where it lives |
+|---|---|---|
+| `fetchWithAuth` | Uses `sessionStorage` (browser API) — requires per-app auth URL config | `apps/web/src/lib/` and `apps/auth/src/lib/` |
+| `api.ts` | Uses `NEXT_PUBLIC_API_URL` — varies per app | Per-app `src/lib/` |
+| `helpers.ts` | App-specific formatting | `apps/web/src/lib/` |

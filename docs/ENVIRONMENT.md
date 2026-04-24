@@ -26,7 +26,7 @@ echo "NEXT_PUBLIC_API_URL=http://localhost:4000\nNEXT_PUBLIC_APP_URL=http://loca
 | Variable | Required | Default | Description |
 |---|---|---|---|
 | `NODE_ENV` | Yes | `development` | `"development"` or `"production"` |
-| `PORT` | No | `4000` | HTTP server port |
+| `PORT` | No | `4000` | HTTP server port. Set to `4001` for the second instance |
 | `DATABASE_URL` | **Yes** | — | MongoDB Atlas connection string |
 | `REDIS_URL` | **Yes** | `redis://localhost:6379` | Redis URL (local or Upstash) |
 | `REDIS_CLUSTER_NODES` | No | — | Comma-separated `host:port` list for Redis Cluster mode |
@@ -34,7 +34,10 @@ echo "NEXT_PUBLIC_API_URL=http://localhost:4000\nNEXT_PUBLIC_APP_URL=http://loca
 | `JWT_EXPIRY` | No | `15m` | Access token expiry |
 | `JWT_REFRESH_SECRET` | **Yes** | — | Secret for signing refresh tokens |
 | `JWT_REFRESH_EXPIRY` | No | `7d` | Refresh token expiry |
-| `FRONTEND_URL` | No | `http://localhost:3000` | Allowed CORS origin |
+| `FRONTEND_URL` | No | `http://localhost:3000` | CORS origin — web app |
+| `AUTH_URL` | No | `http://localhost:3001` | CORS origin — auth app |
+| `DOCS_URL` | No | `http://localhost:3002` | CORS origin — docs app |
+| `ADMIN_URL` | No | `http://localhost:3003` | CORS origin — admin app |
 
 ### Generating Secrets
 
@@ -78,11 +81,13 @@ redis://:your-password@your-host.redis.cloud:12345
 | Variable | Required | Default | Description |
 |---|---|---|---|
 | `NEXT_PUBLIC_API_URL` | **Yes** | `http://localhost:4000` | Backend API base URL |
-| `NEXT_PUBLIC_AUTH_URL` | No | `http://localhost:3001` | Auth app URL (for logout redirects) |
+| `NEXT_PUBLIC_AUTH_URL` | No | `http://localhost:3001` | Auth app URL (for login/logout redirects and landing page links) |
+| `NEXT_PUBLIC_DOCS_URL` | No | `http://localhost:3002` | Docs app URL (for "Docs" nav link on landing page) |
 
 ```env
 NEXT_PUBLIC_API_URL=http://localhost:4000
 NEXT_PUBLIC_AUTH_URL=http://localhost:3001
+NEXT_PUBLIC_DOCS_URL=http://localhost:3002
 ```
 
 ---
@@ -141,5 +146,6 @@ NEXT_PUBLIC_API_URL=http://localhost:4000
 
 - **Never commit `.env` files** — they are gitignored
 - **Never put secrets in `NEXT_PUBLIC_` variables** — these are exposed to the browser
+- **Tokens use `sessionStorage`** — each browser tab has its own isolated session; closing the tab clears the session
 - **Rotate JWT secrets** if compromised — all sessions will be invalidated
 - **Rotate SDK tokens** via the dashboard (POST `/projects/:id/token`) if leaked

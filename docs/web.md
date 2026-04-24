@@ -86,8 +86,11 @@ File: `apps/web/.env.local`
 # Backend API base URL
 NEXT_PUBLIC_API_URL=http://localhost:4000
 
-# Auth app URL (for redirects after logout, etc.)
+# Auth app URL (for redirects after logout, and login link on landing page)
 NEXT_PUBLIC_AUTH_URL=http://localhost:3001
+
+# Docs app URL (for "Docs" nav link on landing page)
+NEXT_PUBLIC_DOCS_URL=http://localhost:3002
 ```
 
 ---
@@ -118,12 +121,12 @@ bun run start    # Serve production build locally
 ## Authentication Flow
 
 1. User visits any `(dashboard)` route
-2. `AuthGuard` component checks for JWT in `localStorage`
+2. `AuthGuard` component checks for JWT in `sessionStorage`
 3. If missing → redirects to `http://localhost:3001/login` (auth app)
-4. After successful login, auth app redirects back to `http://localhost:3000/dashboard`
+4. After successful login, auth app redirects back to `http://localhost:3000/projects`
 5. JWT is decoded client-side to get user info (no server-side session)
 
-**Token storage**: `localStorage` keys:
+**Token storage**: `sessionStorage` keys (per-tab — each tab has its own isolated session):
 - `access_token` — short-lived JWT (15 min)
 - `refresh_token` — long-lived refresh token (7 days)
 
