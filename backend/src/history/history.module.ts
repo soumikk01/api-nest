@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { HistoryController } from './history.controller';
 import { HistoryService } from './history.service';
 
+// CacheModule is @Global() — CacheService is available without importing it here
 @Module({
   controllers: [HistoryController],
   providers: [HistoryService],

@@ -10,9 +10,11 @@ import { CreateProjectDto } from './dto/create-project.dto';
 import { UpdateProjectDto } from './dto/update-project.dto';
 
 // TTLs
-const STATS_TTL = 30; // seconds — stats refresh every 30s
-const CALLS_TTL = 15; // seconds — recent calls list
+const STATS_TTL   = 30;  // seconds — stats refresh every 30s
+const CALLS_TTL   = 15;  // seconds — recent calls list
 const PROJECT_TTL = 120; // seconds — single project metadata
+const LIST_TTL    = 30;  // seconds — user's project list
+const MEMBERS_TTL = 60;  // seconds — project members list
 
 @Injectable()
 export class ProjectsService {
@@ -23,8 +25,13 @@ export class ProjectsService {
 
   /** List all projects for a user, including API call count */
   async list(userId: string) {
+    const cacheKey = `projects:${userId}`;
+    const cached = await this.cache.get<object[]>(cacheKey);
+    if (cached) return cached;
+
+    let result: object[];
     try {
-      return await this.prisma.project.findMany({
+      result = await this.prisma.project.findMany({
         where: {
           OR: [
             { userId },
@@ -38,7 +45,7 @@ export class ProjectsService {
       });
     } catch {
       // Fallback to simple query if members relation is not yet available
-      return this.prisma.project.findMany({
+      result = await this.prisma.project.findMany({
         where: { userId },
         orderBy: { createdAt: 'desc' },
         include: {
@@ -46,6 +53,9 @@ export class ProjectsService {
         },
       });
     }
+
+    await this.cache.set(cacheKey, result, LIST_TTL);
+    return result;
   }
 
   /** Create a new project */
@@ -253,13 +263,17 @@ export class ProjectsService {
       data: { projectId, userId: targetUser.id, role: 'MEMBER' }
     });
 
-    await this.cache.del(`project:${projectId}`);
+    await this.cache.del(`project:${projectId}`, `members:${projectId}`);
     return { message: 'Member added successfully' };
   }
 
   /** Get all members for a project */
   async getMembers(projectId: string, userId: string) {
     await this.findOne(projectId, userId); // Check permissions
+
+    const cacheKey = `members:${projectId}`;
+    const cached = await this.cache.get<object[]>(cacheKey);
+    if (cached) return cached;
 
     const project = await this.prisma.project.findUnique({
       where: { id: projectId },
@@ -275,9 +289,12 @@ export class ProjectsService {
 
     if (!project) throw new NotFoundException('Project not found');
 
-    return [
+    const result = [
       { user: project.user, role: 'OWNER' },
       ...project.members.map(m => ({ user: m.user, role: m.role }))
     ];
+
+    await this.cache.set(cacheKey, result, MEMBERS_TTL);
+    return result;
   }
 }
