@@ -19,7 +19,7 @@ const SpringBackground = () => (
 
 export default function ForgotPasswordPage() {
   // dark mode is always on — no toggle needed
-  const dark = true;
+
   const router = useRouter();
 
   const [step, setStep] = useState<1 | 2>(1);
@@ -85,7 +85,7 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <div className={`${styles.page}${dark ? ' ' + styles.dark : ''}`}>
+    <div className={`${styles.page} ${styles.dark}`}>
       <div className={styles.patternOverlay} />
       <div className={styles.noiseOverlay} />
       <SpringBackground />

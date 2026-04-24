@@ -159,6 +159,8 @@ export class ProjectsService {
     const calls = await this.prisma.apiCall.findMany({
       where: { projectId },
       select: { status: true, latency: true, createdAt: true },
+      take: 10_000, // Safety cap — prevents OOM on large projects
+      orderBy: { createdAt: 'desc' },
     });
 
     const total = calls.length;

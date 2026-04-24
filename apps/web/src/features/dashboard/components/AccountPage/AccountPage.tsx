@@ -211,7 +211,7 @@ export default function AccountPage() {
           </div>
           <div className={styles.field}>
             <label>Account ID</label>
-            <div className={`${styles.fieldValue} ${styles.mono}`}>{(user as {id?: string})?.id ?? '—'}</div>
+            <div className={`${styles.fieldValue} ${styles.mono}`}>{user?.id ?? '—'}</div>
           </div>
           <div className={styles.field}>
             <label>Plan</label>

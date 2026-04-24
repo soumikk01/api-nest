@@ -18,6 +18,15 @@ interface AuthState {
   isLoading: boolean;
 }
 
+// ── Helpers ─────────────────────────────────────────────────────────────────
+/** Syncs the DB avatar index into localStorage so all components refresh consistently */
+function syncAvatarToStorage(avatar: number) {
+  if (typeof window !== 'undefined') {
+    localStorage.setItem('userAvatarIndex', String(avatar));
+    window.dispatchEvent(new Event('avatarChanged'));
+  }
+}
+
 export function useAuth() {
   const [state, setState] = useState<AuthState>({
     user: null,
@@ -65,10 +74,7 @@ export function useAuth() {
         });
         if (!res.ok) throw new Error('Failed to load profile');
         const user = await res.json() as AuthUser;
-        if (typeof window !== 'undefined' && user.avatar !== undefined) {
-           localStorage.setItem('userAvatarIndex', String(user.avatar));
-           window.dispatchEvent(new Event('avatarChanged'));
-        }
+        if (user.avatar !== undefined) syncAvatarToStorage(user.avatar);
         if (!cancelled) {
           setState({ user, accessToken: validToken, isAuthenticated: true, isLoading: false });
         }
@@ -108,11 +114,7 @@ export function useAuth() {
     const userRes = await fetchWithAuth(`${API}/users/me`);
     if (!userRes.ok) throw new Error('Failed to load user profile after login');
     const user = await userRes.json() as AuthUser;
-    
-    if (typeof window !== 'undefined' && user.avatar !== undefined) {
-      localStorage.setItem('userAvatarIndex', String(user.avatar));
-      window.dispatchEvent(new Event('avatarChanged'));
-    }
+    if (user.avatar !== undefined) syncAvatarToStorage(user.avatar);
 
     setState({ user, accessToken, isAuthenticated: true, isLoading: false });
     return user;
@@ -142,11 +144,7 @@ export function useAuth() {
     const userRes = await fetchWithAuth(`${API}/users/me`);
     if (!userRes.ok) throw new Error('Failed to load user profile after registration');
     const user = await userRes.json() as AuthUser;
-    
-    if (typeof window !== 'undefined' && user.avatar !== undefined) {
-      localStorage.setItem('userAvatarIndex', String(user.avatar));
-      window.dispatchEvent(new Event('avatarChanged'));
-    }
+    if (user.avatar !== undefined) syncAvatarToStorage(user.avatar);
 
     setState({ user, accessToken, isAuthenticated: true, isLoading: false });
     return user;
@@ -159,15 +157,16 @@ export function useAuth() {
   }, []);
 
   const logoutWithTransition = useCallback((router: { push: (url: string) => void }) => {
+    const authUrl = process.env.NEXT_PUBLIC_AUTH_URL ?? 'http://localhost:3001';
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new Event('show-logout-transition'));
       setTimeout(() => {
         logout();
-        router.push('/');
+        window.location.href = `${authUrl}/login`;
       }, 1200); // Wait for the animation to play
     } else {
+      // SSR context — no navigation possible, just clear the session
       logout();
-      router.push('/');
     }
   }, [logout]);
 
