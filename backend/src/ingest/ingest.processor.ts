@@ -117,7 +117,19 @@ export class IngestProcessor extends WorkerHost {
     const timer = setTimeout(() => {
       this.statsDebounce.delete(projectId);
       void this.broadcastStats(projectId);
-      void this.cache.del(`stats:${projectId}`, `calls:${projectId}:50`);
+      // Bust all data caches for this project so the next page load is fresh
+      void this.cache.del(
+        `stats:${projectId}`,
+        `calls:${projectId}:50`,
+        `analytics:endpoints:${projectId}`,
+        // Summary buckets for all range options
+        `analytics:summary:${projectId}:1h`,
+        `analytics:summary:${projectId}:24h`,
+        `analytics:summary:${projectId}:7d`,
+        `analytics:summary:${projectId}:30d`,
+      );
+      // History pages become stale too — wipe first page as a fast refresh
+      void this.cache.delByPattern(`history:${projectId}:*`);
     }, STATS_DEBOUNCE_MS);
 
     this.statsDebounce.set(projectId, timer);
