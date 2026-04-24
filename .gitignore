@@ -63,3 +63,6 @@ app/theme-gen.js
 
 # Turborepo
 .turbo/
+
+# Legacy backend/ folder (pre-monorepo migration) — contains locked Prisma .dll.node
+backend/
