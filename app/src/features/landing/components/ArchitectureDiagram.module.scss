@@ -51,6 +51,7 @@
   align-items: center;
   justify-content: center;
   padding: 10px; /* Spacing between rings */
+  will-change: transform, opacity; /* GPU layer promotion for entrance animation */
 }
 
 .ringSmall {
@@ -63,6 +64,7 @@
   align-items: center;
   justify-content: center;
   padding: 6px;
+  will-change: transform, opacity; /* GPU layer promotion for entrance animation */
 }
 
 .ringHollow {
@@ -71,6 +73,7 @@
   border-radius: 12px;
   width: 45px;
   height: 90px;
+  will-change: transform, opacity; /* GPU layer promotion for entrance animation */
 }
 
 .dark .ring,
@@ -110,6 +113,7 @@
   background-color: #4EA4F2;
   border-radius: 5px;
   width: 100%;
+  will-change: transform, opacity; /* GPU layer promotion for entrance animation */
 }
 
 .barGreen {
@@ -117,6 +121,7 @@
   background-color: #4CAF50;
   border-radius: 5px;
   width: 100%;
+  will-change: transform, opacity; /* GPU layer promotion for entrance animation */
 }
 
 /* Add responsive behavior */

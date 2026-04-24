@@ -1,8 +1,13 @@
 import React, { Suspense } from 'react';
+import dynamic from 'next/dynamic';
 import TopNavbar from '@/components/TopNavbar/TopNavbar';
-import ConnectPanel from '@/components/ConnectPanel/ConnectPanel';
 import AuthGuard from '@/components/AuthGuard/AuthGuard';
-import LogoutOverlay from '@/components/LogoutOverlay/LogoutOverlay';
+
+// Lazy load: only shown on user action (panel=getting-started query param)
+const ConnectPanel = dynamic(() => import('@/components/ConnectPanel/ConnectPanel'));
+
+// Lazy load: only shown during logout animation
+const LogoutOverlay = dynamic(() => import('@/components/LogoutOverlay/LogoutOverlay'));
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
