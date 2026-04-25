@@ -16,6 +16,7 @@ import { HistoryModule } from './history/history.module';
 import { AnalyticsModule } from './analytics/analytics.module';
 import { AuditModule } from './audit/audit.module';
 import { AppController } from './app.controller';
+import { ServicesModule } from './services/services.module';
 import { INGEST_QUEUE } from './ingest/ingest.queue';
 
 @Module({
@@ -116,6 +117,7 @@ import { INGEST_QUEUE } from './ingest/ingest.queue';
     HistoryModule,
     AnalyticsModule,
     AuditModule,
+    ServicesModule,
 
     // Register queue so AppController's @InjectQueue can resolve it
     BullModule.registerQueue({ name: INGEST_QUEUE }),

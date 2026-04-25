@@ -187,8 +187,9 @@ export default function SettingsPage() {
   if (loadState === 'loading') {
     return (
       <div className={`${styles.page}${dark ? ' ' + styles.dark : ''}`}>
-        <div className={styles.noiseOverlay} />
-        <div className={styles.dotPattern} />
+        <div className={styles.ambientOrb1} />
+        <div className={styles.ambientOrb2} />
+      <div className={styles.gridLines} />
         <ProjectSidebar projectId={undefined} />
         <ProjectSettingsSidebar 
           projectId={undefined} 
@@ -221,8 +222,9 @@ export default function SettingsPage() {
   if (loadState === 'empty') {
     return (
       <div className={`${styles.page}${dark ? ' ' + styles.dark : ''}`}>
-        <div className={styles.noiseOverlay} />
-        <div className={styles.dotPattern} />
+        <div className={styles.ambientOrb1} />
+        <div className={styles.ambientOrb2} />
+      <div className={styles.gridLines} />
         <ProjectSidebar projectId={undefined} />
         <ProjectSettingsSidebar 
           projectId={undefined} 
@@ -249,8 +251,9 @@ export default function SettingsPage() {
 
   return (
     <div className={`${styles.page}${dark ? ' ' + styles.dark : ''}`}>
-      <div className={styles.noiseOverlay} />
-      <div className={styles.dotPattern} />
+      <div className={styles.ambientOrb1} />
+      <div className={styles.ambientOrb2} />
+      <div className={styles.gridLines} />
 
       {/* ── SIDEBARS — primary and settings specific ── */}
       <ProjectSidebar projectId={projectId ?? undefined} />

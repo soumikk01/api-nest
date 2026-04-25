@@ -14,7 +14,6 @@ import styles from './OverviewPage.module.scss';
 const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000/api/v1';
 
 /* ── Spring Blossom Background ── */
-const SpringBackground = () => null;
 
 interface DbStats {
   total: number;
@@ -132,8 +131,9 @@ export default function OverviewPage() {
   if (loadState === 'loading') {
     return (
       <div className={`${styles.page}${dark ? ' ' + styles.dark : ''}`}>
-        <div className={styles.noiseOverlay} />
-        <div className={styles.dotPattern} />
+        <div className={styles.ambientOrb1} />
+        <div className={styles.ambientOrb2} />
+        <div className={styles.gridLines} />
         <ProjectSidebar projectId={undefined} />
         <main className={styles.content}>
           <ShimmerBlock>
@@ -165,8 +165,9 @@ export default function OverviewPage() {
   if (loadState === 'empty') {
     return (
       <div className={`${styles.page}${dark ? ' ' + styles.dark : ''}`}>
-        <div className={styles.noiseOverlay} />
-        <div className={styles.dotPattern} />
+        <div className={styles.ambientOrb1} />
+        <div className={styles.ambientOrb2} />
+        <div className={styles.gridLines} />
         <ProjectSidebar projectId={undefined} />
         <main className={styles.content}>
           <div className={styles.emptyState}>
@@ -188,9 +189,9 @@ export default function OverviewPage() {
 
   return (
     <div className={`${styles.page}${dark ? ' ' + styles.dark : ''}`}>
-      <div className={styles.noiseOverlay} />
-      <div className={styles.dotPattern} />
-      <SpringBackground />
+      <div className={styles.ambientOrb1} />
+      <div className={styles.ambientOrb2} />
+      <div className={styles.gridLines} />
 
       {/* ── SIDEBAR — shared component, always passes correct projectId ── */}
       <ProjectSidebar projectId={projectId || undefined} />

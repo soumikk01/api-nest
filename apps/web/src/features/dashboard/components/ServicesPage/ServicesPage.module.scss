@@ -1,0 +1,767 @@
+// ════════════════════════════════════════════════
+//  ServicesPage — Design tokens
+// ════════════════════════════════════════════════
+$bg-top:     #F7F3EA;
+$bg-bot:     #EEE8DB;
+$text-main:  #1A1A1A;
+$text-muted: #6B6B6B;
+$white-glass: rgba(255, 255, 255, 0.72);
+$accent:     #1A1A1A;
+$accent-alt: #4F46E5;
+
+$dark-bg-top:    #0F0F13;
+$dark-bg-bot:    #0A0A0D;
+$dark-text-main: #F0F0F5;
+$dark-text-muted:#7A7A8C;
+$dark-glass:     rgba(22, 22, 30, 0.85);
+$dark-border:    rgba(255, 255, 255, 0.07);
+
+$r-xl:   28px;
+$r-lg:   20px;
+$r-md:   14px;
+$pill:   100px;
+
+// ════════════════════════════════════════════════
+//  PAGE LAYOUT
+// ════════════════════════════════════════════════
+.page {
+  position: relative;
+  min-height: 100vh;
+  background: linear-gradient(145deg, $bg-top 0%, $bg-bot 100%);
+  color: $text-main;
+  font-family: 'Inter', sans-serif;
+  overflow: hidden;
+}
+
+// Ambient orbs
+.ambientOrb1, .ambientOrb2 {
+  position: fixed;
+  border-radius: 50%;
+  pointer-events: none;
+  filter: blur(90px);
+  z-index: 0;
+}
+.ambientOrb1 {
+  width: 500px; height: 500px;
+  background: radial-gradient(circle, rgba(79, 70, 229, 0.06) 0%, transparent 70%);
+  top: -200px; right: -100px;
+}
+.ambientOrb2 {
+  width: 400px; height: 400px;
+  background: radial-gradient(circle, rgba(168, 216, 255, 0.08) 0%, transparent 70%);
+  bottom: -100px; left: -100px;
+}
+
+.gridLines {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(0,0,0,0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,0,0,0.04) 1px, transparent 1px);
+  background-size: 40px 40px;
+  mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black 20%, transparent 100%);
+}
+
+.content {
+  position: relative;
+  z-index: 10;
+  margin: 0 auto;
+  padding: 2.5rem 3rem;
+  margin-top: 46px;
+  min-height: calc(100vh - 46px);
+  max-width: 1300px;
+}
+
+// ════════════════════════════════════════════════
+//  DARK MODE
+// ════════════════════════════════════════════════
+.dark {
+  background: linear-gradient(145deg, $dark-bg-top 0%, $dark-bg-bot 100%);
+  color: $dark-text-main;
+
+  .ambientOrb1 {
+    background: radial-gradient(circle, rgba(99, 102, 241, 0.1) 0%, transparent 70%);
+  }
+  .gridLines {
+    background-image:
+      linear-gradient($dark-border 1px, transparent 1px),
+      linear-gradient(90deg, $dark-border 1px, transparent 1px);
+  }
+  .breadcrumbLink { color: $dark-text-muted; &:hover { color: $dark-text-main; } }
+  .breadcrumbSep, .breadcrumbCurrent { color: $dark-text-muted; }
+  .breadcrumbActive { color: $dark-text-main; }
+  .badge {
+    background: rgba(99, 102, 241, 0.1);
+    border-color: rgba(99, 102, 241, 0.2);
+    color: #818CF8;
+  }
+  .title { color: $dark-text-main; }
+  .subtitle { color: $dark-text-muted; }
+  .card {
+    background: $dark-glass;
+    border-color: $dark-border;
+    &:hover { border-color: rgba(255,255,255,0.15); background: rgba(30, 30, 42, 0.9); }
+  }
+  .cardGlow {
+    background: radial-gradient(circle at 30% 30%, rgba(99, 102, 241, 0.15) 0%, transparent 60%);
+  }
+  .serviceIconWrap {
+    background: rgba(99, 102, 241, 0.12);
+    color: #818CF8;
+    border-color: rgba(99, 102, 241, 0.2);
+  }
+  .serviceName { color: $dark-text-main; }
+  .serviceDesc { color: $dark-text-muted; }
+  .serviceTag {
+    background: rgba(255,255,255,0.05);
+    color: $dark-text-muted;
+    border-color: $dark-border;
+  }
+  .serviceCalls { color: $dark-text-muted; }
+  .serviceDate { color: $dark-text-muted; }
+  .enterBtn {
+    color: $dark-text-muted;
+    svg { stroke: $dark-text-muted; }
+  }
+  .cardInteractive:hover .enterBtn {
+    color: $dark-text-main;
+    svg { stroke: $dark-text-main; }
+  }
+  .statusIdle { background: rgba(255,255,255,0.15); }
+  .addCard {
+    background: rgba(255,255,255,0.02);
+    border-color: $dark-border;
+    &:hover { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.15); }
+  }
+  .addCardIcon {
+    background: rgba(99,102,241,0.1);
+    color: #818CF8;
+    border-color: rgba(99,102,241,0.2);
+  }
+  .addCardLabel { color: $dark-text-muted; }
+  .emptyTitle { color: $dark-text-main; }
+  .emptyText { color: $dark-text-muted; }
+  .modal {
+    background: rgba(15, 15, 20, 0.97);
+    border-color: $dark-border;
+  }
+  .modalTitle h2 { color: $dark-text-main; }
+  .modalTitleIcon { background: rgba(99,102,241,0.12); color: #818CF8; border-color: rgba(99,102,241,0.2); }
+  .fieldLabel { color: $dark-text-main; }
+  .fieldInput, .fieldTextarea {
+    background: rgba(255,255,255,0.04);
+    border-color: $dark-border;
+    color: $dark-text-main;
+    &::placeholder { color: $dark-text-muted; }
+    &:focus { border-color: rgba(99,102,241,0.5); box-shadow: 0 0 0 3px rgba(99,102,241,0.1); background: rgba(255,255,255,0.06); }
+  }
+  .cancelBtn {
+    color: $dark-text-muted;
+    border-color: $dark-border;
+    &:hover { color: $dark-text-main; border-color: rgba(255,255,255,0.15); background: rgba(255,255,255,0.04); }
+  }
+  .closeBtn {
+    background: rgba(255,255,255,0.05);
+    color: $dark-text-muted;
+    &:hover { background: rgba(255,255,255,0.1); color: $dark-text-main; }
+  }
+  .skeletonHeader, .skeletonBody, .skeletonFooter {
+    background: rgba(255,255,255,0.05);
+    &::after { background: linear-gradient(90deg, transparent, rgba(255,255,255,0.07), transparent); }
+  }
+}
+
+// ════════════════════════════════════════════════
+//  BREADCRUMB
+// ════════════════════════════════════════════════
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.82rem;
+  font-weight: 500;
+  margin-bottom: 2rem;
+}
+.breadcrumbLink {
+  color: $text-muted;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: inherit;
+  font-family: inherit;
+  font-weight: inherit;
+  padding: 0;
+  transition: color 0.15s;
+  &:hover { color: $text-main; }
+}
+.breadcrumbSep { color: rgba(0,0,0,0.2); }
+.breadcrumbCurrent { color: $text-muted; }
+.breadcrumbActive { color: $text-main; font-weight: 700; }
+
+// ════════════════════════════════════════════════
+//  HEADER
+// ════════════════════════════════════════════════
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 2.5rem;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(79, 70, 229, 0.07);
+  border: 1px solid rgba(79, 70, 229, 0.15);
+  border-radius: $pill;
+  padding: 5px 12px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: $accent-alt;
+  text-transform: uppercase;
+  margin-bottom: 1rem;
+}
+
+.title {
+  font-size: 2.25rem;
+  font-weight: 900;
+  color: $text-main;
+  letter-spacing: -0.03em;
+  margin: 0 0 0.5rem 0;
+  line-height: 1.1;
+}
+
+.subtitle {
+  font-size: 0.95rem;
+  color: $text-muted;
+  margin: 0;
+  max-width: 520px;
+  line-height: 1.6;
+}
+
+.addBtn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: $accent;
+  color: #fff;
+  border: none;
+  border-radius: $pill;
+  padding: 12px 24px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  flex-shrink: 0;
+
+  &:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.18); }
+  &:active { transform: translateY(0); }
+}
+
+// ════════════════════════════════════════════════
+//  SERVICE GRID
+// ════════════════════════════════════════════════
+@keyframes cardEnter {
+  from { opacity: 0; transform: translateY(16px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0)  scale(1); }
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 20px;
+}
+
+// ── Service card ──
+.card {
+  position: relative;
+  background: $white-glass;
+  border: 1px solid rgba(255,255,255,0.8);
+  border-radius: $r-xl;
+  text-align: left;
+  font-family: inherit;
+  cursor: pointer;
+  overflow: hidden;
+  animation: cardEnter 0.35s ease both;
+  animation-delay: var(--card-delay, 0s);
+  transition: border-color 0.25s, box-shadow 0.25s, transform 0.25s, background 0.25s;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.04);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  padding: 0;
+}
+
+.cardInteractive {
+  &:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 20px 40px rgba(0,0,0,0.08);
+    border-color: rgba(255,255,255,1);
+    background: rgba(255,255,255,0.92);
+  }
+  &:focus-visible {
+    outline: 2px solid $accent-alt;
+    outline-offset: 3px;
+  }
+}
+
+.cardHovered { /* handled via JS class for glow */ }
+
+// Colored glow on hover
+.cardGlow {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 30% 20%, rgba(79, 70, 229, 0.06) 0%, transparent 60%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+  z-index: 0;
+
+  .cardHovered & { opacity: 1; }
+}
+
+.cardInner {
+  position: relative;
+  z-index: 1;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  height: 100%;
+}
+
+.cardTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.serviceIconWrap {
+  width: 44px;
+  height: 44px;
+  border-radius: $r-md;
+  background: rgba(79, 70, 229, 0.08);
+  border: 1px solid rgba(79, 70, 229, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: $accent-alt;
+  transition: all 0.2s ease;
+
+  .cardInteractive:hover & {
+    background: rgba(79, 70, 229, 0.12);
+    transform: scale(1.05);
+  }
+}
+
+.statusDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.statusActive {
+  background: #22c55e;
+  box-shadow: 0 0 6px rgba(34, 197, 94, 0.5);
+  animation: pulse 2s infinite;
+}
+.statusIdle {
+  background: rgba(0,0,0,0.15);
+}
+
+@keyframes pulse {
+  0%, 100% { box-shadow: 0 0 6px rgba(34, 197, 94, 0.5); }
+  50%       { box-shadow: 0 0 12px rgba(34, 197, 94, 0.7); }
+}
+
+.cardBody {
+  flex: 1;
+}
+
+.serviceName {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: $text-main;
+  margin: 0 0 6px 0;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.serviceDesc {
+  font-size: 0.84rem;
+  color: $text-muted;
+  margin: 0;
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.cardFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 16px;
+  border-top: 1px solid rgba(0,0,0,0.06);
+}
+
+.footerMeta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.serviceTag {
+  font-size: 0.72rem;
+  font-weight: 700;
+  background: rgba(0,0,0,0.05);
+  border: 1px solid rgba(0,0,0,0.06);
+  border-radius: $pill;
+  padding: 2px 8px;
+  color: $text-muted;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.serviceCalls {
+  font-size: 0.8rem;
+  color: $text-muted;
+  font-weight: 500;
+}
+
+.serviceDate {
+  font-size: 0.78rem;
+  color: $text-muted;
+  font-weight: 500;
+}
+
+.enterBtn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: $text-muted;
+  transition: all 0.2s ease;
+
+  svg {
+    transition: transform 0.2s ease;
+    stroke: $text-muted;
+  }
+
+  .cardInteractive:hover & {
+    color: $accent-alt;
+    svg { stroke: $accent-alt; transform: translateX(3px); }
+  }
+}
+
+// ── Add service card ──
+.addCard {
+  background: rgba(255,255,255,0.35);
+  border: 1.5px dashed rgba(0,0,0,0.12);
+  border-radius: $r-xl;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 180px;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: rgba(255,255,255,0.55);
+    border-color: rgba(79, 70, 229, 0.3);
+    transform: translateY(-3px);
+    box-shadow: 0 12px 32px rgba(79, 70, 229, 0.06);
+
+    .addCardIcon {
+      background: rgba(79, 70, 229, 0.1);
+      color: $accent-alt;
+      border-color: rgba(79, 70, 229, 0.2);
+    }
+    .addCardLabel { color: $accent-alt; }
+  }
+}
+
+.addCardInner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.addCardIcon {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: rgba(0,0,0,0.04);
+  border: 1px solid rgba(0,0,0,0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: $text-muted;
+  transition: all 0.2s ease;
+}
+
+.addCardLabel {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: $text-muted;
+  transition: color 0.2s ease;
+}
+
+// ── Skeleton ──
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+.skeletonCard {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  pointer-events: none;
+  min-height: 200px;
+}
+
+.skeletonHeader, .skeletonBody, .skeletonFooter {
+  border-radius: 8px;
+  background: rgba(0,0,0,0.05);
+  position: relative;
+  overflow: hidden;
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.5), transparent);
+    animation: shimmer 1.5s infinite;
+  }
+}
+.skeletonHeader { height: 44px; width: 44px; border-radius: $r-md; }
+.skeletonBody { height: 48px; flex: 1; }
+.skeletonFooter { height: 20px; width: 60%; }
+
+// ── Empty state ──
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  padding: 100px 20px;
+  text-align: center;
+}
+
+.emptyIllustration {
+  position: relative;
+  color: $text-muted;
+  margin-bottom: 8px;
+}
+.emptyOrb {
+  position: absolute;
+  inset: -24px;
+  background: radial-gradient(circle, rgba(79,70,229,0.06) 0%, transparent 70%);
+  border-radius: 50%;
+}
+
+.emptyTitle {
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: $text-main;
+  margin: 0;
+  letter-spacing: -0.02em;
+}
+
+.emptyText {
+  font-size: 0.95rem;
+  color: $text-muted;
+  margin: 0;
+  max-width: 380px;
+  line-height: 1.6;
+}
+
+// ════════════════════════════════════════════════
+//  MODAL
+// ════════════════════════════════════════════════
+@keyframes modalIn {
+  from { opacity: 0; transform: translateY(-20px) scale(0.96); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.modal {
+  position: relative;
+  background: rgba(255,255,255,0.97);
+  border: 1px solid rgba(255,255,255,0.8);
+  border-radius: $r-xl;
+  padding: 36px;
+  width: 100%;
+  max-width: 460px;
+  box-shadow: 0 40px 80px rgba(0,0,0,0.15);
+  animation: modalIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow: hidden;
+}
+
+.modalGlow {
+  position: absolute;
+  top: -60px;
+  right: -60px;
+  width: 200px;
+  height: 200px;
+  background: radial-gradient(circle, rgba(79,70,229,0.08) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.modalHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 28px;
+}
+
+.modalTitle {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  h2 {
+    font-size: 1.45rem;
+    font-weight: 900;
+    color: $text-main;
+    margin: 0;
+    letter-spacing: -0.02em;
+  }
+}
+
+.modalTitleIcon {
+  width: 38px;
+  height: 38px;
+  border-radius: $r-md;
+  background: rgba(79,70,229,0.08);
+  border: 1px solid rgba(79,70,229,0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: $accent-alt;
+}
+
+.closeBtn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(0,0,0,0.05);
+  color: $text-muted;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  &:hover { background: rgba(0,0,0,0.09); color: $text-main; }
+}
+
+.modalForm {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.fieldLabel {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: $text-main;
+}
+.required { color: #ef4444; margin-left: 2px; }
+.optional { color: $text-muted; font-weight: 400; }
+
+.fieldInput,
+.fieldTextarea {
+  background: #fafafa;
+  border: 1.5px solid rgba(0,0,0,0.09);
+  border-radius: $r-md;
+  color: $text-main;
+  font-size: 0.95rem;
+  font-family: inherit;
+  padding: 12px 16px;
+  outline: none;
+  transition: all 0.2s ease;
+  resize: vertical;
+
+  &::placeholder { color: $text-muted; opacity: 0.6; }
+  &:focus {
+    background: #fff;
+    border-color: $accent-alt;
+    box-shadow: 0 0 0 3px rgba(79,70,229,0.1);
+  }
+}
+
+.modalError {
+  font-size: 0.85rem;
+  color: #ef4444;
+  margin: 0;
+  font-weight: 500;
+}
+
+.modalActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 4px;
+}
+
+.cancelBtn {
+  background: transparent;
+  border: 1.5px solid rgba(0,0,0,0.1);
+  border-radius: $pill;
+  color: $text-muted;
+  font-size: 0.92rem;
+  font-family: inherit;
+  font-weight: 600;
+  padding: 10px 22px;
+  cursor: pointer;
+  transition: all 0.2s;
+  &:hover { border-color: rgba(0,0,0,0.2); color: $text-main; }
+}
+
+.createBtn {
+  background: $accent;
+  border: none;
+  border-radius: $pill;
+  color: #fff;
+  font-size: 0.92rem;
+  font-family: inherit;
+  font-weight: 700;
+  padding: 10px 24px;
+  cursor: pointer;
+  transition: all 0.2s;
+  &:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(0,0,0,0.18); }
+  &:disabled { opacity: 0.45; cursor: not-allowed; }
+}

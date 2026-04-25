@@ -22,7 +22,6 @@ type SortKey = 'name' | 'createdAt';
 type ViewMode = 'grid' | 'list';
 
 /* ── Spring Blossom Background (shared with auth, dialed back) ── */
-const SpringBackground = () => null;
 
 /* ── Icon helpers ── */
 const GridIcon = () => (
@@ -71,6 +70,8 @@ export default function ProjectsPage() {
   const [sort, setSort] = useState<SortKey>('name');
   const [view, setView] = useState<ViewMode>('grid');
   const [showModal, setShowModal] = useState(false);
+  const [modalStep, setModalStep] = useState<1 | 2>(1);
+  const [serviceMode, setServiceMode] = useState<'single' | 'multi'>('single');
   const [newName, setNewName] = useState('');
   const [newDesc, setNewDesc] = useState('');
   const [creating, setCreating] = useState(false);
@@ -113,7 +114,17 @@ export default function ProjectsPage() {
     return () => document.removeEventListener('click', handler);
   }, []);
 
-  /* ── create project ── */
+  /* ── open modal (reset to step 1) ── */
+  const openCreateModal = () => {
+    setModalStep(1);
+    setServiceMode('single');
+    setNewName('');
+    setNewDesc('');
+    setCreateError('');
+    setShowModal(true);
+  };
+
+  /* ── create project + navigate to services ── */
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newName.trim()) return;
@@ -124,16 +135,22 @@ export default function ProjectsPage() {
       const res = await fetch(`${API}/projects`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ name: newName.trim(), description: newDesc.trim() || undefined }),
+        body: JSON.stringify({
+          name: newName.trim(),
+          description: newDesc.trim() || undefined,
+          serviceMode,
+        }),
       });
       if (!res.ok) {
         const d = await res.json() as { message?: string };
         throw new Error(d.message ?? 'Failed to create project');
       }
+      const created = await res.json() as { id: string };
       setShowModal(false);
       setNewName('');
       setNewDesc('');
-      await fetchProjects();
+      // Navigate to the services page for the new project
+      router.push(`/services?projectId=${created.id}`);
     } catch (err) {
       setCreateError(err instanceof Error ? err.message : 'Something went wrong');
     } finally {
@@ -194,9 +211,9 @@ export default function ProjectsPage() {
 
   return (
     <div className={`${styles.page}${dark ? ' ' + styles.dark : ''}`}>
-      <div className={styles.noiseOverlay} />
-      <div className={styles.dotPattern} />
-      <SpringBackground />
+      <div className={styles.ambientOrb1} />
+      <div className={styles.ambientOrb2} />
+      <div className={styles.gridLines} />
 
       {/* ── MAIN AREA ── */}
       <main className={styles.content}>
@@ -246,7 +263,7 @@ export default function ProjectsPage() {
             </div>
 
             {/* New project */}
-            <button id="new-project-btn" className={styles.newBtn} onClick={() => setShowModal(true)}>
+            <button id="new-project-btn" className={styles.newBtn} onClick={openCreateModal}>
               <PlusIcon /> New project
             </button>
           </div>
@@ -274,7 +291,7 @@ export default function ProjectsPage() {
               {search ? 'No projects match your search' : 'No projects yet'}
             </p>
             {!search && (
-              <button className={styles.newBtn} onClick={() => setShowModal(true)}>
+              <button className={styles.newBtn} onClick={openCreateModal}>
                 <PlusIcon /> Create your first project
               </button>
             )}
@@ -285,10 +302,10 @@ export default function ProjectsPage() {
               <div
                 key={project.id}
                 className={styles.card}
-                onClick={() => router.push(`/dashboard?projectId=${project.id}`)}
+                onClick={() => router.push(`/services?projectId=${project.id}`)}
                 role="button"
                 tabIndex={0}
-                onKeyDown={e => e.key === 'Enter' && router.push(`/dashboard?projectId=${project.id}`)}
+                onKeyDown={e => e.key === 'Enter' && router.push(`/services?projectId=${project.id}`)}
               >
                 <div className={styles.cardHeader}>
                   <span className={styles.cardName}>{project.name}</span>
@@ -303,7 +320,7 @@ export default function ProjectsPage() {
                     <div className={styles.dropdown} onClick={e => e.stopPropagation()}>
                       <button
                         className={styles.dropItem}
-                        onClick={() => { setOpenMenu(null); router.push(`/dashboard?projectId=${project.id}`); }}
+                        onClick={() => { setOpenMenu(null); router.push(`/services?projectId=${project.id}`); }}
                       >
                         Open project
                       </button>
@@ -357,42 +374,94 @@ export default function ProjectsPage() {
         <div className={styles.overlay} onClick={() => setShowModal(false)}>
           <div className={styles.modal} onClick={e => e.stopPropagation()}>
             <div className={styles.modalHeader}>
-              <h2>Create a new project</h2>
+              <h2>{modalStep === 1 ? 'Choose project type' : 'Create a new project'}</h2>
               <button className={styles.closeBtn} onClick={() => setShowModal(false)}><CloseIcon /></button>
             </div>
-            <form onSubmit={handleCreate} className={styles.modalForm}>
-              <div className={styles.field}>
-                <label htmlFor="proj-name" className={styles.fieldLabel}>Project name <span className={styles.required}>*</span></label>
-                <input
-                  id="proj-name"
-                  className={styles.fieldInput}
-                  placeholder="e.g. my-backend-api"
-                  value={newName}
-                  onChange={e => setNewName(e.target.value)}
-                  autoFocus
-                  maxLength={80}
-                />
+
+            {modalStep === 1 ? (
+              /* ── STEP 1: Pick service mode ── */
+              <div className={styles.serviceTypeStep}>
+                <p className={styles.serviceTypeHint}>How will this project be structured?</p>
+                <div className={styles.serviceTypeGrid}>
+                  <button
+                    type="button"
+                    className={`${styles.serviceTypeCard} ${serviceMode === 'single' ? styles.serviceTypeCardActive : ''}`}
+                    onClick={() => setServiceMode('single')}
+                  >
+                    <div className={styles.serviceTypeIcon}>
+                      <svg viewBox="0 0 24 24" fill="none" width="28" height="28">
+                        <circle cx="12" cy="12" r="8" stroke="currentColor" strokeWidth="1.5"/>
+                        <circle cx="12" cy="12" r="3" fill="currentColor"/>
+                      </svg>
+                    </div>
+                    <div className={styles.serviceTypeLabel}>Single Service</div>
+                    <div className={styles.serviceTypeDesc}>One default service auto-created for you</div>
+                  </button>
+                  <button
+                    type="button"
+                    className={`${styles.serviceTypeCard} ${serviceMode === 'multi' ? styles.serviceTypeCardActive : ''}`}
+                    onClick={() => setServiceMode('multi')}
+                  >
+                    <div className={styles.serviceTypeIcon}>
+                      <svg viewBox="0 0 24 24" fill="none" width="28" height="28">
+                        <circle cx="6" cy="12" r="4" stroke="currentColor" strokeWidth="1.5"/>
+                        <circle cx="18" cy="12" r="4" stroke="currentColor" strokeWidth="1.5"/>
+                        <circle cx="12" cy="6" r="4" stroke="currentColor" strokeWidth="1.5"/>
+                        <circle cx="6" cy="12" r="1.5" fill="currentColor"/>
+                        <circle cx="18" cy="12" r="1.5" fill="currentColor"/>
+                        <circle cx="12" cy="6" r="1.5" fill="currentColor"/>
+                      </svg>
+                    </div>
+                    <div className={styles.serviceTypeLabel}>Multi Service</div>
+                    <div className={styles.serviceTypeDesc}>Create and manage multiple services</div>
+                  </button>
+                </div>
+                <div className={styles.modalActions}>
+                  <button type="button" className={styles.cancelBtn} onClick={() => setShowModal(false)}>Cancel</button>
+                  <button type="button" className={styles.createBtn} onClick={() => setModalStep(2)}>
+                    Continue →
+                  </button>
+                </div>
               </div>
-              <div className={styles.field}>
-                <label htmlFor="proj-desc" className={styles.fieldLabel}>Description <span className={styles.optional}>(optional)</span></label>
-                <textarea
-                  id="proj-desc"
-                  className={styles.fieldTextarea}
-                  placeholder="What does this project monitor?"
-                  value={newDesc}
-                  onChange={e => setNewDesc(e.target.value)}
-                  rows={3}
-                  maxLength={300}
-                />
-              </div>
-              {createError && <p className={styles.modalError}>{createError}</p>}
-              <div className={styles.modalActions}>
-                <button type="button" className={styles.cancelBtn} onClick={() => setShowModal(false)}>Cancel</button>
-                <button id="create-project-submit" type="submit" className={styles.createBtn} disabled={creating || !newName.trim()}>
-                  {creating ? 'Creating…' : 'Create project'}
-                </button>
-              </div>
-            </form>
+            ) : (
+              /* ── STEP 2: Name + description ── */
+              <form onSubmit={e => void handleCreate(e)} className={styles.modalForm}>
+                <div className={styles.serviceModeBadge}>
+                  {serviceMode === 'single' ? '⬤ Single Service' : '⬤ Multi Service'}
+                </div>
+                <div className={styles.field}>
+                  <label htmlFor="proj-name" className={styles.fieldLabel}>Project name <span className={styles.required}>*</span></label>
+                  <input
+                    id="proj-name"
+                    className={styles.fieldInput}
+                    placeholder="e.g. my-backend-api"
+                    value={newName}
+                    onChange={e => setNewName(e.target.value)}
+                    autoFocus
+                    maxLength={80}
+                  />
+                </div>
+                <div className={styles.field}>
+                  <label htmlFor="proj-desc" className={styles.fieldLabel}>Description <span className={styles.optional}>(optional)</span></label>
+                  <textarea
+                    id="proj-desc"
+                    className={styles.fieldTextarea}
+                    placeholder="What does this project monitor?"
+                    value={newDesc}
+                    onChange={e => setNewDesc(e.target.value)}
+                    rows={3}
+                    maxLength={300}
+                  />
+                </div>
+                {createError && <p className={styles.modalError}>{createError}</p>}
+                <div className={styles.modalActions}>
+                  <button type="button" className={styles.cancelBtn} onClick={() => setModalStep(1)}>← Back</button>
+                  <button id="create-project-submit" type="submit" className={styles.createBtn} disabled={creating || !newName.trim()}>
+                    {creating ? 'Creating…' : 'Create project'}
+                  </button>
+                </div>
+              </form>
+            )}
           </div>
         </div>
       )}

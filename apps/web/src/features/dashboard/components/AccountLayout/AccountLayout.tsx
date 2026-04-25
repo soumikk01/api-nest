@@ -12,7 +12,9 @@ export default function AccountLayout({ children }: { children: React.ReactNode 
 
   return (
     <div className={`${styles.layout}${dark ? ' ' + styles.dark : ''}`}>
-      <div className={styles.noiseOverlay} />
+      <div className={styles.ambientOrb1} />
+      <div className={styles.ambientOrb2} />
+      <div className={styles.gridLines} />
 
       {/* ── SIDEBAR ── */}
       <aside className={styles.sidebar}>
