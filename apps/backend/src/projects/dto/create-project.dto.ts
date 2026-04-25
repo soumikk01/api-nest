@@ -1,4 +1,4 @@
-import { IsString, IsOptional, MinLength, MaxLength } from 'class-validator';
+import { IsString, IsOptional, MinLength, MaxLength, IsIn } from 'class-validator';
 
 export class CreateProjectDto {
   @IsString()
@@ -10,4 +10,9 @@ export class CreateProjectDto {
   @IsString()
   @MaxLength(300)
   description?: string;
+
+  @IsOptional()
+  @IsString()
+  @IsIn(['single', 'multi'])
+  serviceMode?: 'single' | 'multi';
 }

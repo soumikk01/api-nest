@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CacheService } from '../cache/cache.service';
+import { ServicesService } from '../services/services.service';
 import { CreateProjectDto } from './dto/create-project.dto';
 import { UpdateProjectDto } from './dto/update-project.dto';
 
@@ -21,6 +22,7 @@ export class ProjectsService {
   constructor(
     private prisma: PrismaService,
     private cache: CacheService,
+    private servicesService: ServicesService,
   ) {}
 
   /** List all projects for a user, including API call count */
@@ -57,10 +59,14 @@ export class ProjectsService {
 
   /** Create a new project */
   async create(userId: string, dto: CreateProjectDto) {
+    const serviceMode = dto.serviceMode ?? 'single';
     const project = await this.prisma.project.create({
-      data: { ...dto, userId },
+      data: { name: dto.name, description: dto.description, serviceMode, userId },
     });
-    // Invalidate user's project list cache (if we cached it later)
+    // Auto-create default service for single-mode projects
+    if (serviceMode === 'single') {
+      await this.servicesService.createDefault(project.id, project.name);
+    }
     await this.cache.del(`projects:${userId}`);
     return project;
   }

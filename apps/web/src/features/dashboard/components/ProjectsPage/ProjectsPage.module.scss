@@ -828,3 +828,117 @@ $dark-glass:     rgba(30, 30, 35, 0.75);
   transition: all 0.2s ease;
   &:hover { background: #dc2626; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2); }
 }
+
+// ══════════════════════════════════════════════
+//  SERVICE TYPE STEP (modal step 1)
+// ══════════════════════════════════════════════
+.serviceTypeStep {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.serviceTypeHint {
+  font-size: 0.9rem;
+  color: $text-muted;
+  margin: 0;
+}
+
+.serviceTypeGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.serviceTypeCard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 20px 16px;
+  background: #fafafa;
+  border: 2px solid rgba(0,0,0,0.08);
+  border-radius: 16px;
+  cursor: pointer;
+  font-family: inherit;
+  text-align: center;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: #f5f5ff;
+    border-color: rgba(79, 70, 229, 0.3);
+  }
+}
+
+.serviceTypeCardActive {
+  background: rgba(79, 70, 229, 0.05) !important;
+  border-color: #4F46E5 !important;
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+}
+
+.serviceTypeIcon {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  background: rgba(79, 70, 229, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #4F46E5;
+  transition: all 0.2s ease;
+
+  .serviceTypeCardActive & {
+    background: rgba(79, 70, 229, 0.12);
+  }
+}
+
+.serviceTypeLabel {
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: $text-main;
+  letter-spacing: -0.01em;
+}
+
+.serviceTypeDesc {
+  font-size: 0.78rem;
+  color: $text-muted;
+  line-height: 1.4;
+}
+
+.serviceModeBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #4F46E5;
+  background: rgba(79, 70, 229, 0.07);
+  border: 1px solid rgba(79, 70, 229, 0.15);
+  border-radius: 100px;
+  padding: 4px 12px;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  align-self: flex-start;
+}
+
+// Dark mode for service type cards
+.dark {
+  .serviceTypeCard {
+    background: rgba(255,255,255,0.03);
+    border-color: rgba(255,255,255,0.08);
+    &:hover { background: rgba(79,70,229,0.06); border-color: rgba(79,70,229,0.3); }
+  }
+  .serviceTypeCardActive {
+    background: rgba(79,70,229,0.08) !important;
+    border-color: rgba(99,102,241,0.6) !important;
+  }
+  .serviceTypeLabel { color: #F0F0F5; }
+  .serviceTypeDesc { color: #7A7A8C; }
+  .serviceTypeHint { color: #7A7A8C; }
+  .serviceModeBadge {
+    color: #818CF8;
+    background: rgba(99,102,241,0.1);
+    border-color: rgba(99,102,241,0.2);
+  }
+}
+
