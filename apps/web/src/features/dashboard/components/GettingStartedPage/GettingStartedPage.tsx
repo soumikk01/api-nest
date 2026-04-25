@@ -53,8 +53,9 @@ export default function GettingStartedPage() {
 
   return (
     <div className={`${styles.page}${dark ? ' ' + styles.dark : ''}`}>
-      <div className={styles.noiseOverlay} />
-      <div className={styles.dotPattern} />
+      <div className={styles.ambientOrb1} />
+      <div className={styles.ambientOrb2} />
+      <div className={styles.gridLines} />
 
 
       {/* Theme toggle */}

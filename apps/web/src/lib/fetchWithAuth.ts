@@ -123,15 +123,22 @@ export async function ensureValidToken(): Promise<string | null> {
   const token = authStorage.getAccessToken();
   if (!token) return null;
 
-  const res = await fetch(`${API}/users/me`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
+  try {
+    const res = await fetch(`${API}/users/me`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
 
-  if (res.ok) return token;
+    if (res.ok) return token;
 
-  if (res.status === 401) {
-    return tryRefresh();
+    if (res.status === 401) {
+      return tryRefresh();
+    }
+
+    // Any other HTTP error (5xx, etc.) — treat as invalid but don't throw
+    return null;
+  } catch {
+    // Network error (backend unreachable, CORS, etc.) — return null gracefully
+    // so AuthGuard redirects to login instead of crashing with TypeError
+    return null;
   }
-
-  return null;
 }

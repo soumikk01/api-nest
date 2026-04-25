@@ -22,7 +22,6 @@ type SortKey = 'name' | 'createdAt';
 type ViewMode = 'grid' | 'list';
 
 /* ── Spring Blossom Background (shared with auth, dialed back) ── */
-const SpringBackground = () => null;
 
 /* ── Icon helpers ── */
 const GridIcon = () => (
@@ -212,9 +211,9 @@ export default function ProjectsPage() {
 
   return (
     <div className={`${styles.page}${dark ? ' ' + styles.dark : ''}`}>
-      <div className={styles.noiseOverlay} />
-      <div className={styles.dotPattern} />
-      <SpringBackground />
+      <div className={styles.ambientOrb1} />
+      <div className={styles.ambientOrb2} />
+      <div className={styles.gridLines} />
 
       {/* ── MAIN AREA ── */}
       <main className={styles.content}>

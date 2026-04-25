@@ -64,22 +64,43 @@ $r-md: 16px;
   display: flex;
 }
 
-.noiseOverlay {
+
+.ambientOrb1 {
   position: fixed;
-  inset: 0;
-  z-index: 1;
+  width: 500px;
+  height: 500px;
+  border-radius: 50%;
   pointer-events: none;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-  opacity: 0.03;
+  filter: blur(90px);
+  z-index: 0;
+  background: radial-gradient(circle, rgba(79, 70, 229, 0.06) 0%, transparent 70%);
+  top: -200px;
+  right: -100px;
 }
 
-.dotPattern {
+.ambientOrb2 {
+  position: fixed;
+  width: 400px;
+  height: 400px;
+  border-radius: 50%;
+  pointer-events: none;
+  filter: blur(90px);
+  z-index: 0;
+  background: radial-gradient(circle, rgba(168, 216, 255, 0.08) 0%, transparent 70%);
+  bottom: -100px;
+  left: -100px;
+}
+
+.gridLines {
   position: fixed;
   inset: 0;
-  z-index: 1;
+  z-index: 0;
   pointer-events: none;
-  background-image: radial-gradient(rgba(0, 0, 0, 0.09) 1.5px, transparent 1.5px);
-  background-size: 24px 24px;
+  background-image:
+    linear-gradient(rgba(0, 0, 0, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 0, 0, 0.04) 1px, transparent 1px);
+  background-size: 40px 40px;
+  mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black 20%, transparent 100%);
 }
 
 // Petals
@@ -491,10 +512,20 @@ $r-md: 16px;
 
 // Dark mode
 .dark {
+
+  .ambientOrb1 {
+    background: radial-gradient(circle, rgba(99, 102, 241, 0.1) 0%, transparent 70%);
+  }
+  .ambientOrb2 {
+    background: radial-gradient(circle, rgba(100, 180, 255, 0.1) 0%, transparent 70%);
+  }
+  .gridLines {
+    background-image:
+      linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+  }
   background: #121214;
   color: #EDEAE4;
-
-  .dotPattern { background-image: radial-gradient(rgba(255, 255, 255, 0.05) 1.5px, transparent 1.5px); }
 
   .sidebar { background: rgba(18,18,20,0.8); border-color: rgba(255,255,255,0.06); }
   .brandText, .stepTitle { color: #EDEAE4; }

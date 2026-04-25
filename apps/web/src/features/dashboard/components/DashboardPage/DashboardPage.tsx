@@ -60,8 +60,9 @@ export default function DashboardPage() {
   if (loadState === 'loading') {
     return (
       <div className={`${styles.page}${dark ? ' ' + styles.dark : ''}`}>
-        <div className={styles.noiseOverlay} />
-        <div className={styles.dotPattern} />
+        <div className={styles.ambientOrb1} />
+        <div className={styles.ambientOrb2} />
+      <div className={styles.gridLines} />
         <ProjectSidebar projectId={undefined} />
         <main className={styles.content}>
           <ShimmerBlock>
@@ -94,8 +95,9 @@ export default function DashboardPage() {
 
   return (
     <div className={`${styles.page}${dark ? ' ' + styles.dark : ''}`}>
-      <div className={styles.noiseOverlay} />
-      <div className={styles.dotPattern} />
+      <div className={styles.ambientOrb1} />
+      <div className={styles.ambientOrb2} />
+      <div className={styles.gridLines} />
       <ProjectSidebar projectId={projectId || undefined} />
       
       <main className={styles.content}>
