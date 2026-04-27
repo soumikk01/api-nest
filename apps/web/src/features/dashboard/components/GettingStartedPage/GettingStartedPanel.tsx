@@ -96,33 +96,6 @@ export default function GettingStartedPanel() {
         <div className={styles.step}>
           <div className={styles.stepNum}>1</div>
           <div className={styles.stepBody}>
-            <div className={styles.stepTitle}>Get your SDK token</div>
-            <div className={styles.stepDesc}>
-              You&apos;re already logged in — your unique SDK token is below.
-              It identifies your project. Find it anytime in{' '}
-              <Link href="/settings" className={styles.link}>Settings → SDK Token</Link>.
-            </div>
-            <div className={styles.tokenBox}>
-              <span className={styles.tokenLabel}>Your SDK Token</span>
-              <div className={styles.tokenRow}>
-                <code className={styles.tokenValue}>
-                  {sdkLoading ? '— loading…' : (sdkToken || '— not available')}
-                </code>
-                <button className={styles.copyBtn} onClick={() => copy(sdkToken, 'token')} disabled={!sdkToken}>
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
-                    <rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
-                  </svg>
-                  {copied === 'token' ? '✓ Copied!' : 'Copy'}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Step 2 */}
-        <div className={styles.step}>
-          <div className={styles.stepNum}>2</div>
-          <div className={styles.stepBody}>
             <div className={styles.stepTitle}>Install &amp; run the init command in your project</div>
             <div className={styles.stepDesc}>
               Open a terminal in your <strong>backend project folder</strong> and run all three commands in order.
@@ -182,9 +155,9 @@ export default function GettingStartedPanel() {
           </div>
         </div>
 
-        {/* Step 3 */}
+        {/* Step 2 */}
         <div className={styles.step}>
-          <div className={styles.stepNum}>3</div>
+          <div className={styles.stepNum}>2</div>
           <div className={styles.stepBody}>
             <div className={styles.stepTitle}>Start your server</div>
             <div className={styles.stepDesc}>
@@ -209,9 +182,9 @@ export default function GettingStartedPanel() {
           </div>
         </div>
 
-        {/* Step 4 */}
+        {/* Step 3 */}
         <div className={styles.step}>
-          <div className={styles.stepNum}>4</div>
+          <div className={styles.stepNum}>3</div>
           <div className={styles.stepBody}>
             <div className={styles.stepTitle}>Watch your APIs appear live!</div>
             <div className={styles.stepDesc}>

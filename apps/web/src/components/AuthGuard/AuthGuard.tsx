@@ -10,11 +10,13 @@ interface AuthGuardProps {
 /**
  * AuthGuard — wraps every protected dashboard page.
  *
- * Auth tokens are stored in sessionStorage (per-tab).
- * A new browser tab has an empty sessionStorage, so useAuth returns user=null,
- * and AuthGuard immediately redirects to /login — requiring fresh login per tab.
+ * Auth tokens use Supabase-style localStorage storage:
+ *  - Access token: localStorage (instant restore on page refresh)
+ *  - Refresh token: localStorage (used to silently renew AT when expired)
  *
- * Refreshing the same tab keeps the session alive (sessionStorage persists on F5).
+ * On page load: useAuth() reads the token directly from localStorage.
+ * If the token is expired, fetchWithAuth automatically refreshes it.
+ * The user stays logged in seamlessly with zero flicker.
  */
 export default function AuthGuard({ children }: AuthGuardProps) {
   const { user, isLoading } = useAuth();

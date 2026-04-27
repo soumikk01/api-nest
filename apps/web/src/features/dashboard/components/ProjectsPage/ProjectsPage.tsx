@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { useTheme } from '@/hooks/useTheme';
-import { authStorage } from '@/lib/fetchWithAuth';
+import { fetchWithAuth } from '@/lib/fetchWithAuth';
 import styles from './ProjectsPage.module.scss';
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000/api/v1';
@@ -121,22 +121,20 @@ export default function ProjectsPage() {
 
   /* ── fetch projects ── */
   const fetchProjects = useCallback(async () => {
-    const token = authStorage.getAccessToken();
-    if (!token) return;
+    setLoading(true);
     try {
-      const res = await fetch(`${API}/projects`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await fetchWithAuth(`${API}/projects`);
       if (!res.ok) throw new Error('Failed to fetch');
       const data = await res.json() as Project[];
       setProjects(data);
     } catch {
-      /* ignore */
+      /* silently ignore — empty state shown */
     } finally {
       setLoading(false);
     }
   }, []);
 
+  // Refetch every time the component mounts (e.g. navigating back from services page)
   useEffect(() => { void fetchProjects(); }, [fetchProjects]);
 
   /* ── close menu on outside click ── */
@@ -162,11 +160,10 @@ export default function ProjectsPage() {
     if (!newName.trim()) return;
     setCreating(true);
     setCreateError('');
-    const token = authStorage.getAccessToken();
     try {
-      const res = await fetch(`${API}/projects`, {
+      const res = await fetchWithAuth(`${API}/projects`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           name: newName.trim(),
           description: newDesc.trim() || undefined,
@@ -181,7 +178,6 @@ export default function ProjectsPage() {
       setShowModal(false);
       setNewName('');
       setNewDesc('');
-      // Navigate to the services page for the new project
       router.push(`/services?projectId=${created.id}`);
     } catch (err) {
       setCreateError(err instanceof Error ? err.message : 'Something went wrong');
@@ -192,12 +188,8 @@ export default function ProjectsPage() {
 
   /* ── delete project ── */
   const handleDelete = async (id: string) => {
-    const token = authStorage.getAccessToken();
     try {
-      await fetch(`${API}/projects/${id}`, {
-        method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      await fetchWithAuth(`${API}/projects/${id}`, { method: 'DELETE' });
       setProjects(prev => prev.filter(p => p.id !== id));
     } catch { /* ignore */ }
     setDeleteTarget(null);
@@ -209,11 +201,10 @@ export default function ProjectsPage() {
     if (!editTarget || !editName.trim()) return;
     setEditing(true);
     setEditError('');
-    const token = authStorage.getAccessToken();
     try {
-      const res = await fetch(`${API}/projects/${editTarget.id}`, {
+      const res = await fetchWithAuth(`${API}/projects/${editTarget.id}`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name: editName.trim(), description: editDesc.trim() || undefined }),
       });
       if (!res.ok) {

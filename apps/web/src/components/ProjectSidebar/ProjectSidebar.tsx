@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 import styles from './ProjectSidebar.module.scss';
 
 interface Props {
@@ -13,6 +13,8 @@ type SidebarState = 'expanded' | 'collapsed' | 'hover';
 
 export default function ProjectSidebar({ projectId }: Props) {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const serviceIdParam = searchParams.get('serviceId');
   const [sidebarState, setSidebarState] = useState<SidebarState>(() => {
     if (typeof window !== 'undefined') {
       return (localStorage.getItem('sidebarState') as SidebarState) || 'hover';
@@ -35,9 +37,14 @@ export default function ProjectSidebar({ projectId }: Props) {
     return () => document.removeEventListener('mousedown', clickOut);
   }, []);
 
-  /** Build a clean absolute URL preserving the projectId */
-  const href = (path: string) =>
-    projectId ? `${path}?projectId=${projectId}` : path;
+  /** Build a clean absolute URL preserving the projectId and serviceId */
+  const href = (path: string) => {
+    if (!projectId) return path;
+    const params = new URLSearchParams();
+    params.set('projectId', projectId);
+    if (serviceIdParam) params.set('serviceId', serviceIdParam);
+    return `${path}?${params.toString()}`;
+  };
 
   const isActive = (path: string) => pathname === path;
 

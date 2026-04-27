@@ -72,23 +72,26 @@ export function useAuth() {
       accessToken?: string;
       refreshToken?: string;
       message?: string;
+      statusCode?: number;
     };
-    if (!res.ok) throw new Error(data.message ?? 'Login failed');
+
+    if (!res.ok) {
+      // Map backend error codes to human-friendly messages
+      const status = res.status;
+      if (status === 401 || status === 403) throw new Error('Incorrect email or password.');
+      if (status === 429) throw new Error('Too many attempts. Please wait a moment and try again.');
+      if (status >= 500) throw new Error('Server error. Please try again in a few seconds.');
+      throw new Error(data.message ?? 'Sign in failed. Please try again.');
+    }
 
     const accessToken = data.accessToken;
     const refreshToken = data.refreshToken;
-    if (!accessToken) throw new Error('Server did not return an access token');
+    if (!accessToken) throw new Error('Sign in failed. Please try again.');
 
-    // Store in sessionStorage — isolated to this tab only
-    authStorage.setAccessToken(accessToken);
-    if (refreshToken) authStorage.setRefreshToken(refreshToken);
-
-    const userRes = await fetchWithAuth(`${API}/users/me`);
-    if (!userRes.ok) throw new Error('Failed to load user profile after login');
-    const user = await userRes.json() as AuthUser;
-
-    setState({ user, accessToken, isAuthenticated: true, isLoading: false });
-    return user;
+    // Do NOT store tokens in auth app's localStorage (localhost:3001).
+    // The web app (localhost:3000) has a SEPARATE localStorage — it cannot
+    // read ours. Tokens are passed via URL params on redirect instead.
+    return { accessToken, refreshToken: refreshToken ?? '' };
   }, []);
 
   // ── Register ───────────────────────────────────────────────────────────

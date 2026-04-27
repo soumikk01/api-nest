@@ -280,14 +280,24 @@ $h:         46px;
   &:hover { background: #FFF; border-color: rgba(0,0,0,0.15); box-shadow: 0 2px 6px rgba(0,0,0,0.04); }
 }
 
+@keyframes spinSearch {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
 .searchOpen {
   width: 240px;
   background: #FFF !important;
-  border-color: rgba(0,0,0,0.2) !important;
-  box-shadow: 0 0 0 3px rgba(0,0,0,0.05);
+  border-color: #3b82f6 !important;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15) !important;
+
+  .searchIco {
+    color: #3b82f6 !important;
+    animation: spinSearch 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  }
 }
 
-.searchIco { color: $muted; flex-shrink: 0; }
+.searchIco { color: $muted; flex-shrink: 0; transition: color 0.2s; }
 
 .searchInput {
   background: transparent;
@@ -567,6 +577,11 @@ $h:         46px;
     .searchIcon { color: #888; }
     .shortcut { background: rgba(255,255,255,0.15); color: #ccc; border-color: transparent; }
     &:hover { background: rgba(255,255,255,0.1); }
+  }
+  .searchOpen {
+    background: #18181b !important;
+    border-color: #3b82f6 !important;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2) !important;
   }
 
   .userBtn { border-color: rgba(255,255,255,0.15); }

@@ -75,6 +75,14 @@ const CloseIcon = () => (
   </svg>
 );
 
+/* ── Settings icon ── */
+const SettingsIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+    <circle cx="12" cy="12" r="3"/>
+    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+  </svg>
+);
+
 export default function ServicesPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -193,17 +201,19 @@ export default function ServicesPage() {
       <div className={styles.pageLayout}>
         {/* ── LEFT SIDEBAR ── */}
         <aside className={styles.sidebar}>
-          <div className={styles.sidebarBrand}>
-            <span>Project Services</span>
-          </div>
           <nav className={styles.sidebarNav}>
-            <button className={styles.sidebarBtn} onClick={() => setShowCreateModal(true)}>
-              <PlusIcon /> New File
-            </button>
             <button className={`${styles.sidebarBtn} ${styles.sidebarBtnSecondary}`} onClick={() => router.push('/projects')}>
               <ArrowRight /> Back to Projects
             </button>
           </nav>
+          <div style={{ marginTop: 'auto' }}>
+            <button 
+              className={`${styles.sidebarBtn} ${styles.sidebarBtnSecondary}`} 
+              onClick={() => router.push(`/settings?projectId=${projectId}`)}
+            >
+              <SettingsIcon /> Project Settings
+            </button>
+          </div>
         </aside>
 
         <main className={styles.content}>
@@ -211,10 +221,6 @@ export default function ServicesPage() {
         {/* ── HEADER ── */}
         <div className={styles.header}>
           <div>
-            <div className={styles.badge}>
-              {isSingle ? <SingleServiceIcon /> : <MultiServiceIcon />}
-              <span>{isSingle ? 'Single Service' : 'Multi Service'}</span>
-            </div>
             <h1 className={styles.title}>{project?.name ?? 'Loading…'}</h1>
             <p className={styles.subtitle}>
               {isSingle

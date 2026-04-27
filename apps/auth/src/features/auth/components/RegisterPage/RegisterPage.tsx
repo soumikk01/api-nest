@@ -56,22 +56,19 @@ export default function RegisterPage() {
       await register(email, password, name);
       const at = sessionStorage.getItem('access_token');
       const rt = sessionStorage.getItem('refresh_token');
-      
-      // Cross-app redirect: auth app → web app (different port/domain)
+
       const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000';
       const redirectUrl = new URL('/projects', baseUrl);
       if (at) redirectUrl.searchParams.set('access_token', at);
       if (rt) redirectUrl.searchParams.set('refresh_token', rt);
-      
-      // Clear auth app's own session — tokens are now handed off to the web app
+
       sessionStorage.clear();
-      
       window.location.href = redirectUrl.toString();
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      const msg = err instanceof Error ? err.message : 'Something went wrong. Please try again.';
+      setError(msg);
       setIsSubmitting(false);
-      setIsShaking(true);
-      setTimeout(() => setIsShaking(false), 600);
+      handleInvalid();
     }
   };
 
@@ -170,7 +167,10 @@ export default function RegisterPage() {
                 </div>
 
                 {error && (
-                  <div role="alert" aria-live="polite" style={{ color: '#ef4444', fontSize: '13px', marginBottom: '12px' }}>
+                  <div role="alert" aria-live="polite" className={styles.errorBanner}>
+                    <svg viewBox="0 0 20 20" fill="currentColor" width="14" height="14" style={{ flexShrink: 0, marginTop: '1px' }}>
+                      <path fillRule="evenodd" d="M18 10a8 8 0 1 1-16 0 8 8 0 0 1 16 0zm-8-5a.75.75 0 0 1 .75.75v4.5a.75.75 0 0 1-1.5 0v-4.5A.75.75 0 0 1 10 5zm0 10a1 1 0 1 0 0-2 1 1 0 0 0 0 2z" clipRule="evenodd" />
+                    </svg>
                     {error}
                   </div>
                 )}

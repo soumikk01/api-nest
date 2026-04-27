@@ -46,14 +46,11 @@ export default function ForgotPasswordPage() {
 
     setIsLoading(true);
     try {
-      // TODO: Replace with real API call when backend endpoint is ready
-      // await fetch(`${API}/auth/forgot-password`, { method: 'POST', body: JSON.stringify({ email }) });
       await new Promise(r => setTimeout(r, 600)); // simulate network
       setStep(2);
     } catch {
       setError('Failed to send OTP. Please try again.');
-      setIsShaking(true);
-      setTimeout(() => setIsShaking(false), 600);
+      handleInvalid();
     } finally {
       setIsLoading(false);
     }
@@ -71,14 +68,11 @@ export default function ForgotPasswordPage() {
 
     setIsLoading(true);
     try {
-      // TODO: Replace with real API call when backend endpoint is ready
-      // await fetch(`${API}/auth/verify-otp`, { method: 'POST', body: JSON.stringify({ email, otp }) });
       await new Promise(r => setTimeout(r, 600)); // simulate network
       router.push('/login');
     } catch {
       setError('Invalid or expired OTP. Please try again.');
-      setIsShaking(true);
-      setTimeout(() => setIsShaking(false), 600);
+      handleInvalid();
     } finally {
       setIsLoading(false);
     }
@@ -139,7 +133,12 @@ export default function ForgotPasswordPage() {
                 </div>
 
                 {error && (
-                  <div role="alert" aria-live="polite" style={{ color: '#ef4444', fontSize: '13px' }}>{error}</div>
+                  <div role="alert" aria-live="polite" className={styles.errorBanner}>
+                    <svg viewBox="0 0 20 20" fill="currentColor" width="14" height="14" style={{ flexShrink: 0, marginTop: '1px' }}>
+                      <path fillRule="evenodd" d="M18 10a8 8 0 1 1-16 0 8 8 0 0 1 16 0zm-8-5a.75.75 0 0 1 .75.75v4.5a.75.75 0 0 1-1.5 0v-4.5A.75.75 0 0 1 10 5zm0 10a1 1 0 1 0 0-2 1 1 0 0 0 0 2z" clipRule="evenodd" />
+                    </svg>
+                    {error}
+                  </div>
                 )}
 
                 <button type="submit" className={`${styles.submitBtn} ${isLoading ? styles.loadingBtn : ''}`} disabled={isLoading}>
@@ -171,7 +170,12 @@ export default function ForgotPasswordPage() {
                 </div>
 
                 {error && (
-                  <div role="alert" aria-live="polite" style={{ color: '#ef4444', fontSize: '13px' }}>{error}</div>
+                  <div role="alert" aria-live="polite" className={styles.errorBanner}>
+                    <svg viewBox="0 0 20 20" fill="currentColor" width="14" height="14" style={{ flexShrink: 0, marginTop: '1px' }}>
+                      <path fillRule="evenodd" d="M18 10a8 8 0 1 1-16 0 8 8 0 0 1 16 0zm-8-5a.75.75 0 0 1 .75.75v4.5a.75.75 0 0 1-1.5 0v-4.5A.75.75 0 0 1 10 5zm0 10a1 1 0 1 0 0-2 1 1 0 0 0 0 2z" clipRule="evenodd" />
+                    </svg>
+                    {error}
+                  </div>
                 )}
 
                 <button type="submit" className={`${styles.submitBtn} ${isLoading ? styles.loadingBtn : ''}`} disabled={isLoading}>

@@ -1,4 +1,5 @@
 import { Controller, Post, Body, HttpCode, HttpStatus } from '@nestjs/common';
+import { Throttle, SkipThrottle } from '@nestjs/throttler';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
@@ -7,20 +8,32 @@ import { LoginDto } from './dto/login.dto';
 export class AuthController {
   constructor(private authService: AuthService) {}
 
-  /** POST /auth/register */
+  /**
+   * POST /auth/register
+   * 3 requests per 5 minutes per IP — prevents account spam
+   */
+  @Throttle({ short: { ttl: 300_000, limit: 3 }, medium: { ttl: 300_000, limit: 3 } })
   @Post('register')
   register(@Body() dto: RegisterDto) {
     return this.authService.register(dto);
   }
 
-  /** POST /auth/login */
+  /**
+   * POST /auth/login
+   * 5 requests per 60 seconds per IP — brute-force protection
+   */
+  @Throttle({ short: { ttl: 60_000, limit: 5 }, medium: { ttl: 60_000, limit: 5 } })
   @Post('login')
   @HttpCode(HttpStatus.OK)
   login(@Body() dto: LoginDto) {
     return this.authService.login(dto);
   }
 
-  /** POST /auth/refresh */
+  /**
+   * POST /auth/refresh
+   * 30 requests per 60 seconds — generous for silent token renewal across tabs
+   */
+  @Throttle({ short: { ttl: 60_000, limit: 30 }, medium: { ttl: 60_000, limit: 30 } })
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
   refresh(@Body('refreshToken') refreshToken: string) {
