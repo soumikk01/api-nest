@@ -46,7 +46,7 @@ export default function GettingStartedPanel() {
       }
     })();
     return () => { cancelled = true; };
-  }, [user]);
+  }, []);
 
   function copy(text: string, key: string) {
     if (!text) return;

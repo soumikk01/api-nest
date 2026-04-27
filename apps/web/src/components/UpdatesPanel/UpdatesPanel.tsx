@@ -1,20 +1,22 @@
 'use client';
 
-import { useRouter, usePathname, useSearchParams } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
 import styles from './UpdatesPanel.module.scss';
 
 function UpdatesPanelInner() {
-  const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const isOpen = searchParams.get('panel') === 'updates';
 
+  // Use replaceState instead of router.push — avoids a full Next.js navigation
+  // which would remount all page components and cause a visible reload flash.
   const close = () => {
     const params = new URLSearchParams(searchParams.toString());
     params.delete('panel');
     const qs = params.toString();
-    router.push(`${pathname}${qs ? '?' + qs : ''}`, { scroll: false });
+    window.history.replaceState(null, '', `${pathname}${qs ? '?' + qs : ''}`);
+    window.dispatchEvent(new PopStateEvent('popstate'));
   };
 
   if (!isOpen) return null;

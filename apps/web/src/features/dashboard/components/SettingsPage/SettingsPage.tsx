@@ -108,7 +108,7 @@ export default function SettingsPage() {
         }
       } catch { setLoadState('empty'); }
     })();
-  }, [searchParams, user]);
+  }, [searchParams]);
 
   const handleSaveGeneral = async () => {
     if (!projectId || !editName.trim() || editName.trim() === projectName) return;

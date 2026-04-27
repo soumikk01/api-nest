@@ -85,7 +85,7 @@ export default function OverviewPage() {
         }
       }
     })();
-  }, [user, searchParams]);
+  }, [searchParams]);
 
   // ── Fetch real DB stats + recent call history when projectId is known ──
   const fetchDashboard = useCallback(async () => {

@@ -55,7 +55,7 @@ export default function DashboardPage() {
         }
       }
     })();
-  }, [user, searchParams]);
+  }, [searchParams]);
 
   if (loadState === 'loading') {
     return (

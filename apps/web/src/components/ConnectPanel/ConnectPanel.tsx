@@ -1,21 +1,24 @@
 'use client';
 
-import { useRouter, usePathname, useSearchParams } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
 import GettingStartedPanel from '@/features/dashboard/components/GettingStartedPage/GettingStartedPanel';
 import styles from './ConnectPanel.module.scss';
 
 function ConnectPanelInner() {
-  const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const isOpen = searchParams.get('panel') === 'getting-started';
 
+  // Use replaceState instead of router.push — avoids a full Next.js navigation
+  // which would remount all page components and cause a visible reload flash.
   const close = () => {
     const params = new URLSearchParams(searchParams.toString());
     params.delete('panel');
     const qs = params.toString();
-    router.push(`${pathname}${qs ? '?' + qs : ''}`, { scroll: false });
+    window.history.replaceState(null, '', `${pathname}${qs ? '?' + qs : ''}`);
+    // Force React to re-read the URL by dispatching a popstate event
+    window.dispatchEvent(new PopStateEvent('popstate'));
   };
 
   if (!isOpen) return null;

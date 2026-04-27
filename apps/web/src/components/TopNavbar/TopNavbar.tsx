@@ -254,7 +254,8 @@ export default function TopNavbar() {
                   onClick={() => {
                     const params = new URLSearchParams(searchParams.toString());
                     params.set('panel', 'getting-started');
-                    router.push(`${pathname}?${params.toString()}`, { scroll: false });
+                    window.history.replaceState(null, '', `${pathname}?${params.toString()}`);
+                    window.dispatchEvent(new PopStateEvent('popstate'));
                   }}
                 >
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="13" height="13">
@@ -339,7 +340,8 @@ export default function TopNavbar() {
           onClick={() => {
             const params = new URLSearchParams(searchParams.toString());
             params.set('panel', 'updates');
-            router.push(`${pathname}?${params.toString()}`, { scroll: false });
+            window.history.replaceState(null, '', `${pathname}?${params.toString()}`);
+            window.dispatchEvent(new PopStateEvent('popstate'));
           }}
         >
           <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" width="16" height="16">
