@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import styles from './ProjectSettingsSidebar.module.scss';
 
 interface Props {
@@ -13,6 +14,9 @@ interface Props {
 export default function ProjectSettingsSidebar({ projectId, activeSection: propActiveSection, onSectionChange }: Props) {
   const [localActiveSection, setLocalActiveSection] = useState('general');
   const activeSection = propActiveSection ?? localActiveSection;
+  
+  const searchParams = useSearchParams();
+  const serviceIdParam = searchParams.get('serviceId');
 
   useEffect(() => {
     if (onSectionChange) return;
@@ -33,7 +37,13 @@ export default function ProjectSettingsSidebar({ projectId, activeSection: propA
     }
   };
 
-  const backHref = projectId ? `/dashboard?projectId=${projectId}` : '/dashboard';
+  const backHref = (() => {
+    if (!projectId) return '/dashboard';
+    const params = new URLSearchParams();
+    params.set('projectId', projectId);
+    if (serviceIdParam) params.set('serviceId', serviceIdParam);
+    return `/dashboard?${params.toString()}`;
+  })();
 
   return (
     <aside className={styles.sidebar} data-state="expanded">

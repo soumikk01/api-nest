@@ -1,9 +1,10 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { useTheme } from '@/hooks/useTheme';
-import { authStorage } from '@/lib/fetchWithAuth';
+import { fetchWithAuth } from '@/lib/fetchWithAuth';
+import ProjectSettingsContent from '@/features/dashboard/components/SettingsPage/ProjectSettingsContent';
 import styles from './ServicesPage.module.scss';
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000/api/v1';
@@ -75,13 +76,43 @@ const CloseIcon = () => (
   </svg>
 );
 
+/* ── Settings icon ── */
+const SettingsIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+    <circle cx="12" cy="12" r="3"/>
+    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+  </svg>
+);
+
 export default function ServicesPage() {
   const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
   const { dark } = useTheme();
 
   const projectId = searchParams.get('projectId') ?? '';
-  const [project, setProject] = useState<Project | null>(null);
+  // Track Project Settings panel via URL param so browser Back works
+  const showProjectSettings = searchParams.get('panel') === 'project-settings';
+
+  const openProjectSettings = () => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('panel', 'project-settings');
+    router.replace(`${pathname}?${params.toString()}`);
+  };
+
+  const closeProjectSettings = () => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete('panel');
+    router.replace(`${pathname}?${params.toString()}`);
+  };
+
+  const [project, setProject] = useState<Project | null>(() => {
+    // Seed from localStorage so the title never flickers to 'Loading…'
+    if (typeof window === 'undefined') return null;
+    const cached = localStorage.getItem(`project:${searchParams.get('projectId') ?? ''}`);
+    if (!cached) return null;
+    try { return JSON.parse(cached) as Project; } catch { return null; }
+  });
   const [services, setServices] = useState<Service[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -94,20 +125,18 @@ export default function ServicesPage() {
   /* ── Fetch project + services in one pass ── */
   const fetchData = useCallback(async () => {
     if (!projectId) return;
-    const token = authStorage.getAccessToken();
     setLoading(true);
     try {
       const [projRes, svcRes] = await Promise.all([
-        fetch(`${API}/projects/${projectId}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        }),
-        fetch(`${API}/projects/${projectId}/services`, {
-          headers: { Authorization: `Bearer ${token}` },
-        }),
+        fetchWithAuth(`${API}/projects/${projectId}`),
+        fetchWithAuth(`${API}/projects/${projectId}/services`),
       ]);
 
       if (projRes.ok) {
-        setProject(await projRes.json() as Project);
+        const proj = await projRes.json() as Project;
+        setProject(proj);
+        // Cache for instant render next time
+        localStorage.setItem(`project:${projectId}`, JSON.stringify(proj));
       }
       if (svcRes.ok) {
         setServices(await svcRes.json() as Service[]);
@@ -130,11 +159,10 @@ export default function ServicesPage() {
     if (!newServiceName.trim()) return;
     setCreating(true);
     setCreateError('');
-    const token = authStorage.getAccessToken();
     try {
-      const res = await fetch(`${API}/projects/${projectId}/services`, {
+      const res = await fetchWithAuth(`${API}/projects/${projectId}/services`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           name: newServiceName.trim(),
           description: newServiceDesc.trim() || undefined,
@@ -161,11 +189,10 @@ export default function ServicesPage() {
   const initDefaultService = async () => {
     if (!project) return;
     setInitializing(true);
-    const token = authStorage.getAccessToken();
     try {
-      const res = await fetch(`${API}/projects/${projectId}/services`, {
+      const res = await fetchWithAuth(`${API}/projects/${projectId}/services`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           name: `default-service_${project.name}`,
           description: 'Default service',
@@ -193,38 +220,56 @@ export default function ServicesPage() {
       <div className={styles.pageLayout}>
         {/* ── LEFT SIDEBAR ── */}
         <aside className={styles.sidebar}>
-          <div className={styles.sidebarBrand}>
-            <span>Project Services</span>
-          </div>
           <nav className={styles.sidebarNav}>
-            <button className={styles.sidebarBtn} onClick={() => setShowCreateModal(true)}>
-              <PlusIcon /> New File
-            </button>
             <button className={`${styles.sidebarBtn} ${styles.sidebarBtnSecondary}`} onClick={() => router.push('/projects')}>
               <ArrowRight /> Back to Projects
             </button>
           </nav>
+          <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+            {/* Show Service Settings only when there's exactly one service or it's single-mode */}
+            {services.length > 0 && isSingle && (
+              <button
+                className={`${styles.sidebarBtn} ${styles.sidebarBtnSecondary}`}
+                onClick={() => router.push(`/service-settings?projectId=${projectId}&serviceId=${services[0].id}`)}
+              >
+                <SettingsIcon /> Service Settings
+              </button>
+            )}
+            <button
+              className={`${styles.sidebarBtn} ${styles.sidebarBtnSecondary} ${showProjectSettings ? styles.sidebarBtnActive : ''}`}
+              onClick={() => showProjectSettings ? closeProjectSettings() : openProjectSettings()}
+            >
+              <SettingsIcon /> Project Settings
+            </button>
+          </div>
         </aside>
+
+        {/* ── When showProjectSettings: replace content with inline settings ── */}
+        {showProjectSettings ? (
+          <ProjectSettingsContent
+            projectId={projectId}
+            onBack={closeProjectSettings}
+          />
+        ) : (
 
         <main className={styles.content}>
 
         {/* ── HEADER ── */}
         <div className={styles.header}>
           <div>
-            <div className={styles.badge}>
-              {isSingle ? <SingleServiceIcon /> : <MultiServiceIcon />}
-              <span>{isSingle ? 'Single Service' : 'Multi Service'}</span>
-            </div>
-            <h1 className={styles.title}>{project?.name ?? 'Loading…'}</h1>
-            <p className={styles.subtitle}>
-              {isSingle
-                ? 'This project has a single default service. Click to enter the dashboard.'
-                : 'Manage your services. Each service monitors a separate API endpoint group.'}
-            </p>
+            {/* Use cached name — never shows 'Loading…' on revisit */}
+            <h1 className={styles.title}>{project?.name ?? ''}</h1>
+            {!loading && (
+              <p className={styles.subtitle}>
+                {isSingle
+                  ? 'This project has a single default service. Click to enter the dashboard.'
+                  : 'Manage your services. Each service monitors a separate API endpoint group.'}
+              </p>
+            )}
           </div>
 
-          {/* Add service — only for multi-service mode */}
-          {isMulti && (
+          {/* Add service — only for multi-service mode, only after loaded */}
+          {!loading && isMulti && (
             <button className={styles.addBtn} onClick={() => setShowCreateModal(true)}>
               <PlusIcon /> Add Service
             </button>
@@ -367,8 +412,35 @@ export default function ServicesPage() {
                         })}
                       </span>
                     </div>
-                    <div className={styles.enterBtn}>
-                      Enter <ArrowRight />
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      {/* Connect button — opens Getting Started panel with this service's token */}
+                      <button
+                        className={styles.connectBtn ?? styles.enterBtn}
+                        style={{
+                          fontSize: '0.75rem',
+                          padding: '4px 10px',
+                          borderRadius: 6,
+                          border: '1px solid currentColor',
+                          opacity: 0.7,
+                          cursor: 'pointer',
+                          background: 'transparent',
+                        }}
+                        onClick={(e) => {
+                          e.stopPropagation(); // don't trigger card click
+                          const params = new URLSearchParams(searchParams.toString());
+                          params.set('panel', 'getting-started');
+                          params.set('projectId', projectId);
+                          params.set('serviceId', service.id);
+                          params.set('serviceName', encodeURIComponent(service.name));
+                          window.history.replaceState(null, '', `${pathname}?${params.toString()}`);
+                          window.dispatchEvent(new PopStateEvent('popstate'));
+                        }}
+                      >
+                        🔑 SDK Token
+                      </button>
+                      <div className={styles.enterBtn}>
+                        Enter <ArrowRight />
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -390,67 +462,68 @@ export default function ServicesPage() {
           </div>
         )}
       </main>
+        )}
 
-      {/* ── CREATE SERVICE MODAL ── */}
-      {showCreateModal && (
-        <div className={styles.overlay} onClick={() => setShowCreateModal(false)}>
-          <div className={styles.modal} onClick={e => e.stopPropagation()}>
-            <div className={styles.modalGlow} />
-            <div className={styles.modalHeader}>
-              <div className={styles.modalTitle}>
-                <div className={styles.modalTitleIcon}><HexLogo /></div>
-                <h2>New Service</h2>
+        {/* ── CREATE SERVICE MODAL ── */}
+        {showCreateModal && (
+          <div className={styles.overlay} onClick={() => setShowCreateModal(false)}>
+            <div className={styles.modal} onClick={e => e.stopPropagation()}>
+              <div className={styles.modalGlow} />
+              <div className={styles.modalHeader}>
+                <div className={styles.modalTitle}>
+                  <div className={styles.modalTitleIcon}><HexLogo /></div>
+                  <h2>New Service</h2>
+                </div>
+                <button className={styles.closeBtn} onClick={() => setShowCreateModal(false)}>
+                  <CloseIcon />
+                </button>
               </div>
-              <button className={styles.closeBtn} onClick={() => setShowCreateModal(false)}>
-                <CloseIcon />
-              </button>
+              <form onSubmit={e => void handleCreateService(e)} className={styles.modalForm}>
+                <div className={styles.field}>
+                  <label htmlFor="svc-name" className={styles.fieldLabel}>
+                    Service name <span className={styles.required}>*</span>
+                  </label>
+                  <input
+                    id="svc-name"
+                    className={styles.fieldInput}
+                    placeholder="e.g. payment-api"
+                    value={newServiceName}
+                    onChange={e => setNewServiceName(e.target.value)}
+                    autoFocus
+                    maxLength={80}
+                  />
+                </div>
+                <div className={styles.field}>
+                  <label htmlFor="svc-desc" className={styles.fieldLabel}>
+                    Description <span className={styles.optional}>(optional)</span>
+                  </label>
+                  <textarea
+                    id="svc-desc"
+                    className={styles.fieldTextarea}
+                    placeholder="What does this service monitor?"
+                    value={newServiceDesc}
+                    onChange={e => setNewServiceDesc(e.target.value)}
+                    rows={3}
+                    maxLength={300}
+                  />
+                </div>
+                {createError && <p className={styles.modalError}>{createError}</p>}
+                <div className={styles.modalActions}>
+                  <button type="button" className={styles.cancelBtn} onClick={() => setShowCreateModal(false)}>
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className={styles.createBtn}
+                    disabled={creating || !newServiceName.trim()}
+                  >
+                    {creating ? 'Creating…' : 'Create Service'}
+                  </button>
+                </div>
+              </form>
             </div>
-            <form onSubmit={e => void handleCreateService(e)} className={styles.modalForm}>
-              <div className={styles.field}>
-                <label htmlFor="svc-name" className={styles.fieldLabel}>
-                  Service name <span className={styles.required}>*</span>
-                </label>
-                <input
-                  id="svc-name"
-                  className={styles.fieldInput}
-                  placeholder="e.g. payment-api"
-                  value={newServiceName}
-                  onChange={e => setNewServiceName(e.target.value)}
-                  autoFocus
-                  maxLength={80}
-                />
-              </div>
-              <div className={styles.field}>
-                <label htmlFor="svc-desc" className={styles.fieldLabel}>
-                  Description <span className={styles.optional}>(optional)</span>
-                </label>
-                <textarea
-                  id="svc-desc"
-                  className={styles.fieldTextarea}
-                  placeholder="What does this service monitor?"
-                  value={newServiceDesc}
-                  onChange={e => setNewServiceDesc(e.target.value)}
-                  rows={3}
-                  maxLength={300}
-                />
-              </div>
-              {createError && <p className={styles.modalError}>{createError}</p>}
-              <div className={styles.modalActions}>
-                <button type="button" className={styles.cancelBtn} onClick={() => setShowCreateModal(false)}>
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className={styles.createBtn}
-                  disabled={creating || !newServiceName.trim()}
-                >
-                  {creating ? 'Creating…' : 'Create Service'}
-                </button>
-              </div>
-            </form>
           </div>
-        </div>
-      )}
+        )}
       </div>
     </div>
   );

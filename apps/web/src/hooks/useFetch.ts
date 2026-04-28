@@ -1,12 +1,8 @@
 'use client';
-import { authStorage } from '@/lib/fetchWithAuth';
-import { useState, useEffect, useCallback } from 'react';
+import { fetchWithAuth } from '@/lib/fetchWithAuth';
+import { useState, useEffect, useCallback, useRef } from 'react';
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000/api/v1';
-
-function getToken(): string {
-  return typeof window !== 'undefined' ? authStorage.getAccessToken() ?? '' : '';
-}
 
 interface FetchState<T> {
   data: T | null;
@@ -14,6 +10,13 @@ interface FetchState<T> {
   error: string | null;
 }
 
+/**
+ * useFetch — auto-fetches on mount and whenever `path` changes.
+ *
+ * ✅ AbortController: if the component unmounts or `path` changes before the
+ *    previous request finishes, the in-flight request is cancelled. This
+ *    prevents race conditions and stale state updates.
+ */
 export function useFetch<T>(path: string, options?: RequestInit) {
   const [state, setState] = useState<FetchState<T>>({
     data: null,
@@ -21,66 +24,116 @@ export function useFetch<T>(path: string, options?: RequestInit) {
     error: null,
   });
 
+  // Keep a stable ref to the latest options — update after layout to avoid render-phase mutation
+  const optionsRef = useRef(options);
+  useEffect(() => { optionsRef.current = options; });
+
   const url = path.startsWith('http') ? path : `${API}${path}`;
 
-  const execute = useCallback(async () => {
-    setState(s => ({ ...s, loading: true, error: null }));
-    try {
-      const token = getToken();
-      const res = await fetch(url, {
-        ...options,
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          ...(options?.headers ?? {}),
-        },
-      });
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({ message: res.statusText })) as { message?: string };
-        throw new Error(err.message ?? `HTTP ${res.status}`);
+  const execute = useCallback(
+    async (signal?: AbortSignal): Promise<T | undefined> => {
+      setState(s => ({ ...s, loading: true, error: null }));
+      try {
+        // fetchWithAuth automatically handles:
+        // 1. Injecting the Bearer token
+        // 2. Refreshing on 401
+        // 3. Rejecting/Logging out if refresh fails
+        const res = await fetchWithAuth(url, {
+          ...optionsRef.current,
+          signal,
+          headers: {
+            'Content-Type': 'application/json',
+            ...(optionsRef.current?.headers ?? {}),
+          },
+        });
+
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({ message: res.statusText })) as { message?: string };
+          throw new Error(err.message ?? `HTTP ${res.status}`);
+        }
+
+        const data = await res.json() as T;
+        setState({ data, loading: false, error: null });
+        return data;
+      } catch (err) {
+        // AbortError is expected on cleanup — do NOT update state for cancelled requests
+        if ((err as Error).name === 'AbortError') return;
+
+        const msg = (err as Error).message;
+        setState({ data: null, loading: false, error: msg });
+        throw err;
       }
-      const data = await res.json() as T;
-      setState({ data, loading: false, error: null });
-      return data;
-    } catch (err) {
-      const msg = (err as Error).message;
-      setState({ data: null, loading: false, error: msg });
-      throw err;
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [url]);
+    },
+    [url],
+  );
 
   useEffect(() => {
-    void execute();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [url]);
+    // Create a new AbortController for every fetch cycle
+    const controller = new AbortController();
 
-  return { ...state, refetch: execute };
+    void execute(controller.signal);
+
+    // Cleanup: cancel the request if the component unmounts or `url` changes
+    return () => controller.abort();
+  }, [execute]);
+
+  // Manual refetch (e.g. pull-to-refresh) — creates its own controller
+  const refetch = useCallback(() => {
+    const controller = new AbortController();
+    void execute(controller.signal);
+    return () => controller.abort();
+  }, [execute]);
+
+  return { ...state, refetch };
 }
 
 /**
- * One-off authenticated request (POST/PUT/DELETE).
- * Returns a function you call imperatively.
+ * useApi — imperative one-off requests (POST / PUT / PATCH / DELETE).
+ *
+ * ✅ Prevents duplicate submissions: `isLoading` is true while a request is
+ *    in flight. Callers should disable their submit button while `isLoading`.
+ * ✅ AbortController: call the returned `abort` function to cancel.
  */
 export function useApi() {
+  const [isLoading, setIsLoading] = useState(false);
+  const controllerRef = useRef<AbortController | null>(null);
+
   const request = useCallback(async <T>(
     path: string,
     method: 'POST' | 'PUT' | 'PATCH' | 'DELETE' = 'POST',
     body?: unknown,
   ): Promise<T> => {
-    const token = getToken();
-    const res = await fetch(`${API}${path}`, {
-      method,
-      headers: {
-        'Content-Type': 'application/json',
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      },
-      ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
-    });
-    const data = await res.json() as T & { message?: string };
-    if (!res.ok) throw new Error(data.message ?? `HTTP ${res.status}`);
-    return data;
+    // Cancel any previous in-flight request from this hook instance
+    controllerRef.current?.abort();
+    const controller = new AbortController();
+    controllerRef.current = controller;
+
+    setIsLoading(true);
+    try {
+      const res = await fetchWithAuth(`${API}${path}`, {
+        method,
+        signal: controller.signal,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
+      });
+
+      const data = await res.json() as T & { message?: string };
+      if (!res.ok) throw new Error((data as { message?: string }).message ?? `HTTP ${res.status}`);
+      return data;
+    } catch (err) {
+      if ((err as Error).name === 'AbortError') throw err; // let caller handle
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
 
-  return { request };
+  // Allow callers to cancel an in-flight mutation
+  const abort = useCallback(() => {
+    controllerRef.current?.abort();
+  }, []);
+
+  return { request, isLoading, abort };
 }

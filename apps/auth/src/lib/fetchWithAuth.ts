@@ -25,8 +25,10 @@ export const authStorage = {
   clear: () => {
     sessionStorage.removeItem('access_token');
     sessionStorage.removeItem('refresh_token');
-    // activeProjectId lives in localStorage — clear it too on full session end
+    // Also clear web app's localStorage keys so a different user doesn't
+    // see stale project/avatar data after logging in on the same browser
     localStorage.removeItem('activeProjectId');
+    localStorage.removeItem('userAvatarIndex');
   },
 };
 

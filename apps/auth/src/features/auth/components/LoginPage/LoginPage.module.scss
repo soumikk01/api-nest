@@ -306,6 +306,22 @@ $r-lg:   24px;
   color: #ef4444 !important;
 }
 
+.errorBanner {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  color: #dc2626;
+  font-size: 0.83rem;
+  font-weight: 500;
+  line-height: 1.4;
+  margin-bottom: 4px;
+  animation: slideUp 0.25s ease forwards;
+}
+
 .submitBtn {
   display: block;
   width: 100%;
@@ -555,6 +571,12 @@ $dm-glass:  rgba(22, 22, 28, 0.82);
     text-decoration: none;
     transition: color 0.2s;
     &:hover { color: $dm-text; text-decoration: underline; }
+  }
+
+  .errorBanner {
+    background: rgba(239, 68, 68, 0.1);
+    border-color: rgba(239, 68, 68, 0.25);
+    color: #f87171;
   }
 
   .registerLink { color: $dm-text; }

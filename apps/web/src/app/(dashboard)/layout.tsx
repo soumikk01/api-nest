@@ -6,6 +6,9 @@ import AuthGuard from '@/components/AuthGuard/AuthGuard';
 // Lazy load: only shown on user action (panel=getting-started query param)
 const ConnectPanel = dynamic(() => import('@/components/ConnectPanel/ConnectPanel'));
 
+// Lazy load: only shown on user action (panel=updates query param)
+const UpdatesPanel = dynamic(() => import('@/components/UpdatesPanel/UpdatesPanel'));
+
 // Lazy load: only shown during logout animation
 const LogoutOverlay = dynamic(() => import('@/components/LogoutOverlay/LogoutOverlay'));
 
@@ -21,8 +24,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           {children}
         </div>
       </div>
-      {/* Right-side Getting Started panel — shown when ?panel=getting-started */}
+      {/* Right-side panels */}
       <ConnectPanel />
+      <UpdatesPanel />
       {/* Full-screen animated logout transition */}
       <LogoutOverlay />
     </AuthGuard>

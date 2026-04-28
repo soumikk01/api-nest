@@ -1,17 +1,23 @@
 'use client';
-import { authStorage } from '@/lib/fetchWithAuth';
+import { fetchWithAuth } from '@/lib/fetchWithAuth';
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useAuth } from '@/hooks/useAuth';
+
 import styles from './GettingStartedPage.module.scss';
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000/api/v1';
 
-export default function GettingStartedPanel() {
-  const { user } = useAuth();
+interface Props {
+  /** When provided, the panel shows the SDK token for this specific service */
+  projectId?: string;
+  serviceId?: string;
+  serviceName?: string;
+}
+
+export default function GettingStartedPanel({ projectId, serviceId, serviceName }: Props) {
+
   const [sdkToken, setSdkToken] = useState<string>('');
-  const [sdkLoading, setSdkLoading] = useState(true);
   const [copied, setCopied] = useState<string | null>(null);
   const [pm, setPm] = useState<'npm' | 'yarn' | 'pnpm' | 'bun'>('npm');
 
@@ -26,27 +32,30 @@ export default function GettingStartedPanel() {
 
   useEffect(() => {
     let cancelled = false;
+    setSdkToken('');
+
     (async () => {
-      const token = authStorage.getAccessToken();
-      if (!token) {
-        if (!cancelled) setSdkLoading(false);
-        return;
-      }
       try {
-        const r = await fetch(`${API}/users/me/command`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        if (!r.ok) throw new Error('Failed');
-        const d = await r.json() as { token?: string };
-        if (!cancelled && d.token) setSdkToken(d.token);
+        if (projectId && serviceId) {
+          // ── Service-specific token ──────────────────────────────────────
+          const cached = localStorage.getItem(`svcToken:${serviceId}`);
+          if (cached && !cancelled) { setSdkToken(cached); }
+
+          const res = await fetchWithAuth(`${API}/projects/${projectId}/services/${serviceId}`);
+          if (!res.ok) throw new Error('Failed');
+          const svc = await res.json() as { sdkToken?: string };
+          if (!cancelled && svc.sdkToken) {
+            setSdkToken(svc.sdkToken);
+            localStorage.setItem(`svcToken:${serviceId}`, svc.sdkToken);
+          }
+        }
+        // No service context — token stays '' and placeholder is shown in CLI command
       } catch {
-        // ignore
-      } finally {
-        if (!cancelled) setSdkLoading(false);
+        // ignore — placeholder shown in CLI command
       }
     })();
     return () => { cancelled = true; };
-  }, [user]);
+  }, [projectId, serviceId]);
 
   function copy(text: string, key: string) {
     if (!text) return;
@@ -64,16 +73,29 @@ export default function GettingStartedPanel() {
       <div className={styles.header}>
         <div>
           <h1>Getting Started</h1>
-          <p>Set up API monitoring in your project in under 60 seconds.</p>
+          {serviceName ? (
+            <p>Setting up <strong>{serviceName}</strong> — your SDK token is pre-filled below.</p>
+          ) : (
+            <p>Set up API monitoring in your project in under 60 seconds.</p>
+          )}
         </div>
       </div>
 
       {/* Welcome banner */}
       <div className={styles.welcomeBanner}>
-        <div className={styles.welcomeIcon}>👋</div>
+        <div className={styles.welcomeIcon}>{serviceName ? '🔑' : '👋'}</div>
         <div>
-          <div className={styles.welcomeTitle}>Welcome, {user?.name || user?.email || 'Developer'}!</div>
-          <div className={styles.welcomeSub}>Your personalized command is ready below. Copy, run, done.</div>
+          {serviceName ? (
+            <>
+              <div className={styles.welcomeTitle}>SDK Token for <strong>{serviceName}</strong></div>
+              <div className={styles.welcomeSub}>This token is unique to this service. Run the command below to connect it.</div>
+            </>
+          ) : (
+            <>
+              <div className={styles.welcomeTitle}>Getting Started</div>
+              <div className={styles.welcomeSub}>Select a service from the Services page to get your SDK token and connect it.</div>
+            </>
+          )}
         </div>
       </div>
 
@@ -95,33 +117,6 @@ export default function GettingStartedPanel() {
         {/* Step 1 */}
         <div className={styles.step}>
           <div className={styles.stepNum}>1</div>
-          <div className={styles.stepBody}>
-            <div className={styles.stepTitle}>Get your SDK token</div>
-            <div className={styles.stepDesc}>
-              You&apos;re already logged in — your unique SDK token is below.
-              It identifies your project. Find it anytime in{' '}
-              <Link href="/settings" className={styles.link}>Settings → SDK Token</Link>.
-            </div>
-            <div className={styles.tokenBox}>
-              <span className={styles.tokenLabel}>Your SDK Token</span>
-              <div className={styles.tokenRow}>
-                <code className={styles.tokenValue}>
-                  {sdkLoading ? '— loading…' : (sdkToken || '— not available')}
-                </code>
-                <button className={styles.copyBtn} onClick={() => copy(sdkToken, 'token')} disabled={!sdkToken}>
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
-                    <rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
-                  </svg>
-                  {copied === 'token' ? '✓ Copied!' : 'Copy'}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Step 2 */}
-        <div className={styles.step}>
-          <div className={styles.stepNum}>2</div>
           <div className={styles.stepBody}>
             <div className={styles.stepTitle}>Install &amp; run the init command in your project</div>
             <div className={styles.stepDesc}>
@@ -182,9 +177,9 @@ export default function GettingStartedPanel() {
           </div>
         </div>
 
-        {/* Step 3 */}
+        {/* Step 2 */}
         <div className={styles.step}>
-          <div className={styles.stepNum}>3</div>
+          <div className={styles.stepNum}>2</div>
           <div className={styles.stepBody}>
             <div className={styles.stepTitle}>Start your server</div>
             <div className={styles.stepDesc}>
@@ -209,9 +204,9 @@ export default function GettingStartedPanel() {
           </div>
         </div>
 
-        {/* Step 4 */}
+        {/* Step 3 */}
         <div className={styles.step}>
-          <div className={styles.stepNum}>4</div>
+          <div className={styles.stepNum}>3</div>
           <div className={styles.stepBody}>
             <div className={styles.stepTitle}>Watch your APIs appear live!</div>
             <div className={styles.stepDesc}>

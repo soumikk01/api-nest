@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { ThrottlerModule } from '@nestjs/throttler';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { APP_GUARD } from '@nestjs/core';
 import { BullModule } from '@nestjs/bullmq';
 import { LoggerModule } from 'nestjs-pino';
 import { Cluster } from 'ioredis';
@@ -46,8 +47,15 @@ import { INGEST_QUEUE } from './ingest/ingest.queue';
       },
     }),
 
-    // ── Rate limiting ─────────────────────────────────────────────────────
-    ThrottlerModule.forRoot([{ ttl: 60_000, limit: 200 }]),
+    // ── Rate limiting (multi-tier) ────────────────────────────────────────
+    // short  — burst protection  : 20 req / 1s   per IP
+    // medium — general API       : 100 req / 60s  per IP
+    // long   — sensitive actions : 10 req / 60s   per IP (override per route)
+    ThrottlerModule.forRoot([
+      { name: 'short', ttl: 1_000, limit: 20 },
+      { name: 'medium', ttl: 60_000, limit: 100 },
+      { name: 'long', ttl: 60_000, limit: 10 },
+    ]),
 
     // ── BullMQ — cluster-aware or standalone ─────────────────────────────
     BullModule.forRootAsync({
@@ -123,5 +131,10 @@ import { INGEST_QUEUE } from './ingest/ingest.queue';
     BullModule.registerQueue({ name: INGEST_QUEUE }),
   ],
   controllers: [AppController],
+  providers: [
+    // Apply ThrottlerGuard globally — all routes inherit medium+short limits.
+    // Individual routes can override with @Throttle() or opt-out with @SkipThrottle()
+    { provide: APP_GUARD, useClass: ThrottlerGuard },
+  ],
 })
 export class AppModule {}

@@ -1,7 +1,7 @@
 'use client';
 import { authStorage } from '@/lib/fetchWithAuth';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 import { useAuth } from '@/hooks/useAuth';
 import { useTheme } from '@/hooks/useTheme';
@@ -19,26 +19,31 @@ interface Stats {
 
 export default function AccountPage() {
   const { dark } = useTheme();
-  const { user, logoutWithTransition, getCliCommand } = useAuth();
+  const { user, logoutWithTransition } = useAuth();
 
 
   const [stats, setStats] = useState<Stats>({ totalProjects: 0, totalCalls: 0 });
-  const [cliCommand, setCliCommand] = useState<{ command: string; token: string; instructions: string } | null>(null);
-  const [copied, setCopied] = useState(false);
-  const [regenerating, setRegenerating] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [showAvatarPicker, setShowAvatarPicker] = useState(false);
-  const [selectedAvatar, setSelectedAvatar] = useState<number>(() => {
+
+  // Saved avatar (persisted in DB + localStorage)
+  const [savedAvatar, setSavedAvatar] = useState<number>(() => {
     if (typeof window !== 'undefined') {
       return parseInt(localStorage.getItem('userAvatarIndex') ?? '0', 10);
     }
     return 0;
   });
 
+  // Pending avatar — only changed inside the picker, saved on explicit click
+  const [pendingAvatar, setPendingAvatar] = useState<number>(savedAvatar);
+  const [savingAvatar, setSavingAvatar] = useState(false);
+  const [avatarSaveStatus, setAvatarSaveStatus] = useState<'idle' | 'success' | 'error'>('idle');
+
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const handleStorage = () => {
-        setSelectedAvatar(parseInt(localStorage.getItem('userAvatarIndex') ?? '0', 10));
+        const idx = parseInt(localStorage.getItem('userAvatarIndex') ?? '0', 10);
+        setSavedAvatar(idx);
       };
       window.addEventListener('storage', handleStorage);
       window.addEventListener('avatarChanged', handleStorage);
@@ -49,33 +54,51 @@ export default function AccountPage() {
     }
   }, []);
 
-  const currentAvatar = AVATARS[selectedAvatar] ?? AVATARS[0];
+  const currentAvatar = AVATARS[savedAvatar] ?? AVATARS[0];
 
-  const handleSelectAvatar = async (index: number) => {
-    setSelectedAvatar(index);
-    localStorage.setItem('userAvatarIndex', String(index));
-    window.dispatchEvent(new Event('avatarChanged'));
+  // Reset pending selection to saved when the picker opens
+  const openPicker = () => {
+    setPendingAvatar(savedAvatar);
+    setAvatarSaveStatus('idle');
+    setShowAvatarPicker(true);
+  };
+
+  const closePicker = () => {
     setShowAvatarPicker(false);
+    setAvatarSaveStatus('idle');
+  };
 
+  // Commit the pending avatar to DB + localStorage
+  const handleSaveAvatar = async () => {
+    if (pendingAvatar === savedAvatar) { closePicker(); return; }
+    setSavingAvatar(true);
+    setAvatarSaveStatus('idle');
     const token = authStorage.getAccessToken();
     try {
-      await fetch(`${API}/users/me/avatar`, {
+      const res = await fetch(`${API}/users/me/avatar`, {
         method: 'PATCH',
-        headers: { 
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}` 
-        },
-        body: JSON.stringify({ avatar: index })
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ avatar: pendingAvatar }),
       });
-    } catch(err) {
+      if (!res.ok) throw new Error('Failed');
+      // Persist locally only after confirmed save
+      localStorage.setItem('userAvatarIndex', String(pendingAvatar));
+      window.dispatchEvent(new Event('avatarChanged'));
+      setSavedAvatar(pendingAvatar);
+      setAvatarSaveStatus('success');
+      setTimeout(() => { closePicker(); }, 800);
+    } catch (err) {
       console.error('Failed to update avatar in DB', err);
+      setAvatarSaveStatus('error');
+    } finally {
+      setSavingAvatar(false);
     }
   };
 
   const loadData = useCallback(async () => {
-    if (!user) return;
-    setIsLoading(true);
     const token = authStorage.getAccessToken();
+    if (!token) return;
+    setIsLoading(true);
     try {
       const pRes = await fetch(`${API}/projects`, { headers: { Authorization: `Bearer ${token}` } });
       if (pRes.ok) {
@@ -83,38 +106,12 @@ export default function AccountPage() {
         setStats(s => ({ ...s, totalProjects: projects.length }));
       }
     } catch { /* silent */ }
-    try {
-      const cmd = await getCliCommand();
-      setCliCommand(cmd);
-    } catch { /* silent */ }
     setIsLoading(false);
-  }, [user, getCliCommand]);
+  }, []);
 
   useEffect(() => { void loadData(); }, [loadData]);
 
   const handleLogout = () => { logoutWithTransition(); };
-
-  const copyToClipboard = async () => {
-    if (cliCommand) {
-      await navigator.clipboard.writeText(cliCommand.command);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    }
-  };
-
-  const handleRegenerate = async () => {
-    setRegenerating(true);
-    const token = authStorage.getAccessToken();
-    try {
-      const res = await fetch(`${API}/users/me/regenerate-token`, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (!res.ok) throw new Error('Failed');
-      await loadData();
-    } catch (err) { console.error(err); }
-    finally { setRegenerating(false); }
-  };
 
   if (isLoading) {
     return (
@@ -169,7 +166,7 @@ export default function AccountPage() {
           </div>
           <button
             className={styles.avatarEditBtn}
-            onClick={() => setShowAvatarPicker(true)}
+            onClick={openPicker}
             title="Change avatar"
             aria-label="Change profile photo"
           >
@@ -220,30 +217,15 @@ export default function AccountPage() {
         </div>
       </div>
 
-      {/* ── SDK TOKEN ── */}
+      {/* ── SDK TOKENS NOTE ── */}
       <div className={styles.panel}>
-        <h3>SDK Token</h3>
-        <p style={{ marginBottom: '1.25rem' }}>
-          Use this token to connect your projects to the API Nest interceptor. Keep it secret.
+        <h3>SDK Tokens</h3>
+        <p style={{ marginBottom: '1rem' }}>
+          SDK tokens are now managed per service. Go to a service&apos;s settings to view, copy, or rotate its token.
         </p>
-        <div className={styles.codeBlock}>
-          <code>{cliCommand ? cliCommand.token : 'Loading token…'}</code>
-          <button className={styles.copyBtn} onClick={() => void copyToClipboard()}>
-            {copied ? '✓ Copied!' : 'Copy'}
-          </button>
-        </div>
-        <div style={{ marginTop: '1rem' }}>
-          <button
-            className={styles.regenerateBtn}
-            onClick={() => void handleRegenerate()}
-            disabled={regenerating}
-          >
-            {regenerating ? 'Regenerating…' : '↻ Regenerate Token'}
-          </button>
-          <p style={{ marginTop: '0.5rem', fontSize: '0.78rem', color: '#ef4444' }}>
-            ⚠ Regenerating will invalidate your current token immediately.
-          </p>
-        </div>
+        <p style={{ fontSize: '0.82rem', color: '#6b7280' }}>
+          Open a project → select a service → <strong>Service Settings → SDK Token</strong>
+        </p>
       </div>
 
       {/* ── DANGER ZONE ── */}
@@ -259,29 +241,31 @@ export default function AccountPage() {
 
       {/* ── AVATAR PICKER MODAL ── */}
       {showAvatarPicker && (
-        <div className={styles.pickerBackdrop} onClick={() => setShowAvatarPicker(false)}>
+        <div className={styles.pickerBackdrop} onClick={closePicker}>
           <div className={styles.pickerModal} onClick={e => e.stopPropagation()}>
             <div className={styles.pickerHeader}>
               <span>Choose your avatar</span>
-              <button className={styles.pickerClose} onClick={() => setShowAvatarPicker(false)}>
+              <button className={styles.pickerClose} onClick={closePicker}>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="16" height="16">
                   <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
                 </svg>
               </button>
             </div>
             <p className={styles.pickerSub}>
-              unique avatars to match your personality
+              {pendingAvatar !== savedAvatar
+                ? <span className={styles.hoverName}>Avatar changed — click Save to confirm</span>
+                : 'Pick a unique avatar to match your personality'}
             </p>
             <div className={styles.pickerGrid}>
               {AVATARS.map((av, i) => (
                 <button
                   key={i}
-                  className={`${styles.pickerItem} ${selectedAvatar === i ? styles.pickerItemSelected : ''}`}
-                  onClick={() => handleSelectAvatar(i)}
+                  className={`${styles.pickerItem} ${pendingAvatar === i ? styles.pickerItemSelected : ''}`}
+                  onClick={() => setPendingAvatar(i)}
                 >
                   {av.svg}
                   <span className={styles.avatarTooltip}>{av.label}</span>
-                  {selectedAvatar === i && (
+                  {pendingAvatar === i && (
                      <span className={styles.pickerCheck}>
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" width="10" height="10">
                         <polyline points="20 6 9 17 4 12"/>
@@ -290,6 +274,47 @@ export default function AccountPage() {
                   )}
                 </button>
               ))}
+            </div>
+
+            {/* Save / Cancel footer */}
+            <div className={styles.pickerFooter}>
+              {avatarSaveStatus === 'error' && (
+                <span className={styles.pickerError}>Failed to save — try again</span>
+              )}
+              <div className={styles.pickerActions}>
+                <button className={styles.pickerCancelBtn} onClick={closePicker} disabled={savingAvatar}>
+                  Cancel
+                </button>
+                <button
+                  className={`${styles.pickerSaveBtn} ${
+                    avatarSaveStatus === 'success' ? styles.pickerSaveBtnDone : ''
+                  } ${
+                    avatarSaveStatus === 'error' ? styles.pickerSaveBtnError : ''
+                  }`}
+                  onClick={() => void handleSaveAvatar()}
+                  disabled={savingAvatar || pendingAvatar === savedAvatar || avatarSaveStatus === 'success'}
+                >
+                  {savingAvatar && (
+                    <svg className={styles.savingSpinner} viewBox="0 0 20 20" fill="none" width="14" height="14">
+                      <circle cx="10" cy="10" r="7" stroke="currentColor" strokeWidth="2.5" strokeDasharray="32" strokeDashoffset="12" strokeLinecap="round" />
+                    </svg>
+                  )}
+                  {avatarSaveStatus === 'success' && (
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" width="14" height="14" className={styles.savingCheck}>
+                      <polyline points="20 6 9 17 4 12"/>
+                    </svg>
+                  )}
+                  <span>
+                    {savingAvatar
+                      ? 'Saving…'
+                      : avatarSaveStatus === 'success'
+                        ? 'Saved!'
+                        : pendingAvatar === savedAvatar
+                          ? 'No changes'
+                          : 'Save avatar'}
+                  </span>
+                </button>
+              </div>
             </div>
           </div>
         </div>

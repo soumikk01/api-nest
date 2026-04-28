@@ -61,7 +61,12 @@ export class ProjectsService {
   async create(userId: string, dto: CreateProjectDto) {
     const serviceMode = dto.serviceMode ?? 'single';
     const project = await this.prisma.project.create({
-      data: { name: dto.name, description: dto.description, serviceMode, userId },
+      data: {
+        name: dto.name,
+        description: dto.description,
+        serviceMode,
+        userId,
+      },
     });
     // Auto-create default service for single-mode projects
     if (serviceMode === 'single') {

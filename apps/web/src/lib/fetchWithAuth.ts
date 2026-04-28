@@ -1,91 +1,106 @@
 /**
- * fetchWithAuth — industry-level authenticated fetch wrapper
+ * fetchWithAuth — production-hardened authenticated fetch wrapper
  *
- * Uses sessionStorage for tokens so each browser tab has its own session.
- * Opening a new tab always requires fresh login — tokens are NOT shared across tabs.
+ * Storage strategy (Supabase-style):
+ *   accessToken  → localStorage  (survives page refresh)
+ *   refreshToken → localStorage  (long-lived, rotated on every use)
  *
- * Strategy:
- *  1. Attempt the request with the current access token.
- *  2. On 401 → try to mint a new access token using the refresh token.
- *  3. Retry the original request once with the new access token.
- *  4. If refresh also fails → clear session and redirect to /login.
+ * Key behaviors:
+ *  - Singleton refresh deduplication: only ONE /auth/refresh call at a time
+ *  - Transient errors (5xx/429/network) → session preserved, not cleared
+ *  - Definitive 401/400 on refresh → session cleared (truly expired/revoked)
+ *  - New tokens from auth app arrive via URL ?at=&rt= on login redirect
  */
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000/api/v1';
 
-// Singleton refresh promise — prevents concurrent refresh storms
-let refreshingPromise: Promise<string | null> | null = null;
-
-// ── Storage helpers (sessionStorage = per-tab, not shared between tabs) ──
+// ── Storage helpers ────────────────────────────────────────────────────────
 export const authStorage = {
-  getAccessToken: () => sessionStorage.getItem('access_token'),
-  getRefreshToken: () => sessionStorage.getItem('refresh_token'),
-  setAccessToken: (t: string) => sessionStorage.setItem('access_token', t),
-  setRefreshToken: (t: string) => sessionStorage.setItem('refresh_token', t),
-  clear: () => {
-    sessionStorage.removeItem('access_token');
-    sessionStorage.removeItem('refresh_token');
-    // Clear all localStorage state so next user gets a clean session
+  getAccessToken: (): string | null => {
+    if (typeof window === 'undefined') return null;
+    return localStorage.getItem('access_token');
+  },
+  setAccessToken: (t: string): void => {
+    if (typeof window !== 'undefined') localStorage.setItem('access_token', t);
+  },
+
+  getRefreshToken: (): string | null => {
+    if (typeof window === 'undefined') return null;
+    return localStorage.getItem('refresh_token');
+  },
+  setRefreshToken: (t: string): void => {
+    if (typeof window !== 'undefined') localStorage.setItem('refresh_token', t);
+  },
+
+  /** Wipe ALL auth state — called on logout or definitive token failure */
+  clear: (): void => {
+    if (typeof window === 'undefined') return;
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('refresh_token');
     localStorage.removeItem('activeProjectId');
     localStorage.removeItem('userAvatarIndex');
+    sessionStorage.removeItem('access_token');
+    sessionStorage.removeItem('refresh_token');
+  },
+
+  /** True only if we have at least one token (can attempt session restore) */
+  hasSession: (): boolean => {
+    if (typeof window === 'undefined') return false;
+    return !!(localStorage.getItem('access_token') || localStorage.getItem('refresh_token'));
   },
 };
 
-async function tryRefresh(): Promise<string | null> {
-  if (refreshingPromise) return refreshingPromise;
+// ── Singleton refresh ──────────────────────────────────────────────────────
+// One in-flight refresh shared across all concurrent callers.
+let _refreshPromise: Promise<string | null> | null = null;
 
-  refreshingPromise = (async () => {
-    const refreshToken = authStorage.getRefreshToken();
-    if (!refreshToken) return null;
+async function tryRefresh(): Promise<string | null> {
+  if (_refreshPromise) return _refreshPromise;
+
+  _refreshPromise = (async () => {
+    const rt = authStorage.getRefreshToken();
+    if (!rt) return null;
 
     try {
       const res = await fetch(`${API}/auth/refresh`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ refreshToken }),
+        body: JSON.stringify({ refreshToken: rt }),
       });
 
-      if (!res.ok) return null;
+      // 401 / 400 = token definitively invalid → must re-login
+      if (res.status === 401 || res.status === 400) {
+        authStorage.clear();
+        return null;
+      }
 
-      const data = await res.json() as {
-        accessToken?: string;
-        refreshToken?: string;
-      };
+      // 429 / 5xx = transient → throw so callers DON'T clear the session
+      if (!res.ok) throw new Error(`refresh_${res.status}`);
 
-      if (!data.accessToken) return null;
+      const data = await res.json() as { accessToken?: string; refreshToken?: string };
+      if (!data.accessToken) { authStorage.clear(); return null; }
 
       authStorage.setAccessToken(data.accessToken);
       if (data.refreshToken) authStorage.setRefreshToken(data.refreshToken);
 
       return data.accessToken;
-    } catch {
-      return null;
     } finally {
-      refreshingPromise = null;
+      _refreshPromise = null;
     }
   })();
 
-  return refreshingPromise;
-}
-
-function clearSession() {
-  authStorage.clear();
-  // AuthGuard detects user = null and calls router.replace('/login') — no hard reload needed
+  return _refreshPromise;
 }
 
 /**
- * Drop-in replacement for `fetch` that:
- * - Injects `Authorization: Bearer <token>` automatically
- * - Refreshes the access token on 401 and retries once
- * - Signs the user out if refresh also fails
+ * Drop-in replacement for fetch():
+ *  1. Attaches Bearer token from localStorage
+ *  2. On 401 → silently refreshes and retries ONCE
+ *  3. Transient errors → session preserved
+ *  4. Definitive failure → session cleared
  */
-export async function fetchWithAuth(
-  url: string,
-  options: RequestInit = {},
-): Promise<Response> {
-  const accessToken = authStorage.getAccessToken();
-
-  const makeRequest = (token: string | null) =>
+export async function fetchWithAuth(url: string, options: RequestInit = {}): Promise<Response> {
+  const makeReq = (token: string | null) =>
     fetch(url, {
       ...options,
       headers: {
@@ -94,51 +109,20 @@ export async function fetchWithAuth(
       },
     });
 
-  let response = await makeRequest(accessToken);
+  let res = await makeReq(authStorage.getAccessToken());
+  if (res.status !== 401) return res;
 
-  if (response.status !== 401) return response;
-
-  // ── 401 received — try to refresh ──────────────────────────────────────
-  const newToken = await tryRefresh();
-
-  if (!newToken) {
-    clearSession();
-    return response;
-  }
-
-  response = await makeRequest(newToken);
-
-  if (response.status === 401) {
-    clearSession();
-  }
-
-  return response;
-}
-
-/**
- * Silently refresh the access token on app boot if it has expired.
- * Returns the valid access token or null if the session is dead.
- */
-export async function ensureValidToken(): Promise<string | null> {
-  const token = authStorage.getAccessToken();
-  if (!token) return null;
-
+  // ── Silent refresh ────────────────────────────────────────────────────
   try {
-    const res = await fetch(`${API}/users/me`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+    const newToken = await tryRefresh();
+    if (!newToken) return res; // cleared already
 
-    if (res.ok) return token;
-
-    if (res.status === 401) {
-      return tryRefresh();
-    }
-
-    // Any other HTTP error (5xx, etc.) — treat as invalid but don't throw
-    return null;
+    res = await makeReq(newToken);
+    if (res.status === 401) authStorage.clear(); // still failing → hard logout
   } catch {
-    // Network error (backend unreachable, CORS, etc.) — return null gracefully
-    // so AuthGuard redirects to login instead of crashing with TypeError
-    return null;
+    // Transient (429, 5xx, offline) — preserve session, return original 401
+    console.warn('[fetchWithAuth] Transient refresh error, session preserved');
   }
+
+  return res;
 }
