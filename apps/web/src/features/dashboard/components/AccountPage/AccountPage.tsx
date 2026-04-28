@@ -4,7 +4,6 @@ import { authStorage } from '@/lib/fetchWithAuth';
 import { useState, useEffect, useCallback } from 'react';
 
 import { useAuth } from '@/hooks/useAuth';
-import { useTheme } from '@/hooks/useTheme';
 import { Shimmer, ShimmerBlock, ShimmerRow } from '@/components/Shimmer/Shimmer';
 import { AVATARS } from './avatars';
 import styles from './AccountPage.module.scss';
@@ -18,7 +17,6 @@ interface Stats {
 }
 
 export default function AccountPage() {
-  const { dark } = useTheme();
   const { user, logoutWithTransition } = useAuth();
 
 
@@ -115,7 +113,7 @@ export default function AccountPage() {
 
   if (isLoading) {
     return (
-      <main className={`${styles.content}${dark ? ' ' + styles.dark : ''}`}>
+      <main className={`${styles.content}`}>
         <ShimmerBlock>
           {/* Page header */}
           <Shimmer width="22%" height={34} borderRadius={6} delay={1} />
@@ -151,7 +149,7 @@ export default function AccountPage() {
   }
 
   return (
-    <main className={`${styles.content}${dark ? ' ' + styles.dark : ''}`}>
+    <main className={`${styles.content}`}>
       <div className={styles.header}>
         <h1>My Account</h1>
         <p>Manage your profile, API token, and account preferences.</p>

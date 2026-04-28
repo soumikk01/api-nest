@@ -4,7 +4,7 @@ import { authStorage, fetchWithAuth } from '@/lib/fetchWithAuth';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
-import { Moon, Sun, Droplets, Monitor, LogOut, User, ClipboardList, MessageSquare } from 'lucide-react';
+import { Moon, Sun, Droplets, Monitor, User, ClipboardList, MessageSquare } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useTheme } from '@/hooks/useTheme';
 import { AVATARS } from '@/features/dashboard/components/AccountPage/avatars';
@@ -57,7 +57,7 @@ export default function TopNavbar() {
   const isServicesPage = pathname === '/services';
 
   const { user, logoutWithTransition } = useAuth();
-  const { theme, setTheme, dark, isDarkBlue } = useTheme();
+  const { theme, setTheme } = useTheme();
 
   const [activeProject, setActiveProject] = useState<Project | null>(null);
   // Read cached service name synchronously (avoids 'Loading...' flash on navigation)

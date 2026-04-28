@@ -1,12 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
-import { useTheme } from '@/hooks/useTheme';
 import { fetchWithAuth } from '@/lib/fetchWithAuth';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { queryClient } from '@/lib/queryClient';
-import { queryKeys, fetchProject, fetchServices, type Service, type Project } from '@/lib/queries';
+import { queryKeys, fetchProject, fetchServices, type Project } from '@/lib/queries';
 import ProjectSettingsContent from '@/features/dashboard/components/SettingsPage/ProjectSettingsContent';
 import styles from './ServicesPage.module.scss';
 
@@ -79,7 +78,6 @@ export default function ServicesPage() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const { dark } = useTheme();
 
   const projectId = searchParams.get('projectId') ?? '';
   // Track Project Settings panel via URL param so browser Back works
@@ -118,7 +116,7 @@ export default function ServicesPage() {
   });
 
   // ── Services list via React Query (30s stale time) ─────────────────────────
-  const { data: services = [], isLoading: servicesLoading } = useQuery({
+  const { data: services = [] } = useQuery({
     queryKey: queryKeys.services.list(projectId),
     queryFn: () => fetchServices(projectId),
     enabled: !!projectId,
@@ -188,7 +186,7 @@ export default function ServicesPage() {
 
 
   return (
-    <div className={`${styles.page} ${dark ? styles.dark : ''}`}>
+    <div className={styles.page}>
       {/* Ambient background */}
       <div className={styles.ambientOrb1} />
       <div className={styles.ambientOrb2} />

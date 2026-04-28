@@ -7,7 +7,6 @@ import { useSearchParams } from 'next/navigation';
 import { AlertTriangle, X } from 'lucide-react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { queryClient } from '@/lib/queryClient';
-import { useTheme } from '@/hooks/useTheme';
 import { queryKeys, fetchService } from '@/lib/queries';
 import ProjectSidebar from '@/components/ProjectSidebar/ProjectSidebar';
 import ServiceSettingsSidebar from '@/components/ServiceSettingsSidebar/ServiceSettingsSidebar';
@@ -17,7 +16,6 @@ import styles from '../SettingsPage/SettingsPage.module.scss';
 const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000/api/v1';
 
 export default function ServiceSettingsPage() {
-  const { dark } = useTheme();
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -183,7 +181,7 @@ export default function ServiceSettingsPage() {
   // ── Loading skeleton ────────────────────────────────────────────────────────
   if (loadState === 'loading') {
     return (
-      <div className={`${styles.page}${dark ? ' ' + styles.dark : ''}`}>
+      <div className={`${styles.page}`}>
         <div className={styles.ambientOrb1} />
         <div className={styles.ambientOrb2} />
         <div className={styles.gridLines} />

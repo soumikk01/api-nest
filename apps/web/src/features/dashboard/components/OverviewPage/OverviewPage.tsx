@@ -5,7 +5,6 @@ import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
 import { useMonitorSocket, ApiCallEvent } from '@/hooks/useMonitorSocket';
 import { useAuth } from '@/hooks/useAuth';
-import { useTheme } from '@/hooks/useTheme';
 import ProjectSidebar from '@/components/ProjectSidebar/ProjectSidebar';
 import { Shimmer, ShimmerBlock, ShimmerRow } from '@/components/Shimmer/Shimmer';
 import styles from './OverviewPage.module.scss';
@@ -20,7 +19,6 @@ import {
 } from '@/lib/queries';
 
 export default function OverviewPage() {
-  const { dark } = useTheme();
   const { user } = useAuth();
   const searchParams = useSearchParams();
   const paramId = searchParams.get('projectId');
@@ -116,7 +114,7 @@ export default function OverviewPage() {
 
   if (isInitialLoad) {
     return (
-      <div className={`${styles.page}${dark ? ' ' + styles.dark : ''}`}>
+      <div className={`${styles.page}`}>
         <div className={styles.ambientOrb1} />
         <div className={styles.ambientOrb2} />
         <div className={styles.gridLines} />

@@ -1,5 +1,4 @@
 'use client';
-import { useTheme } from '@/hooks/useTheme';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Key, Shield, ClipboardList } from 'lucide-react';
@@ -7,7 +6,6 @@ import styles from './AccountLayout.module.scss';
 import React from 'react';
 
 export default function AccountLayout({ children }: { children: React.ReactNode }) {
-  const { dark } = useTheme();
   const pathname = usePathname();
 
   return (

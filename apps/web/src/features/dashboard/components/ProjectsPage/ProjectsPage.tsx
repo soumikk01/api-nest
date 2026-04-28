@@ -4,7 +4,6 @@ import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/useAuth';
-import { useTheme } from '@/hooks/useTheme';
 import { fetchWithAuth } from '@/lib/fetchWithAuth';
 import { queryClient } from '@/lib/queryClient';
 import { queryKeys, fetchProjects as fetchProjectsList, type Project } from '@/lib/queries';
@@ -88,7 +87,6 @@ const MultiServiceIcon = () => (
 export default function ProjectsPage() {
   const router = useRouter();
   const { isLoading: authLoading } = useAuth();
-  const { dark } = useTheme();
 
   const [iconAnimDone, setIconAnimDone] = useState(false);
   const titleIconRef = useRef<HTMLDivElement>(null);
@@ -229,7 +227,7 @@ export default function ProjectsPage() {
 
 
   return (
-    <div className={`${styles.page}${dark ? ' ' + styles.dark : ''}`}>
+    <div className={`${styles.page}`}>
       <div className={styles.ambientOrb1} />
       <div className={styles.ambientOrb2} />
       <div className={styles.gridLines} />
