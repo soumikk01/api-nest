@@ -12,7 +12,10 @@ export class AuthController {
    * POST /auth/register
    * 3 requests per 5 minutes per IP — prevents account spam
    */
-  @Throttle({ short: { ttl: 300_000, limit: 3 }, medium: { ttl: 300_000, limit: 3 } })
+  @Throttle({
+    short: { ttl: 300_000, limit: 3 },
+    medium: { ttl: 300_000, limit: 3 },
+  })
   @Post('register')
   register(@Body() dto: RegisterDto) {
     return this.authService.register(dto);
@@ -22,7 +25,10 @@ export class AuthController {
    * POST /auth/login
    * 5 requests per 60 seconds per IP — brute-force protection
    */
-  @Throttle({ short: { ttl: 60_000, limit: 5 }, medium: { ttl: 60_000, limit: 5 } })
+  @Throttle({
+    short: { ttl: 60_000, limit: 5 },
+    medium: { ttl: 60_000, limit: 5 },
+  })
   @Post('login')
   @HttpCode(HttpStatus.OK)
   login(@Body() dto: LoginDto) {
@@ -33,7 +39,10 @@ export class AuthController {
    * POST /auth/refresh
    * 30 requests per 60 seconds — generous for silent token renewal across tabs
    */
-  @Throttle({ short: { ttl: 60_000, limit: 30 }, medium: { ttl: 60_000, limit: 30 } })
+  @Throttle({
+    short: { ttl: 60_000, limit: 30 },
+    medium: { ttl: 60_000, limit: 30 },
+  })
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
   refresh(@Body('refreshToken') refreshToken: string) {

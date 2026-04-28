@@ -55,7 +55,7 @@ export default function TopNavbar() {
   const isAccountPage = pathname.startsWith('/projects/account');
   const isAuditPage = pathname === '/projects/account/audit';
   const isServicesPage = pathname === '/services';
-  const isDashboardPage = pathname === '/dashboard';
+
   const { user, logoutWithTransition } = useAuth();
   const { dark, toggleTheme } = useTheme();
 

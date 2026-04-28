@@ -24,9 +24,9 @@ export function useFetch<T>(path: string, options?: RequestInit) {
     error: null,
   });
 
-  // Keep a stable ref to the latest options to avoid re-triggering the effect
+  // Keep a stable ref to the latest options — update after layout to avoid render-phase mutation
   const optionsRef = useRef(options);
-  optionsRef.current = options;
+  useEffect(() => { optionsRef.current = options; });
 
   const url = path.startsWith('http') ? path : `${API}${path}`;
 

@@ -1,5 +1,5 @@
 'use client';
-import { authStorage, fetchWithAuth } from '@/lib/fetchWithAuth';
+import { fetchWithAuth } from '@/lib/fetchWithAuth';
 
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';

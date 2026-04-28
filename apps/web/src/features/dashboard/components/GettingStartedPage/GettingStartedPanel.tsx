@@ -1,5 +1,5 @@
 'use client';
-import { authStorage, fetchWithAuth } from '@/lib/fetchWithAuth';
+import { fetchWithAuth } from '@/lib/fetchWithAuth';
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
@@ -18,7 +18,6 @@ interface Props {
 export default function GettingStartedPanel({ projectId, serviceId, serviceName }: Props) {
   const { user } = useAuth();
   const [sdkToken, setSdkToken] = useState<string>('');
-  const [sdkLoading, setSdkLoading] = useState(true);
   const [copied, setCopied] = useState<string | null>(null);
   const [pm, setPm] = useState<'npm' | 'yarn' | 'pnpm' | 'bun'>('npm');
 
@@ -33,7 +32,6 @@ export default function GettingStartedPanel({ projectId, serviceId, serviceName 
 
   useEffect(() => {
     let cancelled = false;
-    setSdkLoading(true);
     setSdkToken('');
 
     (async () => {
@@ -41,7 +39,7 @@ export default function GettingStartedPanel({ projectId, serviceId, serviceName 
         if (projectId && serviceId) {
           // ── Service-specific token ──────────────────────────────────────
           const cached = localStorage.getItem(`svcToken:${serviceId}`);
-          if (cached) { if (!cancelled) { setSdkToken(cached); setSdkLoading(false); } }
+          if (cached && !cancelled) { setSdkToken(cached); }
 
           const res = await fetchWithAuth(`${API}/projects/${projectId}/services/${serviceId}`);
           if (!res.ok) throw new Error('Failed');
@@ -50,21 +48,10 @@ export default function GettingStartedPanel({ projectId, serviceId, serviceName 
             setSdkToken(svc.sdkToken);
             localStorage.setItem(`svcToken:${serviceId}`, svc.sdkToken);
           }
-        } else {
-          // ── User-level token (fallback / no service context) ────────────
-          const token = authStorage.getAccessToken();
-          if (!token) return;
-          const r = await fetch(`${API}/users/me/command`, {
-            headers: { Authorization: `Bearer ${token}` },
-          });
-          if (!r.ok) throw new Error('Failed');
-          const d = await r.json() as { token?: string };
-          if (!cancelled && d.token) setSdkToken(d.token);
         }
+        // No service context — token stays '' and placeholder is shown in CLI command
       } catch {
         // ignore — placeholder shown in CLI command
-      } finally {
-        if (!cancelled) setSdkLoading(false);
       }
     })();
     return () => { cancelled = true; };

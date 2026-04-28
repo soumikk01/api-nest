@@ -57,7 +57,7 @@ function UpdatesPanelInner() {
               Dashboard Refactor Complete!
             </div>
             <div className={styles.messageText}>
-              We've just pushed a massive update to the core navigation and design system. Enjoy a more streamlined experience, faster token refreshing, and a beautiful new feature panel.
+              We&apos;ve just pushed a massive update to the core navigation and design system. Enjoy a more streamlined experience, faster token refreshing, and a beautiful new feature panel.
             </div>
             <span className={styles.timestamp}>Today at 10:45 AM</span>
           </div>

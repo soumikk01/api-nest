@@ -52,9 +52,9 @@ import { INGEST_QUEUE } from './ingest/ingest.queue';
     // medium — general API       : 100 req / 60s  per IP
     // long   — sensitive actions : 10 req / 60s   per IP (override per route)
     ThrottlerModule.forRoot([
-      { name: 'short',  ttl: 1_000,  limit: 20  },
+      { name: 'short', ttl: 1_000, limit: 20 },
       { name: 'medium', ttl: 60_000, limit: 100 },
-      { name: 'long',   ttl: 60_000, limit: 10  },
+      { name: 'long', ttl: 60_000, limit: 10 },
     ]),
 
     // ── BullMQ — cluster-aware or standalone ─────────────────────────────

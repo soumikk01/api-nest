@@ -13,7 +13,7 @@ interface Props {
 
 export default function ServiceSettingsSidebar({
   projectId,
-  serviceId,
+  serviceId: _serviceId,
   activeSection: propActiveSection,
   onSectionChange,
 }: Props) {

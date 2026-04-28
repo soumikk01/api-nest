@@ -7,7 +7,6 @@ interface AuthUser {
   id: string;
   email: string;
   name?: string;
-  sdkToken: string;
   avatar: number;
 }
 
@@ -113,16 +112,17 @@ export function useAuth() {
         if (user.avatar !== undefined) syncAvatarToStorage(user.avatar);
         const freshToken = authStorage.getAccessToken();
         if (!cancelled) setState({ user, accessToken: freshToken, isAuthenticated: true, isLoading: false });
-      } catch (err: any) {
+      } catch (err: unknown) {
         if (!cancelled) {
-          const is401 = err?.status === 401 || err?.message === '401';
+          const e = err as { status?: number; message?: string };
+          const is401 = e?.status === 401 || e?.message === '401';
           if (is401) {
             // Refresh token also expired/revoked — hard logout
             authStorage.clear();
             setState({ user: null, accessToken: null, isAuthenticated: false, isLoading: false });
           } else {
             // Transient (5xx, 429, offline) — keep user logged in, profile unavailable temporarily
-            console.warn('[useAuth] Transient profile error, keeping session:', err?.message);
+            console.warn('[useAuth] Transient profile error, keeping session:', e?.message);
             setState({ user: null, accessToken: authStorage.getAccessToken(), isAuthenticated: true, isLoading: false });
           }
         }
@@ -200,12 +200,6 @@ export function useAuth() {
     }
   }, [logout]);
 
-  // ── Get CLI command ───────────────────────────────────────────────────────
-  const getCliCommand = useCallback(async () => {
-    const res = await fetchWithAuth(`${API}/users/me/command`);
-    if (!res.ok) throw new Error('Failed to fetch CLI command');
-    return res.json() as Promise<{ command: string; token: string; instructions: string }>;
-  }, []);
 
-  return { ...state, login, register, logout, logoutWithTransition, getCliCommand };
+  return { ...state, login, register, logout, logoutWithTransition };
 }

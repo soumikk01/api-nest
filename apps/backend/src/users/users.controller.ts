@@ -1,7 +1,6 @@
 import {
   Controller,
   Get,
-  Post,
   Patch,
   Body,
   UseGuards,
@@ -24,22 +23,6 @@ export class UsersController {
   @Get('me')
   getMe(@Request() req: AuthRequest) {
     return this.usersService.findById(req.user.userId);
-  }
-
-  /**
-   * GET /users/me/command
-   * Returns the personalised CLI init command the user needs to run once
-   * in their dev project to start intercepting HTTP calls.
-   */
-  @Get('me/command')
-  getCommand(@Request() req: AuthRequest) {
-    return this.usersService.getCliCommand(req.user.userId);
-  }
-
-  /** POST /users/me/regenerate-token — rotate SDK token */
-  @Post('me/regenerate-token')
-  regenerateToken(@Request() req: AuthRequest) {
-    return this.usersService.regenerateSdkToken(req.user.userId);
   }
 
   /** PATCH /users/me/avatar — update user avatar (validated 0–29) */

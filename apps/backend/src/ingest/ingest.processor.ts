@@ -65,7 +65,9 @@ export class IngestProcessor extends WorkerHost {
 
     // ── Write all events in parallel ──────────────────────────────────────
     const records = await Promise.all(
-      events.map((event) => this.persistEvent(event, projectId, serviceId, userId)),
+      events.map((event) =>
+        this.persistEvent(event, projectId, serviceId, userId),
+      ),
     );
 
     this.logger.debug(

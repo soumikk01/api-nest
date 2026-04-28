@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { useTheme } from '@/hooks/useTheme';
-import { authStorage, fetchWithAuth } from '@/lib/fetchWithAuth';
+import { fetchWithAuth } from '@/lib/fetchWithAuth';
 import ProjectSettingsContent from '@/features/dashboard/components/SettingsPage/ProjectSettingsContent';
 import styles from './ServicesPage.module.scss';
 

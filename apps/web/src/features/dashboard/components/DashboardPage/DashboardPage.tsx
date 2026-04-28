@@ -3,7 +3,7 @@ import { fetchWithAuth } from '@/lib/fetchWithAuth';
 
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { useAuth } from '@/hooks/useAuth';
+
 import { useTheme } from '@/hooks/useTheme';
 import ProjectSidebar from '@/components/ProjectSidebar/ProjectSidebar';
 import styles from './DashboardPage.module.scss';
@@ -14,7 +14,6 @@ const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000/api/v1';
 
 export default function DashboardPage() {
   const { dark } = useTheme();
-  const { user } = useAuth();
   const searchParams = useSearchParams();
   const [projectId, setProjectId] = useState('');
   const [projectName, setProjectName] = useState('');

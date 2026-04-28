@@ -63,10 +63,4 @@ export async function getEndpointBreakdown(projectId: string) {
   return res.json() as Promise<{ endpoint: string; count: number; errorRate: number; avgLatency: number }[]>;
 }
 
-// ─── CLI Command ──────────────────────────────────────────────────────────────
 
-export async function getCliCommand() {
-  const res = await fetch(`${API}/users/me/command`, { headers: authHeaders() });
-  if (!res.ok) throw new Error('Failed to fetch CLI command');
-  return res.json() as Promise<{ command: string; token: string; instructions: string }>;
-}

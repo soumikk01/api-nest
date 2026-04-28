@@ -1,7 +1,7 @@
 'use client';
 import { authStorage } from '@/lib/fetchWithAuth';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 import { useAuth } from '@/hooks/useAuth';
 import { useTheme } from '@/hooks/useTheme';
@@ -19,13 +19,10 @@ interface Stats {
 
 export default function AccountPage() {
   const { dark } = useTheme();
-  const { user, logoutWithTransition, getCliCommand } = useAuth();
+  const { user, logoutWithTransition } = useAuth();
 
 
   const [stats, setStats] = useState<Stats>({ totalProjects: 0, totalCalls: 0 });
-  const [cliCommand, setCliCommand] = useState<{ command: string; token: string; instructions: string } | null>(null);
-  const [copied, setCopied] = useState(false);
-  const [regenerating, setRegenerating] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [showAvatarPicker, setShowAvatarPicker] = useState(false);
 
@@ -109,38 +106,12 @@ export default function AccountPage() {
         setStats(s => ({ ...s, totalProjects: projects.length }));
       }
     } catch { /* silent */ }
-    try {
-      const cmd = await getCliCommand();
-      setCliCommand(cmd);
-    } catch { /* silent */ }
     setIsLoading(false);
-  }, [getCliCommand]);
+  }, []);
 
   useEffect(() => { void loadData(); }, [loadData]);
 
   const handleLogout = () => { logoutWithTransition(); };
-
-  const copyToClipboard = async () => {
-    if (cliCommand) {
-      await navigator.clipboard.writeText(cliCommand.command);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    }
-  };
-
-  const handleRegenerate = async () => {
-    setRegenerating(true);
-    const token = authStorage.getAccessToken();
-    try {
-      const res = await fetch(`${API}/users/me/regenerate-token`, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (!res.ok) throw new Error('Failed');
-      await loadData();
-    } catch (err) { console.error(err); }
-    finally { setRegenerating(false); }
-  };
 
   if (isLoading) {
     return (
@@ -246,30 +217,15 @@ export default function AccountPage() {
         </div>
       </div>
 
-      {/* ── SDK TOKEN ── */}
+      {/* ── SDK TOKENS NOTE ── */}
       <div className={styles.panel}>
-        <h3>SDK Token</h3>
-        <p style={{ marginBottom: '1.25rem' }}>
-          Use this token to connect your projects to the API Nest interceptor. Keep it secret.
+        <h3>SDK Tokens</h3>
+        <p style={{ marginBottom: '1rem' }}>
+          SDK tokens are now managed per service. Go to a service&apos;s settings to view, copy, or rotate its token.
         </p>
-        <div className={styles.codeBlock}>
-          <code>{cliCommand ? cliCommand.token : 'Loading token…'}</code>
-          <button className={styles.copyBtn} onClick={() => void copyToClipboard()}>
-            {copied ? '✓ Copied!' : 'Copy'}
-          </button>
-        </div>
-        <div style={{ marginTop: '1rem' }}>
-          <button
-            className={styles.regenerateBtn}
-            onClick={() => void handleRegenerate()}
-            disabled={regenerating}
-          >
-            {regenerating ? 'Regenerating…' : '↻ Regenerate Token'}
-          </button>
-          <p style={{ marginTop: '0.5rem', fontSize: '0.78rem', color: '#ef4444' }}>
-            ⚠ Regenerating will invalidate your current token immediately.
-          </p>
-        </div>
+        <p style={{ fontSize: '0.82rem', color: '#6b7280' }}>
+          Open a project → select a service → <strong>Service Settings → SDK Token</strong>
+        </p>
       </div>
 
       {/* ── DANGER ZONE ── */}

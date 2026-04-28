@@ -13,7 +13,7 @@
  */
 
 import { fetchWithAuth } from '@/lib/fetchWithAuth';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { AlertTriangle, X } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import ProjectSettingsSidebar from '@/components/ProjectSettingsSidebar/ProjectSettingsSidebar';
@@ -68,6 +68,15 @@ export default function ProjectSettingsContent({ projectId, onBack }: Props) {
     return () => window.removeEventListener('hashchange', handleHashChange);
   }, []);
 
+  const fetchMembers = useCallback(async (pid: string) => {
+    try {
+      const res = await fetchWithAuth(`${API}/projects/${pid}/members`);
+      if (res.ok) setMembers(await res.json());
+    } catch { /* ignore */ } finally {
+      setMembersLoaded(true);
+    }
+  }, []);
+
   // ── Load project ────────────────────────────────────────────────────────────
   useEffect(() => {
     if (!projectId) return;
@@ -84,17 +93,7 @@ export default function ProjectSettingsContent({ projectId, onBack }: Props) {
         }
       } catch { /* ignore */ }
     })();
-  }, [projectId]);
-
-
-  const fetchMembers = async (pid: string) => {
-    try {
-      const res = await fetchWithAuth(`${API}/projects/${pid}/members`);
-      if (res.ok) setMembers(await res.json());
-    } catch { /* ignore */ } finally {
-      setMembersLoaded(true);
-    }
-  };
+  }, [projectId, fetchMembers]);
 
   // ── Save general ────────────────────────────────────────────────────────────
   const handleSaveGeneral = async () => {
