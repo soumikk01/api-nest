@@ -3,7 +3,6 @@ import { useState, useCallback, useEffect } from 'react';
 import { authStorage } from '@/lib/fetchWithAuth';
 import { RefreshCw } from 'lucide-react';
 import { format } from 'date-fns';
-import { useTheme } from '@/hooks/useTheme';
 import { Shimmer } from '@/components/Shimmer/Shimmer';
 import styles from './AccountAuditPage.module.scss';
 
@@ -21,7 +20,6 @@ interface AuditLog {
 }
 
 export default function AccountAuditPage() {
-  const { dark } = useTheme();
   const [logs, setLogs] = useState<AuditLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [projectsList, setProjectsList] = useState<{ id: string; name: string }[]>([]);
@@ -76,7 +74,7 @@ export default function AccountAuditPage() {
   const dateRangeStr = `${format(new Date(Date.now() - 86400000), 'dd MMM, HH:mm')} - ${format(new Date(), 'dd MMM, HH:mm')}`;
 
   return (
-    <div className={`${styles.content}${dark ? ' ' + styles.dark : ''}`}>
+    <div className={`${styles.content}`}>
       <div className={styles.header}>
         <h1>Audit Logs</h1>
         <p>View a detailed history of account activities and security events.</p>
@@ -85,7 +83,7 @@ export default function AccountAuditPage() {
       <div className={styles.panel}>
         <div className={styles.filters}>
           <div className={styles.filterGroup}>
-            <span style={{ fontSize: '0.85rem', fontWeight: 600, color: dark ? '#A1A1AA' : '#6B6B6B' }}>Filter by</span>
+            <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-muted)' }}>Filter by</span>
             <select
               className={styles.filterSelect}
               value={selectedProject}

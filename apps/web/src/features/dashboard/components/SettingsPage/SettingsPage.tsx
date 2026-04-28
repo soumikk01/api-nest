@@ -6,7 +6,6 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { AlertTriangle, X } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
-import { useTheme } from '@/hooks/useTheme';
 import ProjectSidebar from '@/components/ProjectSidebar/ProjectSidebar';
 import ProjectSettingsSidebar from '@/components/ProjectSettingsSidebar/ProjectSettingsSidebar';
 import { Shimmer, ShimmerBlock } from '@/components/Shimmer/Shimmer';
@@ -15,7 +14,6 @@ import styles from './SettingsPage.module.scss';
 const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000/api/v1';
 
 export default function SettingsPage() {
-  const { dark } = useTheme();
   const searchParams = useSearchParams();
   const { user } = useAuth();
 
@@ -186,7 +184,7 @@ export default function SettingsPage() {
   // ── Loading skeleton ──
   if (loadState === 'loading') {
     return (
-      <div className={`${styles.page}${dark ? ' ' + styles.dark : ''}`}>
+      <div className={`${styles.page}`}>
         <div className={styles.ambientOrb1} />
         <div className={styles.ambientOrb2} />
       <div className={styles.gridLines} />
@@ -221,7 +219,7 @@ export default function SettingsPage() {
   // ── No project empty state — redirect user to create one ──
   if (loadState === 'empty') {
     return (
-      <div className={`${styles.page}${dark ? ' ' + styles.dark : ''}`}>
+      <div className={`${styles.page}`}>
         <div className={styles.ambientOrb1} />
         <div className={styles.ambientOrb2} />
       <div className={styles.gridLines} />
@@ -250,7 +248,7 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className={`${styles.page}${dark ? ' ' + styles.dark : ''}`}>
+    <div className={`${styles.page}`}>
       <div className={styles.ambientOrb1} />
       <div className={styles.ambientOrb2} />
       <div className={styles.gridLines} />
