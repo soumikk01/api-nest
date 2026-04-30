@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 # ============================================================
-#  APINest Install Script  (Linux / macOS)
+#  Apio Install Script  (Linux / macOS)
 #  Usage:
-#    APINEST_TOKEN=your_token bash -c "$(curl -fsSL https://apinest.io/install.sh)"
+#    APIO_TOKEN=your_token bash -c "$(curl -fsSL https://apio.one/install.sh)"
 #  Or:
-#    curl -fsSL https://apinest.io/install.sh | APINEST_TOKEN=your_token bash
+#    curl -fsSL https://apio.one/install.sh | APIO_TOKEN=your_token bash
 # ============================================================
 
 set -e
@@ -13,23 +13,23 @@ set -e
 RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'
 BLUE='\033[0;34m'; CYAN='\033[0;36m'; BOLD='\033[1m'; RESET='\033[0m'
 
-info()    { echo -e "${CYAN}[apinest]${RESET} $1"; }
-success() { echo -e "${GREEN}[apinest] ✅ $1${RESET}"; }
-warn()    { echo -e "${YELLOW}[apinest] ⚠️  $1${RESET}"; }
-error()   { echo -e "${RED}[apinest] ❌ $1${RESET}"; exit 1; }
+info()    { echo -e "${CYAN}[apio]${RESET} $1"; }
+success() { echo -e "${GREEN}[apio] ✅ $1${RESET}"; }
+warn()    { echo -e "${YELLOW}[apio] ⚠️  $1${RESET}"; }
+error()   { echo -e "${RED}[apio] ❌ $1${RESET}"; exit 1; }
 
-BACKEND_URL="${APINEST_BACKEND_URL:-http://localhost:4000}"
-TOKEN="${APINEST_TOKEN:-}"
+BACKEND_URL="${APIO_BACKEND_URL:-http://localhost:4000}"
+TOKEN="${APIO_TOKEN:-}"
 
 echo ""
 echo -e "${BOLD}${BLUE}╔══════════════════════════════════════╗${RESET}"
-echo -e "${BOLD}${BLUE}║      APINest — API Monitor Setup     ║${RESET}"
+echo -e "${BOLD}${BLUE}║      Apio — API Monitor Setup     ║${RESET}"
 echo -e "${BOLD}${BLUE}╚══════════════════════════════════════╝${RESET}"
 echo ""
 
 # ── Validate token ───────────────────────────────────────────
 if [ -z "$TOKEN" ]; then
-  echo -e "${YELLOW}No APINEST_TOKEN set. Get your token from the dashboard.${RESET}"
+  echo -e "${YELLOW}No APIO_TOKEN set. Get your token from the dashboard.${RESET}"
   read -rp "Enter your SDK token: " TOKEN
   [ -z "$TOKEN" ] && error "Token is required."
 fi
@@ -59,7 +59,7 @@ echo ""
 #  JAVA — Spring Boot
 # ════════════════════════════════════════════════════════════
 install_java() {
-  info "Installing APINest for Java (Spring Boot)..."
+  info "Installing Apio for Java (Spring Boot)..."
 
   # Find src/main/java directory
   JAVA_DIR=$(find . -type d -path "*/src/main/java" | head -1)
@@ -99,10 +99,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
 @Component
 public class ApiMonitorFilter implements Filter {
 
-    @Value("\${APINEST_SDK_TOKEN:}")
+    @Value("\${APIO_SDK_TOKEN:}")
     private String sdkToken;
 
-    @Value("\${APINEST_BACKEND_URL:$BACKEND_URL}")
+    @Value("\${APIO_BACKEND_URL:$BACKEND_URL}")
     private String backendUrl;
 
     private final BlockingQueue<Map<String, Object>> eventQueue = new LinkedBlockingQueue<>(1000);
@@ -131,7 +131,7 @@ public class ApiMonitorFilter implements Filter {
 
     private void startSender() {
         if (!senderStarted.compareAndSet(false, true)) return;
-        if (sdkToken == null || sdkToken.isBlank()) { System.out.println("[api-monitor] APINEST_SDK_TOKEN not set — disabled"); return; }
+        if (sdkToken == null || sdkToken.isBlank()) { System.out.println("[api-monitor] APIO_SDK_TOKEN not set — disabled"); return; }
         String url = backendUrl.stripTrailing() + "/api/v1/ingest";
         System.out.println("[api-monitor] ✅ Sender active → " + url);
         scheduler = Executors.newSingleThreadScheduledExecutor(r -> { Thread t = new Thread(r, "api-monitor-sender"); t.setDaemon(true); return t; });
@@ -171,17 +171,17 @@ JAVA
   # Inject token into application.properties
   PROPS=$(find . -name "application.properties" | head -1)
   if [ -n "$PROPS" ]; then
-    if ! grep -q "APINEST_SDK_TOKEN" "$PROPS"; then
+    if ! grep -q "APIO_SDK_TOKEN" "$PROPS"; then
       echo "" >> "$PROPS"
-      echo "# APINest Monitoring" >> "$PROPS"
-      echo "APINEST_SDK_TOKEN=$TOKEN" >> "$PROPS"
-      echo "APINEST_BACKEND_URL=$BACKEND_URL" >> "$PROPS"
+      echo "# Apio Monitoring" >> "$PROPS"
+      echo "APIO_SDK_TOKEN=$TOKEN" >> "$PROPS"
+      echo "APIO_BACKEND_URL=$BACKEND_URL" >> "$PROPS"
       success "Token added to $PROPS"
     else
-      warn "APINEST_SDK_TOKEN already in $PROPS — update manually if needed"
+      warn "APIO_SDK_TOKEN already in $PROPS — update manually if needed"
     fi
   else
-    warn "No application.properties found. Set manually: APINEST_SDK_TOKEN=$TOKEN"
+    warn "No application.properties found. Set manually: APIO_SDK_TOKEN=$TOKEN"
   fi
 
   success "ApiMonitorFilter.java installed!"
@@ -194,7 +194,7 @@ JAVA
 #  NODE.JS — Express / Fastify / NestJS
 # ════════════════════════════════════════════════════════════
 install_node() {
-  info "Installing APINest for Node.js..."
+  info "Installing Apio for Node.js..."
 
   # Detect package manager
   if [ -f "bun.lockb" ] || [ -f "bun.lock" ]; then
@@ -210,17 +210,17 @@ install_node() {
   info "Package manager: $PM"
 
   # Write the monitor module locally (no external npm package needed)
-  cat > "apinest-monitor.js" << 'JSEOF'
+  cat > "apio-monitor.js" << 'JSEOF'
 /**
- * APINest Monitor — Express/Fastify/NestJS middleware
- * Auto-injected by: curl -fsSL https://apinest.io/install.sh | bash
+ * Apio Monitor — Express/Fastify/NestJS middleware
+ * Auto-injected by: curl -fsSL https://apio.one/install.sh | bash
  */
 const { EventEmitter } = require('events');
 const https = require('https');
 const http = require('http');
 
-const SDK_TOKEN   = process.env.APINEST_SDK_TOKEN || '';
-const BACKEND_URL = (process.env.APINEST_BACKEND_URL || 'http://localhost:4000').replace(/\/$/, '');
+const SDK_TOKEN   = process.env.APIO_SDK_TOKEN || '';
+const BACKEND_URL = (process.env.APIO_BACKEND_URL || 'http://localhost:4000').replace(/\/$/, '');
 const INGEST_URL  = `${BACKEND_URL}/api/v1/ingest`;
 
 let queue = [];
@@ -246,11 +246,11 @@ setInterval(flush, 500);
 if (SDK_TOKEN) {
   console.log(`[api-monitor] ✅ Sender active → ${INGEST_URL}`);
 } else {
-  console.log('[api-monitor] ⚠️  APINEST_SDK_TOKEN not set — monitoring disabled');
+  console.log('[api-monitor] ⚠️  APIO_SDK_TOKEN not set — monitoring disabled');
 }
 
 /** Express / NestJS middleware */
-function apinestMiddleware(req, res, next) {
+function apioMiddleware(req, res, next) {
   const start = Date.now();
   const startedAt = new Date().toISOString();
   const originalEnd = res.end.bind(res);
@@ -261,31 +261,31 @@ function apinestMiddleware(req, res, next) {
   next();
 }
 
-module.exports = { apinestMiddleware };
+module.exports = { apioMiddleware };
 JSEOF
 
   # Inject .env token
   if [ -f ".env" ]; then
-    if ! grep -q "APINEST_SDK_TOKEN" ".env"; then
+    if ! grep -q "APIO_SDK_TOKEN" ".env"; then
       echo "" >> ".env"
-      echo "# APINest Monitoring" >> ".env"
-      echo "APINEST_SDK_TOKEN=$TOKEN" >> ".env"
-      echo "APINEST_BACKEND_URL=$BACKEND_URL" >> ".env"
+      echo "# Apio Monitoring" >> ".env"
+      echo "APIO_SDK_TOKEN=$TOKEN" >> ".env"
+      echo "APIO_BACKEND_URL=$BACKEND_URL" >> ".env"
       success "Token added to .env"
     else
-      warn "APINEST_SDK_TOKEN already in .env"
+      warn "APIO_SDK_TOKEN already in .env"
     fi
   else
-    echo "APINEST_SDK_TOKEN=$TOKEN" > ".env"
-    echo "APINEST_BACKEND_URL=$BACKEND_URL" >> ".env"
+    echo "APIO_SDK_TOKEN=$TOKEN" > ".env"
+    echo "APIO_BACKEND_URL=$BACKEND_URL" >> ".env"
     success ".env created with token"
   fi
 
-  success "apinest-monitor.js installed!"
+  success "apio-monitor.js installed!"
   echo ""
   echo -e "${BOLD}Add 1 line to your app entry file (app.js / index.js / main.ts):${RESET}"
-  echo -e "  ${GREEN}const { apinestMiddleware } = require('./apinest-monitor');${RESET}"
-  echo -e "  ${GREEN}app.use(apinestMiddleware);${RESET}"
+  echo -e "  ${GREEN}const { apioMiddleware } = require('./apinest-monitor');${RESET}"
+  echo -e "  ${GREEN}app.use(apioMiddleware);${RESET}"
   echo ""
   echo -e "${BOLD}Then run your app normally.${RESET}"
 }
@@ -294,13 +294,13 @@ JSEOF
 #  PYTHON — FastAPI / Flask / Django
 # ════════════════════════════════════════════════════════════
 install_python() {
-  info "Installing APINest for Python..."
+  info "Installing Apio for Python..."
 
   # Write monitor.py
-  cat > "apinest_monitor.py" << 'PYEOF'
+  cat > "apio_monitor.py" << 'PYEOF'
 """
-APINest Monitor — ASGI/WSGI middleware
-Auto-injected by: curl -fsSL https://apinest.io/install.sh | bash
+Apio Monitor — ASGI/WSGI middleware
+Auto-injected by: curl -fsSL https://apio.one/install.sh | bash
 
 FastAPI:  app.add_middleware(ApiMonitorMiddleware)
 Flask:    app.wsgi_app = WsgiApiMonitorMiddleware(app.wsgi_app)
@@ -310,8 +310,8 @@ import os, time, json, threading, queue
 from datetime import datetime, timezone
 import urllib.request, urllib.error
 
-SDK_TOKEN   = os.environ.get("APINEST_SDK_TOKEN", "")
-BACKEND_URL = os.environ.get("APINEST_BACKEND_URL", "http://localhost:4000").rstrip("/")
+SDK_TOKEN   = os.environ.get("APIO_SDK_TOKEN", "")
+BACKEND_URL = os.environ.get("APIO_BACKEND_URL", "http://localhost:4000").rstrip("/")
 INGEST_URL  = f"{BACKEND_URL}/api/v1/ingest"
 
 _q: queue.Queue = queue.Queue(maxsize=1000)
@@ -342,7 +342,7 @@ def _start():
         while True: time.sleep(0.5); _flush()
     t = threading.Thread(target=loop, daemon=True, name="apinest-sender"); t.start()
     if SDK_TOKEN: print(f"[api-monitor] ✅ Sender active → {INGEST_URL}")
-    else: print("[api-monitor] ⚠️  APINEST_SDK_TOKEN not set — monitoring disabled")
+    else: print("[api-monitor] ⚠️  APIO_SDK_TOKEN not set — monitoring disabled")
 
 _start()
 
@@ -381,16 +381,16 @@ PYEOF
 
   # Inject .env token
   if [ -f ".env" ]; then
-    if ! grep -q "APINEST_SDK_TOKEN" ".env"; then
-      { echo ""; echo "# APINest Monitoring"; echo "APINEST_SDK_TOKEN=$TOKEN"; echo "APINEST_BACKEND_URL=$BACKEND_URL"; } >> ".env"
+    if ! grep -q "APIO_SDK_TOKEN" ".env"; then
+      { echo ""; echo "# Apio Monitoring"; echo "APIO_SDK_TOKEN=$TOKEN"; echo "APIO_BACKEND_URL=$BACKEND_URL"; } >> ".env"
       success "Token added to .env"
     fi
   else
-    printf "APINEST_SDK_TOKEN=%s\nAPINEST_BACKEND_URL=%s\n" "$TOKEN" "$BACKEND_URL" > ".env"
+    printf "APIO_SDK_TOKEN=%s\nAPIO_BACKEND_URL=%s\n" "$TOKEN" "$BACKEND_URL" > ".env"
     success ".env created with token"
   fi
 
-  success "apinest_monitor.py installed!"
+  success "apio_monitor.py installed!"
   echo ""
   echo -e "${BOLD}Add to your app:${RESET}"
   echo -e "  ${GREEN}# FastAPI:${RESET}"
@@ -409,13 +409,13 @@ case "$LANG" in
   python)  install_python ;;
   *)
     warn "Could not auto-detect language."
-    echo "Please specify: LANG=java|node|python APINEST_TOKEN=$TOKEN bash -c \"\$(curl -fsSL https://apinest.io/install.sh)\""
+    echo "Please specify: LANG=java|node|python APIO_TOKEN=$TOKEN bash -c \"\$(curl -fsSL https://apio.one/install.sh)\""
     exit 1
     ;;
 esac
 
 echo ""
 echo -e "${BOLD}${GREEN}╔══════════════════════════════════════════╗${RESET}"
-echo -e "${BOLD}${GREEN}║  APINest connected! Check your dashboard ║${RESET}"
+echo -e "${BOLD}${GREEN}║  Apio connected! Check your dashboard ║${RESET}"
 echo -e "${BOLD}${GREEN}╚══════════════════════════════════════════╝${RESET}"
 echo ""

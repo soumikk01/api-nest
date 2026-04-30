@@ -155,9 +155,9 @@ export default function GettingStartedPanel({ projectId, serviceId, serviceName 
   const isLocalhost = backBase.includes('localhost') || backBase.includes('127.0.0.1');
   const installBase = isLocalhost ? backBase : backBase.replace('http://', 'https://');
 
-  const cliCmd = `${pmCmds.exec} api-nest-cli@latest init --token ${tok}`;
+  const cliCmd = `${pmCmds.exec} apio-cli@latest init --token ${tok}`;
   // Display version with masked token
-  const cliCmdDisplay = `${pmCmds.exec} api-nest-cli@latest init --token ${displayTok}`;
+  const cliCmdDisplay = `${pmCmds.exec} apio-cli@latest init --token ${displayTok}`;
 
 
   useEffect(() => {
@@ -283,13 +283,13 @@ export default function GettingStartedPanel({ projectId, serviceId, serviceName 
       {/* ══════════════ NODE.JS STEPS ══════════════ */}
       {lang === 'nodejs' && (
         <div className={styles.steps}>
-          <StepCard num={1} title="Install the API Nest CLI in your backend folder">
+          <StepCard num={1} title="Install the Apio CLI in your backend folder">
             <div className={styles.stepDesc}>
               Open a terminal inside your <strong>backend project folder</strong> and run:
             </div>
             <TermBlock
               title="Terminal — install package"
-              cmd={`${pmCmds.install} api-nest-cli`}
+              cmd={`${pmCmds.install} apio-cli`}
               copyKey="node-install"
               copied={copied}
               onCopy={copy}
@@ -320,7 +320,7 @@ export default function GettingStartedPanel({ projectId, serviceId, serviceName 
               'Validates your SDK token',
               'Creates project on dashboard',
               'Patches package.json start script',
-              'Saves .api-nest.json config',
+              'Saves .apio.json config',
             ]} />
           </StepCard>
 
@@ -335,7 +335,7 @@ export default function GettingStartedPanel({ projectId, serviceId, serviceName 
               copied={copied}
               onCopy={copy}
             />
-            <SuccessTip>Look for <strong>[api-nest] Monitoring active</strong> in your terminal output.</SuccessTip>
+            <SuccessTip>Look for <strong>[apio] Monitoring active</strong> in your terminal output.</SuccessTip>
           </StepCard>
 
           <StepCard num={4} title="Watch your APIs stream live! 🎉">
@@ -376,10 +376,10 @@ export default function GettingStartedPanel({ projectId, serviceId, serviceName 
             </div>
             <EnvBlock
               winKey="java-setup-win" unixKey="java-setup-unix"
-              win={`$env:APINEST_SDK_TOKEN="${tok}"\n$env:APINEST_BACKEND_URL="${installBase}"\niwr -useb ${installBase}/install.ps1 | iex`}
-              unix={`export APINEST_SDK_TOKEN="${tok}"\nexport APINEST_BACKEND_URL="${installBase}"\ncurl -fsSL ${installBase}/install.sh | bash`}
-              winDisplay={`$env:APINEST_SDK_TOKEN="${displayTok}"\n$env:APINEST_BACKEND_URL="${installBase}"\niwr -useb ${installBase}/install.ps1 | iex`}
-              unixDisplay={`export APINEST_SDK_TOKEN="${displayTok}"\nexport APINEST_BACKEND_URL="${installBase}"\ncurl -fsSL ${installBase}/install.sh | bash`}
+              win={`$env:APIO_SDK_TOKEN="${tok}"\n$env:APIO_BACKEND_URL="${installBase}"\niwr -useb ${installBase}/install.ps1 | iex`}
+              unix={`export APIO_SDK_TOKEN="${tok}"\nexport APIO_BACKEND_URL="${installBase}"\ncurl -fsSL ${installBase}/install.sh | bash`}
+              winDisplay={`$env:APIO_SDK_TOKEN="${displayTok}"\n$env:APIO_BACKEND_URL="${installBase}"\niwr -useb ${installBase}/install.ps1 | iex`}
+              unixDisplay={`export APIO_SDK_TOKEN="${displayTok}"\nexport APIO_BACKEND_URL="${installBase}"\ncurl -fsSL ${installBase}/install.sh | bash`}
               copied={copied} onCopy={copy}
             />
             <CaptureGrid items={[
@@ -452,10 +452,10 @@ export default function GettingStartedPanel({ projectId, serviceId, serviceName 
             </div>
             <EnvBlock
               winKey="py-env-win" unixKey="py-env-unix"
-              win={`$env:APINEST_SDK_TOKEN="${tok}"\n$env:APINEST_BACKEND_URL="${backBase}"\n$env:PORT="8000"`}
-              unix={`export APINEST_SDK_TOKEN="${tok}"\nexport APINEST_BACKEND_URL="${backBase}"\nexport PORT=8000`}
+              win={`$env:APIO_SDK_TOKEN="${tok}"\n$env:APIO_BACKEND_URL="${backBase}"\n$env:PORT="8000"`}
+              unix={`export APIO_SDK_TOKEN="${tok}"\nexport APIO_BACKEND_URL="${backBase}"\nexport PORT=8000`}
               fileType="python"
-              fileContent={`APINEST_SDK_TOKEN=${tok}\nAPINEST_BACKEND_URL=${backBase}\nPORT=8000`}
+              fileContent={`APIO_SDK_TOKEN=${tok}\nAPIO_BACKEND_URL=${backBase}\nPORT=8000`}
               copied={copied} onCopy={copy}
             />
           </StepCard>
@@ -499,14 +499,14 @@ export default function GettingStartedPanel({ projectId, serviceId, serviceName 
         <div className={styles.steps}>
           <StepCard num={1} title="Set your SDK token as an environment variable">
             <div className={styles.stepDesc}>
-              The Go middleware reads <code style={{ fontFamily: 'monospace', fontSize: '0.85em' }}>APINEST_SDK_TOKEN</code> at startup — zero code changes needed.
+              The Go middleware reads <code style={{ fontFamily: 'monospace', fontSize: '0.85em' }}>APIO_SDK_TOKEN</code> at startup — zero code changes needed.
             </div>
             <EnvBlock
               winKey="go-env-win" unixKey="go-env-unix"
-              win={`$env:APINEST_SDK_TOKEN="${tok}"\n$env:APINEST_BACKEND_URL="${backBase}"\n$env:PORT="8080"`}
-              unix={`export APINEST_SDK_TOKEN="${tok}"\nexport APINEST_BACKEND_URL="${backBase}"\nexport PORT=8080`}
+              win={`$env:APIO_SDK_TOKEN="${tok}"\n$env:APIO_BACKEND_URL="${backBase}"\n$env:PORT="8080"`}
+              unix={`export APIO_SDK_TOKEN="${tok}"\nexport APIO_BACKEND_URL="${backBase}"\nexport PORT=8080`}
               fileType="go"
-              fileContent={`APINEST_SDK_TOKEN=${tok}\nAPINEST_BACKEND_URL=${backBase}\nPORT=8080`}
+              fileContent={`APIO_SDK_TOKEN=${tok}\nAPIO_BACKEND_URL=${backBase}\nPORT=8080`}
               copied={copied} onCopy={copy}
             />
           </StepCard>
@@ -568,11 +568,11 @@ export default function GettingStartedPanel({ projectId, serviceId, serviceName 
             <span className={styles.termDot} style={{ background: '#28c840' }} />
             <span className={styles.termTitle}>docker run</span>
             <button className={`${styles.termCopy} ${copied === 'docker' ? styles.termCopied : ''}`}
-              onClick={() => copy(`docker run \\\n  -e APINEST_BACKEND_URL=http://host.docker.internal:4000 \\\n  -e APINEST_SDK_TOKEN=${tok} \\\n  your-image`, 'docker')}>
+              onClick={() => copy(`docker run \\\n  -e APIO_BACKEND_URL=http://host.docker.internal:4000 \\\n  -e APIO_SDK_TOKEN=${tok} \\\n  your-image`, 'docker')}>
               {copied === 'docker' ? '✓ Copied!' : 'Copy'}
             </button>
           </div>
-          <pre className={styles.termBody}><span className={styles.cmd}>{`docker run \\\n  -e APINEST_BACKEND_URL=http://host.docker.internal:4000 \\\n  -e APINEST_SDK_TOKEN=${tok} \\\n  your-image`}</span></pre>
+          <pre className={styles.termBody}><span className={styles.cmd}>{`docker run \\\n  -e APIO_BACKEND_URL=http://host.docker.internal:4000 \\\n  -e APIO_SDK_TOKEN=${tok} \\\n  your-image`}</span></pre>
         </div>
         <div className={styles.infoPill} style={{ marginTop: '0.75rem' }}>
           💡 Linux users: use <code style={{ fontFamily: 'monospace' }}>172.17.0.1</code> instead of <code style={{ fontFamily: 'monospace' }}>host.docker.internal</code>
@@ -585,13 +585,13 @@ export default function GettingStartedPanel({ projectId, serviceId, serviceName 
         <div className={styles.troubleList}>
           {[
             ['APIs not showing after starting the server?',
-              'Make sure you ran the install AND init commands before starting. Confirm you see [api-nest] Monitoring active in the terminal.'],
+              'Make sure you ran the install AND init commands before starting. Confirm you see [apio] Monitoring active in the terminal.'],
             ['Dashboard shows "Connecting"?',
-              'The WebSocket can\'t reach the API Nest backend. Make sure the backend is running on port 4000 and refresh the page.'],
-            ['"Cannot find module api-nest-cli/register.js"?',
-              'Run npm install api-nest-cli@latest inside your backend folder first, then run the init command again.'],
+              'The WebSocket can\'t reach the Apio backend. Make sure the backend is running on port 4000 and refresh the page.'],
+            ['"Cannot find module apio-cli/register.js"?',
+              'Run npm install apio-cli@latest inside your backend folder first, then run the init command again.'],
             ['Running from a monorepo root?',
-              'Run both commands from inside your backend directory: cd backend, then npm install api-nest-cli, then the init command.'],
+              'Run both commands from inside your backend directory: cd backend, then npm install apio-cli, then the init command.'],
             ['Using TypeScript or ES Modules?',
               'Fully supported. The CLI detects "type": "module" in your package.json and uses --import (ESM) instead of --require (CJS) automatically.'],
           ].map(([q, a]) => (
