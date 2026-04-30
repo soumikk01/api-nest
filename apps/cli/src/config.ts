@@ -7,7 +7,7 @@ export interface CliConfig {
   backendUrl: string;
 }
 
-const CONFIG_FILE = '.api-nest.json';
+const CONFIG_FILE = '.apio.json';
 
 export function saveConfig(config: CliConfig, cwd = process.cwd()) {
   const filePath = path.join(cwd, CONFIG_FILE);
@@ -18,11 +18,11 @@ export function saveConfig(config: CliConfig, cwd = process.cwd()) {
 /**
  * Loads config by walking UP the directory tree from startDir.
  * Env vars are merged on top with highest priority so Docker users
- * don't need to modify .api-nest.json inside the image:
+ * don't need to modify .apio.json inside the image:
  *
- *   APINEST_BACKEND_URL  — e.g. http://host.docker.internal:4000
- *   APINEST_SDK_TOKEN    — overrides token from file
- *   APINEST_PROJECT_ID   — overrides projectId from file
+ *   APIO_BACKEND_URL  — e.g. http://host.docker.internal:4000
+ *   APIO_SDK_TOKEN    — overrides token from file
+ *   APIO_PROJECT_ID   — overrides projectId from file
  */
 export function loadConfig(startDir = process.cwd()): CliConfig | null {
   // Walk up directories to find the config file
@@ -42,9 +42,9 @@ export function loadConfig(startDir = process.cwd()): CliConfig | null {
   }
 
   // Env var overrides (highest priority — critical for Docker / CI)
-  const envBackend = process.env.APINEST_BACKEND_URL;
-  const envToken   = process.env.APINEST_SDK_TOKEN;
-  const envProject = process.env.APINEST_PROJECT_ID;
+  const envBackend = process.env.APIO_BACKEND_URL;
+  const envToken   = process.env.APIO_SDK_TOKEN;
+  const envProject = process.env.APIO_PROJECT_ID;
 
   // If all three are set via env, no file needed (pure env-var mode)
   if (!fileConfig && envToken && envBackend) {

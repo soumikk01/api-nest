@@ -1,36 +1,37 @@
 # ============================================================
-#  APINest Install Script  (Windows PowerShell)
+#  Apio Install Script  (Windows PowerShell)
 #  Usage:
-#    $env:APINEST_TOKEN="your_token"; iwr https://apinest.io/install.ps1 | iex
+#    $env:APIO_TOKEN="your_token"; iwr https://apio.one/install.ps1 | iex
 # ============================================================
 
 param(
-  [string]$Token      = $env:APINEST_TOKEN,
-  [string]$BackendUrl = $env:APINEST_BACKEND_URL
+  [string]$Token      = $env:APIO_TOKEN,
+  [string]$BackendUrl = $env:APIO_BACKEND_URL
 )
 
 if (-not $BackendUrl) { $BackendUrl = "http://localhost:4000" }
 
 $ErrorActionPreference = "Stop"
 
-function Write-Info    { param($m) Write-Host "[apinest] $m" -ForegroundColor Cyan }
-function Write-Success { param($m) Write-Host "[apinest] OK $m" -ForegroundColor Green }
-function Write-Warn    { param($m) Write-Host "[apinest] WARN $m" -ForegroundColor Yellow }
-function Write-Fail    { param($m) Write-Host "[apinest] ERR $m" -ForegroundColor Red; exit 1 }
+function Write-Info    { param($m) Write-Host "[apio] $m" -ForegroundColor Cyan }
+function Write-Success { param($m) Write-Host "[apio] OK $m" -ForegroundColor Green }
+function Write-Warn    { param($m) Write-Host "[apio] WARN $m" -ForegroundColor Yellow }
+function Write-Fail    { param($m) Write-Host "[apio] ERR $m" -ForegroundColor Red; exit 1 }
 
 Write-Host ""
-Write-Host "    ___    ____  ____   _   __           __ " -ForegroundColor Cyan
-Write-Host "   /   |  / __ \/  _/  / | / /__  _____/ /_" -ForegroundColor Cyan
-Write-Host "  / /| | / /_/ // /   /  |/ / _ \/ ___/ __/" -ForegroundColor Cyan
-Write-Host " / ___ |/ ____// /   / /|  /  __(__  ) /_  " -ForegroundColor Cyan
-Write-Host "/_/  |_/_/   /___/  /_/ |_/\___/____/\__/  " -ForegroundColor Cyan
+Write-Host "    _    ____  ___ ___  " -ForegroundColor Cyan
+Write-Host "   /_\  |  _ \|_ _/ _ \ " -ForegroundColor Cyan
+Write-Host "  / _ \ | |_) || || | | |" -ForegroundColor Cyan
+Write-Host " / ___ \|  __/ | || |_| |" -ForegroundColor Cyan
+Write-Host "/_/   \_\_|   |___\___/ " -ForegroundColor Cyan -NoNewline
+Write-Host ".one" -ForegroundColor DarkCyan
 Write-Host ""
-Write-Host "  :: API Nest Monitor ::                          (v1.0.0)" -ForegroundColor DarkCyan
+Write-Host "  Apio V1.0.0" -ForegroundColor DarkCyan
 Write-Host ""
 
 # ── Validate token ────────────────────────────────────────────
 if (-not $Token) {
-  $Token = Read-Host "Enter your APINest SDK token"
+  $Token = Read-Host "Enter your Apio SDK token"
   if (-not $Token) { Write-Fail "Token is required." }
 }
 
@@ -54,7 +55,7 @@ Write-Host ""
 #  JAVA
 # ════════════════════════════════════════════════════════════
 function Install-Java {
-  Write-Info "Installing APINest for Java (Spring Boot)..."
+  Write-Info "Installing Apio for Java (Spring Boot)..."
 
   $JavaDir = Get-ChildItem -Recurse -Directory -Filter "java" | Where-Object { $_.FullName -match "src.main.java" } | Select-Object -First 1
   if (-not $JavaDir) { Write-Fail "Cannot find src/main/java. Run from your project root." }
@@ -91,10 +92,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
 @Component
 public class ApiMonitorFilter implements Filter {
 
-    @Value("`${APINEST_SDK_TOKEN:}")
+    @Value("`${APIO_SDK_TOKEN:}")
     private String sdkToken;
 
-    @Value("`${APINEST_BACKEND_URL:$BackendUrl}")
+    @Value("`${APIO_BACKEND_URL:$BackendUrl}")
     private String backendUrl;
 
     private final BlockingQueue<Map<String, Object>> eventQueue = new LinkedBlockingQueue<>(1000);
@@ -123,7 +124,7 @@ public class ApiMonitorFilter implements Filter {
 
     private void startSender() {
         if (!senderStarted.compareAndSet(false, true)) return;
-        if (sdkToken == null || sdkToken.isBlank()) { System.out.println("[api-monitor] APINEST_SDK_TOKEN not set — disabled"); return; }
+        if (sdkToken == null || sdkToken.isBlank()) { System.out.println("[api-monitor] APIO_SDK_TOKEN not set — disabled"); return; }
         String url = backendUrl.stripTrailing() + "/api/v1/ingest";
         System.out.println("[api-monitor] OK Sender active -> " + url);
         scheduler = Executors.newSingleThreadScheduledExecutor(r -> { Thread t2 = new Thread(r, "api-monitor-sender"); t2.setDaemon(true); return t2; });
@@ -167,11 +168,11 @@ public class ApiMonitorFilter implements Filter {
   $Props = Get-ChildItem -Recurse -Filter "application.properties" | Select-Object -First 1
   if ($Props) {
     $content = Get-Content $Props.FullName -Raw
-    if ($content -notmatch "APINEST_SDK_TOKEN") {
-      Add-Content $Props.FullName "`n# APINest Monitoring`nAPINEST_SDK_TOKEN=$Token`nAPINEST_BACKEND_URL=$BackendUrl"
+    if ($content -notmatch "APIO_SDK_TOKEN") {
+      Add-Content $Props.FullName "`n# Apio Monitoring`nAPIO_SDK_TOKEN=$Token`nAPIO_BACKEND_URL=$BackendUrl"
       Write-Success "Token added to $($Props.FullName)"
     } else {
-      Write-Warn "APINEST_SDK_TOKEN already in $($Props.Name)"
+      Write-Warn "APIO_SDK_TOKEN already in $($Props.Name)"
     }
   }
 
@@ -186,12 +187,12 @@ public class ApiMonitorFilter implements Filter {
 #  NODE.JS
 # ════════════════════════════════════════════════════════════
 function Install-Node {
-  Write-Info "Installing APINest for Node.js..."
+  Write-Info "Installing Apio for Node.js..."
 
   $MonitorContent = @'
 const http = require('http'), https = require('https');
-const SDK_TOKEN = process.env.APINEST_SDK_TOKEN || '';
-const BACKEND_URL = (process.env.APINEST_BACKEND_URL || 'http://localhost:4000').replace(/\/$/, '');
+const SDK_TOKEN = process.env.APIO_SDK_TOKEN || '';
+const BACKEND_URL = (process.env.APIO_BACKEND_URL || 'http://localhost:4000').replace(/\/$/, '');
 const INGEST_URL = `${BACKEND_URL}/api/v1/ingest`;
 let queue = [];
 function enqueue(e) { if (queue.length >= 1000) queue.shift(); queue.push(e); }
@@ -207,8 +208,8 @@ function flush() {
 }
 setInterval(flush, 500);
 if (SDK_TOKEN) console.log(`[api-monitor] OK Sender active -> ${INGEST_URL}`);
-else console.log('[api-monitor] WARN APINEST_SDK_TOKEN not set');
-function apinestMiddleware(req, res, next) {
+else console.log('[api-monitor] WARN APIO_SDK_TOKEN not set');
+function apioMiddleware(req, res, next) {
   const start = Date.now(), startedAt = new Date().toISOString(), origEnd = res.end.bind(res);
   res.end = function(...a) {
     enqueue({ method: req.method, url: `${req.protocol || 'http'}://${req.headers.host}${req.originalUrl || req.url}`, statusCode: res.statusCode, statusText: res.statusCode >= 400 ? 'error' : 'success', latency: Date.now() - start, startedAt, endedAt: new Date().toISOString() });
@@ -216,42 +217,42 @@ function apinestMiddleware(req, res, next) {
   };
   next();
 }
-module.exports = { apinestMiddleware };
+module.exports = { apioMiddleware };
 '@
 
-  Set-Content -Path "apinest-monitor.js" -Value $MonitorContent -Encoding UTF8
+  Set-Content -Path "apio-monitor.js" -Value $MonitorContent -Encoding UTF8
 
   if (Test-Path ".env") {
     $envContent = Get-Content ".env" -Raw
-    if ($envContent -notmatch "APINEST_SDK_TOKEN") {
-      Add-Content ".env" "`n# APINest Monitoring`nAPINEST_SDK_TOKEN=$Token`nAPINEST_BACKEND_URL=$BackendUrl"
+    if ($envContent -notmatch "APIO_SDK_TOKEN") {
+      Add-Content ".env" "`n# Apio Monitoring`nAPIO_SDK_TOKEN=$Token`nAPIO_BACKEND_URL=$BackendUrl"
       Write-Success "Token added to .env"
     }
   } else {
-    Set-Content ".env" "APINEST_SDK_TOKEN=$Token`nAPINEST_BACKEND_URL=$BackendUrl" -Encoding UTF8
+    Set-Content ".env" "APIO_SDK_TOKEN=$Token`nAPIO_BACKEND_URL=$BackendUrl" -Encoding UTF8
     Write-Success ".env created"
   }
 
   Write-Success "Node.js installation complete!"
   Write-Host ""
   Write-Host "Add to your app entry file:" -ForegroundColor White
-  Write-Host "  const { apinestMiddleware } = require('./apinest-monitor');" -ForegroundColor Green
-  Write-Host "  app.use(apinestMiddleware);" -ForegroundColor Green
+  Write-Host "  const { apioMiddleware } = require('./apio-monitor');" -ForegroundColor Green
+  Write-Host "  app.use(apioMiddleware);" -ForegroundColor Green
 }
 
 # ════════════════════════════════════════════════════════════
 #  PYTHON
 # ════════════════════════════════════════════════════════════
 function Install-Python {
-  Write-Info "Installing APINest for Python..."
+  Write-Info "Installing Apio for Python..."
 
   $MonitorContent = @'
 import os, time, json, threading, queue
 from datetime import datetime, timezone
 import urllib.request, urllib.error
 
-SDK_TOKEN = os.environ.get("APINEST_SDK_TOKEN", "")
-BACKEND_URL = os.environ.get("APINEST_BACKEND_URL", "http://localhost:4000").rstrip("/")
+SDK_TOKEN = os.environ.get("APIO_SDK_TOKEN", "")
+BACKEND_URL = os.environ.get("APIO_BACKEND_URL", "http://localhost:4000").rstrip("/")
 INGEST_URL = f"{BACKEND_URL}/api/v1/ingest"
 _q = queue.Queue(maxsize=1000)
 
@@ -279,9 +280,9 @@ def _flush():
 def _start():
     def loop():
         while True: time.sleep(0.5); _flush()
-    threading.Thread(target=loop, daemon=True, name="apinest-sender").start()
+    threading.Thread(target=loop, daemon=True, name="apio-sender").start()
     if SDK_TOKEN: print(f"[api-monitor] OK Sender active -> {INGEST_URL}")
-    else: print("[api-monitor] WARN APINEST_SDK_TOKEN not set")
+    else: print("[api-monitor] WARN APIO_SDK_TOKEN not set")
 
 _start()
 
@@ -318,16 +319,16 @@ class WsgiApiMonitorMiddleware:
         return result
 '@
 
-  Set-Content -Path "apinest_monitor.py" -Value $MonitorContent -Encoding UTF8
+  Set-Content -Path "apio_monitor.py" -Value $MonitorContent -Encoding UTF8
 
   if (Test-Path ".env") {
     $envContent = Get-Content ".env" -Raw
-    if ($envContent -notmatch "APINEST_SDK_TOKEN") {
-      Add-Content ".env" "`n# APINest Monitoring`nAPINEST_SDK_TOKEN=$Token`nAPINEST_BACKEND_URL=$BackendUrl"
+    if ($envContent -notmatch "APIO_SDK_TOKEN") {
+      Add-Content ".env" "`n# Apio Monitoring`nAPIO_SDK_TOKEN=$Token`nAPIO_BACKEND_URL=$BackendUrl"
       Write-Success "Token added to .env"
     }
   } else {
-    Set-Content ".env" "APINEST_SDK_TOKEN=$Token`nAPINEST_BACKEND_URL=$BackendUrl" -Encoding UTF8
+    Set-Content ".env" "APIO_SDK_TOKEN=$Token`nAPIO_BACKEND_URL=$BackendUrl" -Encoding UTF8
     Write-Success ".env created"
   }
 
@@ -335,10 +336,10 @@ class WsgiApiMonitorMiddleware:
   Write-Host ""
   Write-Host "Add to your app:" -ForegroundColor White
   Write-Host "  # FastAPI:" -ForegroundColor Green
-  Write-Host "  from apinest_monitor import ApiMonitorMiddleware" -ForegroundColor Green
+  Write-Host "  from apio_monitor import ApiMonitorMiddleware" -ForegroundColor Green
   Write-Host "  app.add_middleware(ApiMonitorMiddleware)" -ForegroundColor Green
   Write-Host "  # Flask:" -ForegroundColor Green
-  Write-Host "  from apinest_monitor import WsgiApiMonitorMiddleware" -ForegroundColor Green
+  Write-Host "  from apio_monitor import WsgiApiMonitorMiddleware" -ForegroundColor Green
   Write-Host "  app.wsgi_app = WsgiApiMonitorMiddleware(app.wsgi_app)" -ForegroundColor Green
 }
 
@@ -355,6 +356,6 @@ switch ($Lang) {
 
 Write-Host ""
 Write-Host "╔══════════════════════════════════════════╗" -ForegroundColor Green
-Write-Host "║  APINest connected! Check your dashboard ║" -ForegroundColor Green
+Write-Host "║  Apio connected! Check your dashboard ║" -ForegroundColor Green
 Write-Host "╚══════════════════════════════════════════╝" -ForegroundColor Green
 Write-Host ""

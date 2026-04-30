@@ -1,4 +1,4 @@
-# APINest — Install Scripts
+# Apio — Install Scripts
 
 Two scripts. Works for **Java, Node.js, Python** — no Node.js required on the user's machine.
 
@@ -7,13 +7,13 @@ Two scripts. Works for **Java, Node.js, Python** — no Node.js required on the 
 ## Linux / macOS
 
 ```bash
-APINEST_TOKEN=your_token_here bash -c "$(curl -fsSL https://apinest.io/install.sh)"
+APIO_TOKEN=your_token_here bash -c "$(curl -fsSL https://apio.one/install.sh)"
 ```
 
 ## Windows (PowerShell)
 
 ```powershell
-$env:APINEST_TOKEN="your_token_here"; iwr https://apinest.io/install.ps1 | iex
+$env:APIO_TOKEN="your_token_here"; iwr https://apio.one/install.ps1 | iex
 ```
 
 ---
@@ -23,8 +23,8 @@ $env:APINEST_TOKEN="your_token_here"; iwr https://apinest.io/install.ps1 | iex
 | Language | Action |
 |---|---|
 | **Java** (Spring Boot) | Copies `ApiMonitorFilter.java` into your package, adds token to `application.properties` |
-| **Node.js** (Express/NestJS) | Creates `apinest-monitor.js`, adds token to `.env` |
-| **Python** (FastAPI/Flask/Django) | Creates `apinest_monitor.py`, adds token to `.env` |
+| **Node.js** (Express/NestJS) | Creates `apio-monitor.js`, adds token to `.env` |
+| **Python** (FastAPI/Flask/Django) | Creates `apio_monitor.py`, adds token to `.env` |
 
 After running → start your app normally → APIs appear in dashboard.
 
@@ -33,7 +33,7 @@ After running → start your app normally → APIs appear in dashboard.
 ## Force a specific language
 
 ```bash
-LANG=java APINEST_TOKEN=xxx bash -c "$(curl -fsSL https://apinest.io/install.sh)"
+LANG=java APIO_TOKEN=xxx bash -c "$(curl -fsSL https://apio.one/install.sh)"
 ```
 
 ```powershell
