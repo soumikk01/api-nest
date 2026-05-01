@@ -43,15 +43,13 @@ $r-md:        16px;
   to   { opacity: 1; transform: translateY(0) scale(1); }
 }
 @keyframes floatPetal {
-  0%   { transform: translateY(0) rotate(0deg) translateX(0); opacity: 0.7; }
-  25%  { transform: translateY(30px) rotate(40deg) translateX(8px); }
-  50%  { transform: translateY(60px) rotate(80deg) translateX(-6px); opacity: 0.5; }
-  75%  { transform: translateY(90px) rotate(120deg) translateX(10px); }
-  100% { transform: translateY(140px) rotate(160deg) translateX(0); opacity: 0; }
+  0%   { transform: translate(0, 0) rotate(0deg);   opacity: 0.7; }
+  50%  { transform: translate(4px, 70px) rotate(80deg);  opacity: 0.45; }
+  100% { transform: translate(0, 140px) rotate(160deg);  opacity: 0; }
 }
 @keyframes gentleFloat {
   0%,100% { transform: translateY(0px); }
-  50%      { transform: translateY(-10px); }
+  50%      { transform: translateY(-8px); }
 }
 @keyframes shimmer {
   0%   { background-position: 200% center; }
@@ -103,6 +101,7 @@ $r-md:        16px;
   flex-direction: column;
   height: 100vh;
   overflow: hidden;
+  overflow-anchor: none;   /* stop Chrome scroll anchoring */
   color: $text-main;
   font-family: $body;
   background: linear-gradient(160deg, $bg-top 0%, $bg-bot 100%);
@@ -114,6 +113,8 @@ $r-md:        16px;
   flex: 1;
   overflow-y: auto;
   overflow-x: hidden;
+  overflow-anchor: none;   /* stop Chrome scroll anchoring */
+  overscroll-behavior-y: none;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -134,6 +135,8 @@ $r-md:        16px;
   z-index: 2;
   pointer-events: none;
   overflow: hidden;
+  contain: layout style;
+  color: $text-main;        // let child SVGs inherit dark/light color via currentColor
 }
 .branch1 {
   position: absolute; top: -10px; left: -30px; width: 380px; opacity: 1;
@@ -155,13 +158,14 @@ $r-md:        16px;
 .petal6 { width: 13px; top: 10%; left: 42%; animation-duration: 9s;  animation-delay: 3s; }
 .petal7 { width: 15px; top: 15%; left: 8%;  animation-duration: 8s;  animation-delay: 0.8s; }
 
-.sparkle { position: absolute; }
+.sparkle { position: absolute; will-change: transform; }
 .sp1 { width: 20px; top: 28%; left: 8%;  animation: gentleFloat 3.5s ease-in-out infinite; }
 .sp2 { width: 14px; top: 55%; left: 88%; animation: gentleFloat 4s   ease-in-out infinite 0.5s; }
 .sp3 { width: 18px; top: 70%; left: 12%; animation: gentleFloat 5s   ease-in-out infinite 1s; }
-.sp4 { width: 10px; top: 38%; left: 92%; animation: gentleFloat 3s   ease-in-out infinite 0.2s; }
-.sp5 { width: 16px; top: 48%; left: 5%;  animation: gentleFloat 4.5s ease-in-out infinite 1.5s; }
-.sp6 { width: 12px; top: 82%; left: 78%; animation: gentleFloat 3.8s ease-in-out infinite 0.7s; }
+// sp4-sp6: reduced to 3 total sparkles to ease GPU compositor load
+.sp4 { display: none; }
+.sp5 { display: none; }
+.sp6 { display: none; }
 
 .bloom1 { position: absolute; width: 60px; top: 30%; right: 6%;  animation: gentleFloat 5s ease-in-out infinite; }
 .bloom2 { position: absolute; width: 48px; top: 62%; left: 4%;   animation: gentleFloat 6s ease-in-out infinite 1s; }
@@ -236,18 +240,36 @@ $r-md:        16px;
 
 .logoMark {
   font-family: $head;
-  font-size: 1.25rem;
-  font-weight: 900;
-  letter-spacing: 0.03em;
-  background: linear-gradient(135deg, #1A1A1A 0%, #6B6B6B 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  color: transparent; // fallback
-  transition: filter 0.4s, opacity 0.3s;
-  
-  // slightly glowing shadow
-  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
+  font-size: 1.18rem;
+  letter-spacing: -0.03em;
+  display: inline-flex;
+  align-items: center;       // center so SVG & text vertically align
+  gap: 1px;
+  transition: opacity 0.3s;
+  line-height: 1;
+}
+
+.logoApi {
+  font-weight: 300;
+  color: $text-main;
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+
+.logoAiSvg {
+  // Match optical cap-height of 'Api' at font-size 1.18rem
+  width: 1.1em;
+  height: 1.1em;
+  flex-shrink: 0;
+  // No translateY needed — align-items: center handles it
+  transform: none;
+  margin-left: 1px;
+  filter: drop-shadow(0 1px 6px rgba(79, 70, 229, 0.35));
+  transition: filter 0.3s ease;
+
+  &:hover {
+    filter: drop-shadow(0 2px 10px rgba(79, 70, 229, 0.55));
+  }
 }
 
 .navLinks {
@@ -988,7 +1010,7 @@ $dm-border:  rgba(255, 255, 255, 0.08);
     pointer-events: none;
   }
 
-  .springBg { opacity: 0.2; }
+  .springBg { opacity: 0.2; color: $dm-text; }
 
   .nav {
     background: rgba(22, 22, 28, 0.88);
@@ -997,10 +1019,9 @@ $dm-border:  rgba(255, 255, 255, 0.08);
   }
   .navLink { color: $dm-text; &:hover { background: rgba(255,255,255,0.06); } }
   .logoSvg { color: $dm-text; }
-  .logoMark {
-    background: linear-gradient(135deg, #FFFFFF 0%, #A8D8FF 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
+  .logoApi { color: $dm-text; }
+  .logoAiSvg { 
+    color: $dm-text; 
     filter: drop-shadow(0 0px 8px rgba(168, 216, 255, 0.5));
   }
   .navLink::after { background: $dm-text; }

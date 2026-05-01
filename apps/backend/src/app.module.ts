@@ -17,6 +17,7 @@ import { HistoryModule } from './history/history.module';
 import { AnalyticsModule } from './analytics/analytics.module';
 import { AuditModule } from './audit/audit.module';
 import { AppController } from './app.controller';
+import { InstallController } from './app.controller';
 import { ServicesModule } from './services/services.module';
 import { INGEST_QUEUE } from './ingest/ingest.queue';
 
@@ -130,7 +131,7 @@ import { INGEST_QUEUE } from './ingest/ingest.queue';
     // Register queue so AppController's @InjectQueue can resolve it
     BullModule.registerQueue({ name: INGEST_QUEUE }),
   ],
-  controllers: [AppController],
+  controllers: [AppController, InstallController],
   providers: [
     // Apply ThrottlerGuard globally — all routes inherit medium+short limits.
     // Individual routes can override with @Throttle() or opt-out with @SkipThrottle()

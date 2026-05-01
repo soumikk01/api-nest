@@ -81,6 +81,11 @@
   padding: 0;
 }
 
+html {
+  scroll-behavior: auto;        /* no smooth scroll on restore */
+  overflow-anchor: none;        /* disable Chrome scroll anchoring */
+}
+
 body {
   background-color: var(--bg-base, #F5F1E8);
   background-image: linear-gradient(to bottom, var(--bg-base, #F7F3EA), var(--bg-base-2, #F1ECE2));
@@ -89,9 +94,11 @@ body {
   -webkit-font-smoothing: antialiased;
   min-height: 100vh;
   transition: background-color 0.3s ease, color 0.3s ease;
+  overscroll-behavior-y: none;  /* no rubber-band scroll */
+  overflow-anchor: none;
 }
 
-/* Smooth theme transitions */
+/* Smooth theme transitions — only on color/border, NOT transform/opacity/layout */
 *, *::before, *::after {
   transition: background-color 0.25s ease, border-color 0.25s ease, color 0.2s ease,
               box-shadow 0.25s ease;

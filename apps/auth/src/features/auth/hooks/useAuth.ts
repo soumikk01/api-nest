@@ -106,21 +106,20 @@ export function useAuth() {
       refreshToken?: string;
       message?: string;
     };
-    if (!res.ok) throw new Error(data.message ?? 'Registration failed');
+    if (!res.ok) {
+      const s = res.status;
+      if (s === 409) throw new Error('An account with this email already exists.');
+      if (s === 429) throw new Error('Too many attempts. Please wait a moment and try again.');
+      if (s >= 500) throw new Error('Server error. Please try again in a few seconds.');
+      throw new Error(data.message ?? 'Registration failed. Please try again.');
+    }
 
     const accessToken = data.accessToken;
     const refreshToken = data.refreshToken;
     if (!accessToken) throw new Error('Server did not return an access token');
 
-    authStorage.setAccessToken(accessToken);
-    if (refreshToken) authStorage.setRefreshToken(refreshToken);
-
-    const userRes = await fetchWithAuth(`${API}/users/me`);
-    if (!userRes.ok) throw new Error('Failed to load user profile after registration');
-    const user = await userRes.json() as AuthUser;
-
-    setState({ user, accessToken, isAuthenticated: true, isLoading: false });
-    return user;
+    // Return tokens directly — RegisterPage will pass them via ?at=&rt= to the web app
+    return { accessToken, refreshToken: refreshToken ?? '' };
   }, []);
 
   // ── Logout ─────────────────────────────────────────────────────────────

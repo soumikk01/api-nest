@@ -8,6 +8,10 @@ import { SiNodedotjs, SiPython, SiGo } from "react-icons/si";
 import { FaJava } from "react-icons/fa6";
 import styles from './LandingPage.module.scss';
 import { ArchitectureDiagram } from './ArchitectureDiagram';
+import DashboardMockSection from './DashboardMockSection';
+import BentoSection from './BentoSection';
+
+const CanvasBackground = dynamic(() => import('./CanvasBackground'), { ssr: false });
 
 const AUTH_URL = process.env.NEXT_PUBLIC_AUTH_URL ?? 'http://localhost:3001';
 const DOCS_URL = process.env.NEXT_PUBLIC_DOCS_URL ?? 'http://localhost:3002';
@@ -118,29 +122,27 @@ const SpringBackground = () => (
 
     {[styles.sp1,styles.sp2,styles.sp3,styles.sp4,styles.sp5,styles.sp6].map((s,i) => (
       <svg key={i} className={`${styles.sparkle} ${s}`} viewBox="0 0 20 20" fill="none">
-        <path d="M10,1 L11.2,8.8 L19,10 L11.2,11.2 L10,19 L8.8,11.2 L1,10 L8.8,8.8 Z" fill="#1A1A1A" opacity="0.5"/>
+        <path d="M10,1 L11.2,8.8 L19,10 L11.2,11.2 L10,19 L8.8,11.2 L1,10 L8.8,8.8 Z" fill="currentColor" opacity="0.5"/>
       </svg>
     ))}
 
-    {/* Standalone blooms removed */}
-
     <svg className={styles.curly1} viewBox="0 0 70 35" fill="none">
-      <path d="M5,28 C12,6 22,6 28,18 C34,30 44,30 50,18 C56,6 62,8 66,14" stroke="#1A1A1A" strokeWidth="2.5" strokeLinecap="round" fill="none" opacity="0.18"/>
+      <path d="M5,28 C12,6 22,6 28,18 C34,30 44,30 50,18 C56,6 62,8 66,14" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" fill="none" opacity="0.18"/>
     </svg>
     <svg className={styles.curly2} viewBox="0 0 55 28" fill="none">
-      <path d="M3,22 C9,5 17,5 22,13 C27,22 35,22 40,13 C45,4 51,7 53,13" stroke="#7C6050" strokeWidth="2" strokeLinecap="round" fill="none" opacity="0.15"/>
+      <path d="M3,22 C9,5 17,5 22,13 C27,22 35,22 40,13 C45,4 51,7 53,13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" fill="none" opacity="0.15"/>
     </svg>
     <svg className={styles.dots1} viewBox="0 0 60 20" fill="none">
-      <circle cx="5" cy="10" r="2.5" fill="#1A1A1A" opacity="0.22"/>
-      <circle cx="18" cy="10" r="1.8" fill="#1A1A1A" opacity="0.18"/>
-      <circle cx="31" cy="10" r="2.5" fill="#1A1A1A" opacity="0.22"/>
-      <circle cx="44" cy="10" r="1.8" fill="#7C6050" opacity="0.18"/>
+      <circle cx="5" cy="10" r="2.5" fill="currentColor" opacity="0.22"/>
+      <circle cx="18" cy="10" r="1.8" fill="currentColor" opacity="0.18"/>
+      <circle cx="31" cy="10" r="2.5" fill="currentColor" opacity="0.22"/>
+      <circle cx="44" cy="10" r="1.8" fill="currentColor" opacity="0.18"/>
     </svg>
     <svg className={styles.dots2} viewBox="0 0 40 14" fill="none">
-      <circle cx="4" cy="7" r="2" fill="#7C6050" opacity="0.2"/>
-      <circle cx="15" cy="7" r="1.5" fill="#1A1A1A" opacity="0.16"/>
-      <circle cx="26" cy="7" r="2" fill="#1A1A1A" opacity="0.2"/>
-      <circle cx="37" cy="7" r="1.5" fill="#7C6050" opacity="0.16"/>
+      <circle cx="4" cy="7" r="2" fill="currentColor" opacity="0.2"/>
+      <circle cx="15" cy="7" r="1.5" fill="currentColor" opacity="0.16"/>
+      <circle cx="26" cy="7" r="2" fill="currentColor" opacity="0.2"/>
+      <circle cx="37" cy="7" r="1.5" fill="currentColor" opacity="0.16"/>
     </svg>
   </div>
 );
@@ -248,6 +250,21 @@ export default function LandingPage() {
   const magSecondary = useMagnetic(0.25);
   const magToggle    = useMagnetic(0.35);
 
+  // ── Scroll restoration fix ──────────────────────────────────────
+  // The actual scroll container is .pageContent div (overflow-y:auto),
+  // NOT window — so window.scrollTo does nothing. Use a ref instead.
+  const pageContentRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    // Scroll the actual container element to top
+    if (pageContentRef.current) {
+      pageContentRef.current.scrollTop = 0;
+    }
+    // Also disable browser-level scroll restoration as a safety net
+    if ('scrollRestoration' in window.history) {
+      window.history.scrollRestoration = 'manual';
+    }
+  }, []);
+
   // Scroll-reveal sections
   const { ref: badgeRef, visible: badgeVisible } = useInView(0.2);
   const { ref: headlineRef, visible: headlineVisible } = useInView(0.2);
@@ -259,7 +276,7 @@ export default function LandingPage() {
   const { ref: footerRef, visible: footerVisible } = useInView(0.1);
 
   return (
-    <div className={`${styles.layout}${dark ? ' ' + styles.dark : ''}`}>
+    <div className={`${styles.layout}${dark ? ' dark ' + styles.dark : ''}`}>
       {/* ── NAVBAR ── */}
       <header className={styles.navWrap}>
         <div className={styles.logoAbsolute}>
@@ -267,7 +284,21 @@ export default function LandingPage() {
             <polygon points="10,1 19,6 19,14 10,19 1,14 1,6" stroke="currentColor" strokeWidth="1.5" fill="none"/>
             <circle cx="10" cy="10" r="3" fill="currentColor"/>
           </svg>
-          <span className={styles.logoMark}>Apio</span>
+          <span className={styles.logoMark}>
+            <span className={styles.logoApi}>Api</span>
+            <svg viewBox="0 0 100 100" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" className={styles.logoAiSvg}>
+              {/* Outer O ring */}
+              <path d="M 10 53 A 40 40 0 0 1 63 12" />
+              <path d="M 85 30 A 40 40 0 0 1 18 73" />
+              <circle cx="12" cy="64" r="4.5" fill="currentColor" stroke="none" />
+              {/* Inner a */}
+              <path d="M 54 60 A 12 12 0 1 1 30 60 A 12 12 0 1 1 54 60" />
+              <path d="M 54 48 L 54 66 C 54 72, 57 72, 60 72" />
+              {/* Inner i — hexagon dot echoes the main logo mark */}
+              <path d="M 75 35 L 75 72" />
+              <polygon points="75,12 80,15.5 80,22.5 75,26 70,22.5 70,15.5" fill="currentColor" stroke="none" />
+            </svg>
+          </span>
         </div>
         <nav className={`${styles.nav} ${styles.navIn}`}>
           <div className={styles.navLinks}>
@@ -309,8 +340,9 @@ export default function LandingPage() {
         </nav>
       </header>
 
-      <div className={styles.pageContent}>
+      <div className={styles.pageContent} ref={pageContentRef}>
         <div className={styles.noiseOverlay} />
+        <CanvasBackground />
         <SpringBackground />
 
       {/* ── HERO ── */}
@@ -481,6 +513,12 @@ export default function LandingPage() {
         </div>
       </main>
 
+      {/* ── PRODUCT DEMO (Terminal → Dashboard mock) ── */}
+      <DashboardMockSection />
+
+      {/* ── BENTO + FEATURES ── */}
+      <BentoSection />
+
       {/* ── STATS ── */}
       <section
         id="stats"
@@ -500,7 +538,7 @@ export default function LandingPage() {
         ref={footerRef as React.RefObject<HTMLElement>}
         className={`${styles.footer} ${footerVisible ? styles.fadeUp : styles.hidden}`}
       >
-        <span className={styles.footerCopy}>© 2025 API_NEST // CORE_KERNEL_STABLE</span>
+        <span className={styles.footerCopy}>© 2025 Apio · apio.one</span>
         <div className={styles.footerLinks}>
           <a href="#" className={styles.footerLink}>Legal</a>
           <a href="#" className={styles.footerLink}>Docs</a>

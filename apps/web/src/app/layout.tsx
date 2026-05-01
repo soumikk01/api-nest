@@ -49,6 +49,11 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <head>
+        {/* Kill scroll restoration completely before React hydrates */}
+        <script dangerouslySetInnerHTML={{ __html: `
+          if (history.scrollRestoration) history.scrollRestoration = 'manual';
+          window.scrollTo(0, 0);
+        `}} />
         {/* Material Symbols — CDN loaded, next/font doesn't support variable icon fonts */}
         {/* eslint-disable-next-line @next/next/no-page-custom-font */}
         <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
