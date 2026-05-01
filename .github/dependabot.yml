@@ -1,47 +1,94 @@
-# Dependabot — auto dependency update PRs
-# Runs weekly on Mondays for both npm (Next.js app) and GitHub Actions
+# ─────────────────────────────────────────────────────────────────────────────
+#  Dependabot — automatic dependency updates
+#  Opens PRs weekly for: npm (all apps) + GitHub Actions
+# ─────────────────────────────────────────────────────────────────────────────
 
 version: 2
 
 updates:
-  # Frontend (Next.js / Bun)
+  # ── Root workspace deps ──────────────────────────────────────────────────────
   - package-ecosystem: "npm"
-    directory: "/app"
+    directory: "/"
     schedule:
       interval: "weekly"
       day: "monday"
-      time: "09:00"
+      time: "06:00"
       timezone: "Asia/Kolkata"
-    open-pull-requests-limit: 5
-    labels:
-      - "dependencies"
-      - "frontend"
+    labels: ["dependencies", "automated"]
     commit-message:
       prefix: "chore(deps)"
     groups:
-      # Batch all Next.js-related updates into one PR
-      nextjs:
-        patterns:
-          - "next"
-          - "react"
-          - "react-dom"
-          - "@types/react*"
-      # Batch all dev tooling
-      tooling:
-        patterns:
-          - "eslint*"
-          - "typescript"
-          - "sass"
-          - "postcss*"
+      dev-tools:
+        patterns: ["eslint*", "prettier*", "typescript*", "@types/*"]
+      turbo:
+        patterns: ["turbo*"]
 
-  # GitHub Actions
+  # ── Backend deps ─────────────────────────────────────────────────────────────
+  - package-ecosystem: "npm"
+    directory: "/apps/backend"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "Asia/Kolkata"
+    labels: ["dependencies", "backend", "automated"]
+    commit-message:
+      prefix: "chore(deps/backend)"
+    groups:
+      nestjs:
+        patterns: ["@nestjs/*", "nestjs-*"]
+      prisma:
+        patterns: ["prisma", "@prisma/*"]
+
+  # ── Web app deps ─────────────────────────────────────────────────────────────
+  - package-ecosystem: "npm"
+    directory: "/apps/web"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "Asia/Kolkata"
+    labels: ["dependencies", "frontend", "automated"]
+    commit-message:
+      prefix: "chore(deps/web)"
+    groups:
+      react:
+        patterns: ["react", "react-dom", "@types/react*"]
+      next:
+        patterns: ["next", "eslint-config-next"]
+
+  # ── Auth app deps ────────────────────────────────────────────────────────────
+  - package-ecosystem: "npm"
+    directory: "/apps/auth"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "Asia/Kolkata"
+    labels: ["dependencies", "auth", "automated"]
+    commit-message:
+      prefix: "chore(deps/auth)"
+
+  # ── GitHub Actions ───────────────────────────────────────────────────────────
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
       interval: "weekly"
       day: "monday"
-    labels:
-      - "dependencies"
-      - "ci/cd"
+      time: "06:00"
+      timezone: "Asia/Kolkata"
+    labels: ["dependencies", "ci", "automated"]
     commit-message:
-      prefix: "ci(deps)"
+      prefix: "chore(ci)"
+
+  # ── Docker base images ───────────────────────────────────────────────────────
+  - package-ecosystem: "docker"
+    directory: "/apps/backend"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "Asia/Kolkata"
+    labels: ["dependencies", "docker", "automated"]
+    commit-message:
+      prefix: "chore(docker)"

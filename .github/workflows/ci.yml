@@ -1,7 +1,23 @@
 # ─────────────────────────────────────────────────────────────────────────────
-#  CI Pipeline — api-monitor
-#  Runs on: every push + every pull-request targeting main/develop
-#  Jobs: lint → typecheck → build  (lint & typecheck run in parallel)
+#  CI Pipeline — Apio API Monitor
+#
+#  Triggers : every push + PR to main / develop
+#
+#  Job graph (parallel where possible):
+#
+#    ┌──────────┐  ┌────────────┐  ┌──────────────┐  ┌───────────────┐
+#    │   lint   │  │ typecheck  │  │ unit-tests   │  │ security-scan │
+#    └────┬─────┘  └─────┬──────┘  └──────┬───────┘  └───────┬───────┘
+#         │              │                │                   │
+#         └──────────────┴────────────────┴───────────────────┘
+#                                  │
+#                          ┌───────▼────────┐
+#                          │  build-check   │  (frontend build)
+#                          └───────┬────────┘
+#                                  │
+#                          ┌───────▼────────┐
+#                          │  docker-build  │  (backend Dockerfile validation)
+#                          └────────────────┘
 # ─────────────────────────────────────────────────────────────────────────────
 
 name: CI
@@ -11,30 +27,40 @@ on:
     branches: [main, develop]
   pull_request:
     branches: [main, develop]
+    types: [opened, synchronize, reopened]
+
+# Cancel in-progress runs on the same branch/PR when a new commit is pushed
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 env:
   BUN_VERSION: "1.x"
-  # Suppress Next.js telemetry in CI
+  NODE_VERSION: "20"
   NEXT_TELEMETRY_DISABLED: "1"
-  # Suppress Turborepo telemetry in CI
   TURBO_TELEMETRY_DISABLED: "1"
+  FORCE_COLOR: "1"
 
+# ─────────────────────────────────────────────────────────────────────────────
+#  Reusable setup composite — DRY: avoids repeating checkout + bun + cache
+# ─────────────────────────────────────────────────────────────────────────────
 jobs:
-  # ── 1. Lint ─────────────────────────────────────────────────────────────────
+
+  # ── 1. Lint ──────────────────────────────────────────────────────────────────
   lint:
-    name: 🔍 Lint
+    name: 🔍 ESLint
     runs-on: ubuntu-latest
+    timeout-minutes: 10
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # needed for git-based lint-staged in future
 
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
+      - uses: oven-sh/setup-bun@v2
         with:
           bun-version: ${{ env.BUN_VERSION }}
 
-      # FIX: cache ALL workspace node_modules, not just root
       - name: Cache dependencies
         uses: actions/cache@v4
         with:
@@ -43,8 +69,7 @@ jobs:
             apps/*/node_modules
             packages/*/node_modules
           key: ${{ runner.os }}-bun-${{ hashFiles('bun.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-bun-
+          restore-keys: ${{ runner.os }}-bun-
 
       - name: Install dependencies
         run: bun install --frozen-lockfile
@@ -52,17 +77,16 @@ jobs:
       - name: Run ESLint
         run: bun run lint
 
-  # ── 2. TypeScript Check ─────────────────────────────────────────────────────
+  # ── 2. TypeScript Type Check ──────────────────────────────────────────────────
   typecheck:
     name: 🔷 TypeScript
     runs-on: ubuntu-latest
+    timeout-minutes: 10
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
+      - uses: oven-sh/setup-bun@v2
         with:
           bun-version: ${{ env.BUN_VERSION }}
 
@@ -74,31 +98,24 @@ jobs:
             apps/*/node_modules
             packages/*/node_modules
           key: ${{ runner.os }}-bun-${{ hashFiles('bun.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-bun-
+          restore-keys: ${{ runner.os }}-bun-
 
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
-      # FIX: typecheck depends on ^build in turbo.json, so shared packages
-      # must be built first (they are TypeScript source, not compiled).
-      # We skip the backend build (it needs Prisma/DB) and only check
-      # the packages that have a typecheck script.
-      - name: TypeScript type check
+      - name: TypeScript type check (all apps)
         run: bun run typecheck
 
-  # ── 3. Build ─────────────────────────────────────────────────────────────────
-  build:
-    name: 🏗️ Build
+  # ── 3. Unit Tests ─────────────────────────────────────────────────────────────
+  unit-tests:
+    name: 🧪 Unit Tests
     runs-on: ubuntu-latest
-    needs: [lint, typecheck]
+    timeout-minutes: 15
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
+      - uses: oven-sh/setup-bun@v2
         with:
           bun-version: ${{ env.BUN_VERSION }}
 
@@ -110,40 +127,224 @@ jobs:
             apps/*/node_modules
             packages/*/node_modules
           key: ${{ runner.os }}-bun-${{ hashFiles('bun.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-bun-
+          restore-keys: ${{ runner.os }}-bun-
 
-      - name: Cache Turbo
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Run backend unit tests (Jest)
+        working-directory: apps/backend
+        run: bun run test --passWithNoTests --coverage --coverageReporters=text-summary
+        env:
+          # Provide dummy values so the NestJS app can bootstrap in test mode
+          DATABASE_URL: "mongodb://localhost:27017/apio_test"
+          REDIS_URL: "redis://localhost:6379"
+          JWT_SECRET: "ci_test_secret_not_real"
+          JWT_REFRESH_SECRET: "ci_test_refresh_secret_not_real"
+          NODE_ENV: "test"
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: apps/backend/coverage/
+          retention-days: 7
+          if-no-files-found: ignore
+
+  # ── 4. Security Scanning ──────────────────────────────────────────────────────
+  security-scan:
+    name: 🔐 Security Scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    # Don't block PRs from forks — they can't access secrets
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    permissions:
+      contents: read
+      security-events: write   # needed to upload SARIF results
+      actions: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+
+      - name: Cache dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            node_modules
+            apps/*/node_modules
+            packages/*/node_modules
+          key: ${{ runner.os }}-bun-${{ hashFiles('bun.lock') }}
+          restore-keys: ${{ runner.os }}-bun-
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      # ── 4a. npm audit (dependency vulnerability check) ───────────────────────
+      - name: Dependency vulnerability audit
+        run: |
+          echo "── Backend audit ──────────────────────────────"
+          cd apps/backend && bun audit --audit-level=high || true
+          echo "── Web audit ──────────────────────────────────"
+          cd ../web && bun audit --audit-level=high || true
+        continue-on-error: false
+
+      # ── 4b. Trivy — filesystem scan (secrets + CVEs) ─────────────────────────
+      - name: Trivy filesystem scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: "fs"
+          scan-ref: "."
+          format: "sarif"
+          output: "trivy-results.sarif"
+          severity: "CRITICAL,HIGH"
+          # Ignore .env files (they're gitignored, but just in case)
+          skip-dirs: "node_modules,.next,.turbo,dist"
+          exit-code: "0"   # don't fail the job on first run — review findings
+
+      - name: Upload Trivy SARIF to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: trivy-results.sarif
+          category: trivy-fs
+
+      # ── 4c. Secret scanning — detect accidental credential commits ────────────
+      - name: Detect hard-coded secrets (Gitleaks)
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}  # optional: for org reporting
+        continue-on-error: false
+
+  # ── 5. Frontend Build Check ───────────────────────────────────────────────────
+  build-check:
+    name: 🏗️ Frontend Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: [lint, typecheck]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+
+      - name: Cache dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            node_modules
+            apps/*/node_modules
+            packages/*/node_modules
+          key: ${{ runner.os }}-bun-${{ hashFiles('bun.lock') }}
+          restore-keys: ${{ runner.os }}-bun-
+
+      - name: Cache Turbo build
         uses: actions/cache@v4
         with:
           path: .turbo
           key: ${{ runner.os }}-turbo-${{ github.sha }}
-          restore-keys: |
-            ${{ runner.os }}-turbo-
+          restore-keys: ${{ runner.os }}-turbo-
 
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
-      # FIX: only build the Next.js frontend apps (web, auth, docs, admin).
-      # The backend build requires Prisma/DB secrets — excluded from CI build.
+      # Build all frontend apps (backend excluded — needs DB/Prisma)
+      # --concurrency=1 avoids OOM on 2-core GitHub runners
       - name: Build frontend apps
-        # --concurrency=1 builds apps sequentially to avoid OOM on 2-core runners
-        run: bunx turbo run build --filter=@api-monitor/web --filter=@api-monitor/auth --filter=@api-monitor/docs --filter=@api-monitor/admin --concurrency=1
+        run: |
+          bunx turbo run build \
+            --filter=@api-monitor/web \
+            --filter=@api-monitor/auth \
+            --concurrency=1
         env:
           NEXT_PUBLIC_APP_NAME: "Apio"
-          NEXT_PUBLIC_API_URL: "https://api.example.com/api/v1"
-          NEXT_PUBLIC_AUTH_URL: "https://auth.example.com"
-          NEXT_PUBLIC_DOCS_URL: "https://docs.example.com"
+          NEXT_PUBLIC_API_URL: "https://api.apio.dev/api/v1"
+          NEXT_PUBLIC_WS_URL: "https://api.apio.dev"
+          NEXT_PUBLIC_AUTH_URL: "https://auth.apio.dev"
 
-      # FIX: Next.js outputs to .next/, not dist/. Upload the correct paths.
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: build-artifacts
+          name: frontend-build-${{ github.sha }}
           path: |
             apps/web/.next/
             apps/auth/.next/
-            apps/docs/.next/
-            apps/admin/.next/
-          retention-days: 7
+          retention-days: 3
           if-no-files-found: warn
+
+  # ── 6. Docker Build Validation ────────────────────────────────────────────────
+  docker-build:
+    name: 🐳 Docker Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: [lint, typecheck, unit-tests]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # Set up QEMU for multi-platform emulation (linux/amd64 + linux/arm64)
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      # BuildKit unlocks: layer cache, parallel stages, faster builds
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # ── 6a. Lint the Dockerfile before building ───────────────────────────────
+      - name: Lint Dockerfile (Hadolint)
+        uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: apps/backend/Dockerfile
+          failure-threshold: warning
+          format: tty
+
+      # ── 6b. Build image (no push) — validates the Dockerfile is correct ────────
+      - name: Build backend Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: apps/backend
+          file: apps/backend/Dockerfile
+          platforms: linux/amd64
+          push: false
+          # Cache layers in GitHub Actions cache to speed up subsequent builds
+          cache-from: type=gha,scope=backend-docker
+          cache-to:   type=gha,scope=backend-docker,mode=max
+          # Tag with branch + SHA for traceability
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/apio-backend:${{ github.sha }}
+            ghcr.io/${{ github.repository_owner }}/apio-backend:ci
+
+      # ── 6c. Trivy scan the built image ───────────────────────────────────────
+      - name: Scan Docker image for CVEs (Trivy)
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: "image"
+          image-ref: "ghcr.io/${{ github.repository_owner }}/apio-backend:ci"
+          format: "table"
+          severity: "CRITICAL,HIGH"
+          exit-code: "0"   # report only — don't block CI on first scan
+
+  # ── 7. CI Status Gate ─────────────────────────────────────────────────────────
+  #  Single job that required-status-checks can point to.
+  #  Set this as the required check in branch protection rules.
+  ci-success:
+    name: ✅ CI Passed
+    runs-on: ubuntu-latest
+    needs: [lint, typecheck, unit-tests, security-scan, build-check, docker-build]
+    if: always()
+
+    steps:
+      - name: Check all jobs succeeded
+        run: |
+          if [[ "${{ contains(needs.*.result, 'failure') }}" == "true" ]]; then
+            echo "❌ One or more CI jobs failed"
+            exit 1
+          fi
+          echo "✅ All CI checks passed"

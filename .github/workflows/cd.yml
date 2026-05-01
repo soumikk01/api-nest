@@ -1,7 +1,26 @@
 # ─────────────────────────────────────────────────────────────────────────────
-#  CD Pipeline — api-monitor
-#  Runs on: push to main ONLY
-#  Builds all frontend apps and prepares production artifacts.
+#  CD Pipeline — Apio API Monitor
+#
+#  Triggers : push to main (auto) OR manual workflow_dispatch
+#
+#  Job graph:
+#
+#    ┌─────────────────────┐
+#    │  build-and-publish  │  Build Docker image + push to GHCR
+#    └──────────┬──────────┘
+#               │
+#    ┌──────────▼──────────┐
+#    │  deploy-railway     │  Trigger Railway redeploy via webhook
+#    └──────────┬──────────┘
+#               │
+#    ┌──────────▼──────────┐
+#    │  deploy-vercel      │  Trigger Vercel redeploy (web + auth)
+#    └──────────┬──────────┘
+#               │
+#    ┌──────────▼──────────┐
+#    │  smoke-test         │  Hit /health on the live backend
+#    └─────────────────────┘
+#
 # ─────────────────────────────────────────────────────────────────────────────
 
 name: CD
@@ -10,98 +29,177 @@ on:
   push:
     branches: [main]
 
-  # Allow manual trigger from GitHub UI
+  # Manual trigger — useful for re-deploying without a code change
   workflow_dispatch:
 
-# Ensure only one deployment runs at a time
+# Only one production deployment at a time — never cancel in flight
 concurrency:
-  group: production
+  group: production-deploy
   cancel-in-progress: false
 
 env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository_owner }}/apio-backend
   NEXT_TELEMETRY_DISABLED: "1"
   TURBO_TELEMETRY_DISABLED: "1"
 
 jobs:
-  build-and-prepare:
-    name: 🏗️ Build Production Artifact
+  # ── 1. Build + Push Docker image to GHCR ─────────────────────────────────────
+  build-and-publish:
+    name: 🐳 Build & Push Docker Image
     runs-on: ubuntu-latest
+    timeout-minutes: 25
+    permissions:
+      contents: read
+      packages: write   # needed to push to ghcr.io
+
+    outputs:
+      image-tag: ${{ steps.meta.outputs.tags }}
+      image-digest: ${{ steps.build.outputs.digest }}
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
+      - name: Set up QEMU (multi-platform)
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
         with:
-          bun-version: "1.x"
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
-      # FIX: cache ALL workspace node_modules
-      - name: Cache dependencies
-        uses: actions/cache@v4
+      # Generate tags: latest + branch + short SHA
+      - name: Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
         with:
-          path: |
-            node_modules
-            apps/*/node_modules
-            packages/*/node_modules
-          key: ${{ runner.os }}-bun-${{ hashFiles('bun.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-bun-
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=ref,event=branch
+            type=sha,prefix=sha-,format=short
 
-      - name: Cache Turbo
-        uses: actions/cache@v4
+      - name: Build and push backend image
+        id: build
+        uses: docker/build-push-action@v6
         with:
-          path: .turbo
-          key: ${{ runner.os }}-turbo-${{ github.sha }}
-          restore-keys: |
-            ${{ runner.os }}-turbo-
+          context: apps/backend
+          file: apps/backend/Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha,scope=backend-docker
+          cache-to:   type=gha,scope=backend-docker,mode=max
 
-      - name: Install dependencies
-        run: bun install --frozen-lockfile
-
-      # FIX: only build frontend apps — backend needs DB/Prisma secrets
-      - name: Build frontend apps
-        # --concurrency=1 builds apps sequentially to avoid OOM on 2-core runners
-        run: bunx turbo run build --filter=@api-monitor/web --filter=@api-monitor/auth --filter=@api-monitor/docs --filter=@api-monitor/admin --concurrency=1
-        env:
-          NEXT_PUBLIC_APP_NAME: "Apio"
-          NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL }}
-          NEXT_PUBLIC_AUTH_URL: ${{ secrets.NEXT_PUBLIC_AUTH_URL }}
-          NEXT_PUBLIC_DOCS_URL: ${{ secrets.NEXT_PUBLIC_DOCS_URL }}
-
-      # FIX: correct artifact paths (.next/ for Next.js apps)
-      - name: Archive Production Artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: production-build
-          path: |
-            apps/web/.next/
-            apps/auth/.next/
-            apps/docs/.next/
-            apps/admin/.next/
-            apps/*/public/
-            apps/*/package.json
-            package.json
-            bun.lock
-            turbo.json
-          retention-days: 14
-          if-no-files-found: warn
-
-  deploy:
-    name: 🚀 Deploy
-    runs-on: ubuntu-latest
-    needs: [build-and-prepare]
-
-    steps:
-      - name: Download Production Artifacts
-        uses: actions/download-artifact@v8
-        with:
-          name: production-build
-          path: out
-
-      - name: Deployment Placeholder
+      - name: Image digest summary
         run: |
-          echo "✅ Production artifacts successfully built and downloaded."
-          echo "ℹ️  Add your deployment steps here."
-          echo "     e.g. Docker build+push, rsync to VPS, deploy to Railway/Vercel/Fly.io"
-          ls -la out/
+          echo "### 🐳 Docker Image Published" >> $GITHUB_STEP_SUMMARY
+          echo "| Tag | Digest |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| \`latest\` | \`${{ steps.build.outputs.digest }}\` |" >> $GITHUB_STEP_SUMMARY
+
+  # ── 2. Deploy Backend — Railway ───────────────────────────────────────────────
+  deploy-railway:
+    name: 🚂 Deploy Backend (Railway)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: [build-and-publish]
+    # environment: production  # Uncomment after creating this in GitHub → Settings → Environments
+
+    steps:
+      - name: Trigger Railway deployment via webhook
+        run: |
+          curl --fail --silent --show-error \
+            -X POST "${{ secrets.RAILWAY_DEPLOY_WEBHOOK }}" \
+            -H "Content-Type: application/json"
+
+      - name: Wait for Railway to come up
+        run: |
+          echo "Waiting 30s for Railway to restart..."
+          sleep 30
+
+      - name: Verify backend health
+        run: |
+          curl --fail --silent --show-error \
+            --max-time 15 \
+            --retry 6 \
+            --retry-delay 10 \
+            --retry-connrefused \
+            "${{ secrets.RAILWAY_PUBLIC_URL }}/health" | jq .
+
+  # ── 3. Deploy Frontend — Vercel (web + auth) ──────────────────────────────────
+  deploy-vercel:
+    name: ▲ Deploy Frontend (Vercel)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: [build-and-publish]
+
+    steps:
+      # Vercel handles its own builds via Git integration.
+      # This step confirms the deployment completed using the Vercel CLI.
+      - uses: actions/checkout@v4
+
+      - name: Install Vercel CLI
+        run: npm install --global vercel@latest
+
+      - name: Deploy web app to Vercel (production)
+        run: |
+          vercel deploy \
+            --token=${{ secrets.VERCEL_TOKEN }} \
+            --prod \
+            --yes \
+            --cwd=apps/web
+        env:
+          VERCEL_ORG_ID:     ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_WEB_PROJECT_ID }}
+
+      - name: Deploy auth app to Vercel (production)
+        run: |
+          vercel deploy \
+            --token=${{ secrets.VERCEL_TOKEN }} \
+            --prod \
+            --yes \
+            --cwd=apps/auth
+        env:
+          VERCEL_ORG_ID:     ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_AUTH_PROJECT_ID }}
+
+  # ── 4. Smoke Test — verify live endpoints after deploy ────────────────────────
+  smoke-test:
+    name: 🔥 Smoke Test
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    needs: [deploy-railway, deploy-vercel]
+
+    steps:
+      - name: Backend health check
+        run: |
+          echo "Testing: ${{ secrets.RAILWAY_PUBLIC_URL }}/health"
+          curl --fail --silent --show-error \
+            --max-time 10 \
+            "${{ secrets.RAILWAY_PUBLIC_URL }}/health" | jq .
+
+      - name: Frontend availability check
+        run: |
+          HTTP_CODE=$(curl -o /dev/null -s -w "%{http_code}" "${{ secrets.VERCEL_WEB_URL }}")
+          if [ "$HTTP_CODE" != "200" ]; then
+            echo "❌ Frontend returned HTTP $HTTP_CODE"
+            exit 1
+          fi
+          echo "✅ Frontend is up (HTTP $HTTP_CODE)"
+
+      - name: Post deployment summary
+        run: |
+          echo "## 🚀 Deployment Complete" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Service | URL | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|---------|-----|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Backend  | ${{ secrets.RAILWAY_PUBLIC_URL }} | ✅ Live |" >> $GITHUB_STEP_SUMMARY
+          echo "| Web App  | ${{ secrets.VERCEL_WEB_URL }}    | ✅ Live |" >> $GITHUB_STEP_SUMMARY
+          echo "| Commit   | ${{ github.sha }} | deployed |" >> $GITHUB_STEP_SUMMARY
