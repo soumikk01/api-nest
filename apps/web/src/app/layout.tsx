@@ -49,10 +49,12 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <head>
-        {/* Kill scroll restoration completely before React hydrates */}
+        {/* Fix #16: only reset scroll on the landing page ('/')
+             Dashboard pages have their own scroll containers and need to
+             preserve scroll position between navigations. */}
         <script dangerouslySetInnerHTML={{ __html: `
           if (history.scrollRestoration) history.scrollRestoration = 'manual';
-          window.scrollTo(0, 0);
+          if (location.pathname === '/') window.scrollTo(0, 0);
         `}} />
         {/* Material Symbols — CDN loaded, next/font doesn't support variable icon fonts */}
         {/* eslint-disable-next-line @next/next/no-page-custom-font */}

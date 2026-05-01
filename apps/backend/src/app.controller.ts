@@ -5,7 +5,7 @@ import { PrismaService } from './prisma/prisma.service';
 import { CacheService } from './cache/cache.service';
 import { INGEST_QUEUE } from './ingest/ingest.queue';
 import type { Response } from 'express';
-import * as fs from 'fs';
+import { promises as fsPromises, existsSync } from 'fs';
 import * as path from 'path';
 
 /**
@@ -73,28 +73,36 @@ export class InstallController {
       // compiled dist — 4 levels up to monorepo root
       path.join(__dirname, '..', '..', '..', '..', 'scripts', name),
     ];
-    return candidates.find((p) => fs.existsSync(p)) ?? null;
+    return candidates.find((p) => existsSync(p)) ?? null;
   }
 
   @Get('install.ps1')
-  servePs1(@Res() res: Response) {
+  async servePs1(@Res() res: Response) {
     const file = this.findScript('install.ps1');
-    if (!file) return (res as any).status(404).send('install.ps1 not found on server');
-    const content = fs.readFileSync(file, 'utf-8');
-    (res as any)
-      .setHeader('Content-Type', 'text/plain; charset=utf-8')
-      .setHeader('Content-Disposition', 'inline; filename="install.ps1"')
-      .send(content);
+    if (!file) return res.status(404).send('install.ps1 not found on server');
+    try {
+      const content = await fsPromises.readFile(file, 'utf-8');
+      res
+        .setHeader('Content-Type', 'text/plain; charset=utf-8')
+        .setHeader('Content-Disposition', 'inline; filename="install.ps1"')
+        .send(content);
+    } catch {
+      res.status(500).send('Failed to read install script');
+    }
   }
 
   @Get('install.sh')
-  serveSh(@Res() res: Response) {
+  async serveSh(@Res() res: Response) {
     const file = this.findScript('install.sh');
-    if (!file) return (res as any).status(404).send('install.sh not found on server');
-    const content = fs.readFileSync(file, 'utf-8');
-    (res as any)
-      .setHeader('Content-Type', 'text/plain; charset=utf-8')
-      .setHeader('Content-Disposition', 'inline; filename="install.sh"')
-      .send(content);
+    if (!file) return res.status(404).send('install.sh not found on server');
+    try {
+      const content = await fsPromises.readFile(file, 'utf-8');
+      res
+        .setHeader('Content-Type', 'text/plain; charset=utf-8')
+        .setHeader('Content-Disposition', 'inline; filename="install.sh"')
+        .send(content);
+    } catch {
+      res.status(500).send('Failed to read install script');
+    }
   }
 }

@@ -164,7 +164,9 @@ export class ProjectsService {
    * Eliminates repetitive Atlas round-trips on every dashboard refresh.
    */
   async getStats(projectId: string, userId: string) {
-    const cacheKey = `stats:${projectId}`;
+    // Fix #8: cache key scoped by userId so user A's cached stats can't be
+    // returned to user B (who may not have access to this project)
+    const cacheKey = `stats:${projectId}:u${userId}`;
     const cached = await this.cache.get<object>(cacheKey);
     if (cached) return cached;
 
@@ -222,7 +224,8 @@ export class ProjectsService {
    * Seeds the Overview feed on page load before live socket events arrive.
    */
   async getRecentCalls(projectId: string, userId: string, limit = 50) {
-    const cacheKey = `calls:${projectId}:${limit}`;
+    // Fix #8: same userId scoping as getStats
+    const cacheKey = `calls:${projectId}:u${userId}:${limit}`;
     const cached = await this.cache.get<object[]>(cacheKey);
     if (cached) return cached;
 

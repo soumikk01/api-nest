@@ -60,10 +60,6 @@ export class IngestDto {
   @IsNotEmpty()
   sdkToken: string; // Identifies the service (and its project/user) — no projectId needed
 
-  @IsOptional()
-  @IsString()
-  projectId?: string; // Legacy: only needed when using a user-level SDK token
-
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => ApiCallEventDto)

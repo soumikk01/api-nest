@@ -82,19 +82,21 @@ export class AnalyticsService {
   }
 
   /**
-   * GET /analytics/endpoints?projectId=
+   * GET /analytics/endpoints?projectId=&range=24h
    * Returns per-endpoint breakdown sorted by call count.
-   * Cached per project — busted when new calls are ingested.
+   * Fix #10: now accepts an optional range parameter (same values as summary)
+   * to filter by time. Cached per (project + range) bucket.
    */
-  async endpoints(userId: string, projectId: string) {
+  async endpoints(userId: string, projectId: string, range = '24h') {
     await this.assertProjectAccess(projectId, userId);
 
-    const cacheKey = `analytics:endpoints:${projectId}`;
+    const cacheKey = `analytics:endpoints:${projectId}:${range}`;
     const cached = await this.cache.get<object[]>(cacheKey);
     if (cached) return cached;
 
+    const since = this.rangeToDate(range);
     const calls = await this.prisma.apiCall.findMany({
-      where: { projectId },
+      where: { projectId, createdAt: { gte: since } },
       select: {
         method: true,
         path: true,

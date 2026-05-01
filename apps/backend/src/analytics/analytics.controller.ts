@@ -36,16 +36,17 @@ export class AnalyticsController {
   }
 
   /**
-   * GET /analytics/endpoints?projectId=
-   * Cache-Control: private — endpoints list changes less often, cache 60s.
+   * GET /analytics/endpoints?projectId=&range=24h
+   * Cache-Control: private — endpoints list is now range-scoped, cache 60s.
    */
   @Get('endpoints')
   @Header('Cache-Control', 'private, max-age=60, stale-while-revalidate=120')
   endpoints(
     @Request() req: AuthRequest,
     @Query('projectId') projectId: string,
+    @Query('range') range?: string,
   ) {
     if (!projectId) throw new BadRequestException('projectId is required');
-    return this.analyticsService.endpoints(req.user.userId, projectId);
+    return this.analyticsService.endpoints(req.user.userId, projectId, range);
   }
 }

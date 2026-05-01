@@ -51,15 +51,23 @@ export class AuthService {
   }
 
   private signTokens(userId: string, email: string) {
+    // Fix #6: fail hard if secrets are missing — signing with undefined secret
+    // produces tokens that some JWT libs accept without verification.
+    const jwtSecret     = this.config.get<string>('JWT_SECRET');
+    const refreshSecret = this.config.get<string>('JWT_REFRESH_SECRET');
+    if (!jwtSecret || !refreshSecret) {
+      throw new Error('JWT_SECRET and JWT_REFRESH_SECRET must be configured');
+    }
+
     const payload = { sub: userId, email };
 
     const accessToken = this.jwtService.sign(payload, {
-      secret: this.config.get('JWT_SECRET'),
+      secret: jwtSecret,
       expiresIn: this.config.get('JWT_EXPIRY', '15m'),
     });
 
     const refreshToken = this.jwtService.sign(payload, {
-      secret: this.config.get('JWT_REFRESH_SECRET'),
+      secret: refreshSecret,
       expiresIn: this.config.get('JWT_REFRESH_EXPIRY', '7d'),
     });
 

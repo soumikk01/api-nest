@@ -75,20 +75,35 @@ export class HistoryService {
 
   /**
    * Single API call detail — cached for 60s (immutable once written).
+   * Fix #9: ownership check now validates project access (owner OR member),
+   * not apiCall.userId equality — which was the project owner's ID, not the
+   * requesting user's ID, so project members always got 403.
    */
   async findOne(id: string, userId: string) {
     const cacheKey = `history:call:${id}`;
     const cached = await this.cache.get<object>(cacheKey);
     if (cached) {
-      // Still verify ownership against cached data
-      const call = cached as { userId: string };
-      if (call.userId !== userId) throw new ForbiddenException();
+      const call = cached as { projectId: string; userId: string };
+      // Fast path: owner check without DB hit
+      if (call.userId === userId) return cached;
+      // Member check: still need a DB lookup (membership can't be cached safely here)
+      const member = await this.prisma.projectMember.findUnique({
+        where: { projectId_userId: { projectId: call.projectId, userId } },
+      });
+      if (!member) throw new ForbiddenException();
       return cached;
     }
 
     const call = await this.prisma.apiCall.findUnique({ where: { id } });
     if (!call) throw new NotFoundException('API call not found');
-    if (call.userId !== userId) throw new ForbiddenException();
+
+    // Check ownership or project membership
+    if (call.userId !== userId) {
+      const member = await this.prisma.projectMember.findUnique({
+        where: { projectId_userId: { projectId: call.projectId, userId } },
+      });
+      if (!member) throw new ForbiddenException();
+    }
 
     await this.cache.set(cacheKey, call, HISTORY_ITEM_TTL);
     return call;
