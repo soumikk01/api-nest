@@ -44,7 +44,15 @@ export class ServicesService {
   async list(projectId: string, userId: string) {
     await this.verifyAccess(projectId, userId);
 
-    const cacheKey = `services:${projectId}`;
+    // Fix #12: scope cache by ownership so owner's sdkToken result isn’t
+    // served to non-owners (and non-owner’s redacted result isn’t served to owner)
+    const project = await this.prisma.project.findUnique({
+      where: { id: projectId },
+      select: { userId: true },
+    });
+    const isOwner = project?.userId === userId;
+    const cacheKey = `services:${projectId}:${isOwner ? 'owner' : 'member'}`;
+
     const cached = await this.cache.get<object[]>(cacheKey);
     if (cached) return cached;
 
@@ -53,11 +61,7 @@ export class ServicesService {
       orderBy: [{ isDefault: 'desc' }, { createdAt: 'asc' }],
       include: { _count: { select: { apiCalls: true } } },
     });
-    // Only the project owner sees the sdkToken
-    const project = await this.prisma.project.findUnique({
-      where: { id: projectId },
-    });
-    const isOwner = project?.userId === userId;
+
     const result = services.map((s) =>
       isOwner ? s : { ...s, sdkToken: undefined },
     );
@@ -101,8 +105,11 @@ export class ServicesService {
         sdkToken: `sdk_${randomBytes(24).toString('hex')}`,
       },
     });
-    // Bust list cache so next fetch reflects the new service
-    await this.cache.del(`services:${projectId}`);
+    // Bust both role-scoped list caches so next fetch reflects the new service
+    await this.cache.del(
+      `services:${projectId}:owner`,
+      `services:${projectId}:member`,
+    );
     return newService;
   }
 
@@ -138,7 +145,10 @@ export class ServicesService {
     const deleted = await this.prisma.service.delete({
       where: { id: serviceId },
     });
-    await this.cache.del(`services:${projectId}`);
+    await this.cache.del(
+      `services:${projectId}:owner`,
+      `services:${projectId}:member`,
+    );
     return deleted;
   }
 

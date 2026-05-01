@@ -13,6 +13,7 @@ import { Server, Socket } from 'socket.io';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { EventsService } from './events.service';
+import { PrismaService } from '../prisma/prisma.service';
 
 interface JoinProjectPayload {
   projectId: string;
@@ -40,6 +41,7 @@ export class EventsGateway
     private eventsService: EventsService,
     private jwtService: JwtService,
     private config: ConfigService,
+    private prisma: PrismaService,
   ) {}
 
   private readonly logger = new Logger(EventsGateway.name);
@@ -82,10 +84,28 @@ export class EventsGateway
     @MessageBody() payload: JoinProjectPayload,
   ) {
     try {
+      // 1. Verify JWT is valid
       const raw = payload.token?.replace('Bearer ', '');
-      this.jwtService.verify(raw, {
+      const decoded = this.jwtService.verify(raw, {
         secret: this.config.get('JWT_SECRET'),
+      }) as { sub: string };
+      const userId = decoded.sub;
+
+      // 2. Fix #5 — verify the user owns or is a member of the project
+      //    (prevents any logged-in user from listening to arbitrary projects)
+      const project = await this.prisma.project.findFirst({
+        where: {
+          id: payload.projectId,
+          OR: [{ userId }, { members: { some: { userId } } }],
+        },
+        select: { id: true },
       });
+      if (!project) {
+        client.emit('error', { message: 'Forbidden' });
+        client.disconnect();
+        return;
+      }
+
       await client.join(`project:${payload.projectId}`);
       client.emit('joined', { projectId: payload.projectId });
     } catch {

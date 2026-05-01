@@ -59,7 +59,7 @@ function UpdatesPanelInner() {
             <div className={styles.messageText}>
               We&apos;ve just pushed a massive update to the core navigation and design system. Enjoy a more streamlined experience, faster token refreshing, and a beautiful new feature panel.
             </div>
-            <span className={styles.timestamp}>Today at 10:45 AM</span>
+            <span className={styles.timestamp}>May 1, 2026 · 10:45 AM</span>
           </div>
 
           <div className={`${styles.message} ${styles.messageSystem}`}>
@@ -70,7 +70,7 @@ function UpdatesPanelInner() {
             <div className={styles.messageText}>
               You will no longer be logged out when refreshing your browser. We have migrated our auth engine to use industry-standard LocalStorage refresh token rotation (matching Supabase and Auth0 flows).
             </div>
-            <span className={styles.timestamp}>Yesterday at 4:20 PM</span>
+            <span className={styles.timestamp}>Apr 30, 2026 · 4:20 PM</span>
           </div>
 
           <div className={`${styles.message} ${styles.messageSystem}`}>
@@ -81,7 +81,7 @@ function UpdatesPanelInner() {
             <div className={styles.messageText}>
               The backend API is now heavily fortified against spam requests and brute-force attacks. Stay secure while scaling to 10k+ concurrent connections!
             </div>
-            <span className={styles.timestamp}>Apr 24 at 1:15 PM</span>
+            <span className={styles.timestamp}>Apr 24, 2026 · 1:15 PM</span>
           </div>
 
         </div>

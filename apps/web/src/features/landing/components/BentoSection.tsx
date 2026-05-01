@@ -1,6 +1,5 @@
 'use client';
-import { useRef } from 'react';
-import { motion, useInView } from 'framer-motion';
+import { motion } from 'framer-motion';
 import styles from './BentoSection.module.scss';
 
 const fadeUp = (delay = 0) => ({
@@ -22,13 +21,14 @@ const IlluUptime = () => (
     ))}
     {/* Uptime line */}
     <defs>
-      <linearGradient id="uptimeGrad" x1="0" y1="0" x2="0" y2="1">
+      {/* Namespaced ID — prevents collision with other SVGs on the same page */}
+      <linearGradient id="bento-uptime-grad" x1="0" y1="0" x2="0" y2="1">
         <stop offset="0%" stopColor="#22c55e" stopOpacity="0.35"/>
         <stop offset="100%" stopColor="#22c55e" stopOpacity="0"/>
       </linearGradient>
     </defs>
     <path d="M0,80 L30,78 L60,76 L90,78 L100,60 L110,10 L120,62 L150,72 L180,70 L200,68" fill="none" stroke="#22c55e" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
-    <path d="M0,80 L30,78 L60,76 L90,78 L100,60 L110,10 L120,62 L150,72 L180,70 L200,68 L200,120 L0,120Z" fill="url(#uptimeGrad)"/>
+    <path d="M0,80 L30,78 L60,76 L90,78 L100,60 L110,10 L120,62 L150,72 L180,70 L200,68 L200,120 L0,120Z" fill="url(#bento-uptime-grad)"/>
     {/* Spike label */}
     <circle cx="110" cy="10" r="4" fill="#22c55e"/>
     <rect x="118" y="2" width="50" height="16" rx="6" fill="#22c55e"/>
@@ -42,14 +42,14 @@ const IlluUptime = () => (
 const IlluLatency = () => (
   <svg viewBox="0 0 160 100" fill="none" className={styles.illus}>
     <defs>
-      <linearGradient id="latGrad" x1="0" y1="0" x2="1" y2="0">
+      <linearGradient id="bento-lat-grad" x1="0" y1="0" x2="1" y2="0">
         <stop offset="0%" stopColor="#a78bfa"/>
         <stop offset="100%" stopColor="#60a5fa"/>
       </linearGradient>
     </defs>
     {/* Gauge arc */}
     <path d="M20,80 A60,60 0 0 1 140,80" stroke="rgba(167,139,250,0.15)" strokeWidth="10" strokeLinecap="round" fill="none"/>
-    <path d="M20,80 A60,60 0 0 1 95,26" stroke="url(#latGrad)" strokeWidth="10" strokeLinecap="round" fill="none"/>
+    <path d="M20,80 A60,60 0 0 1 95,26" stroke="url(#bento-lat-grad)" strokeWidth="10" strokeLinecap="round" fill="none"/>
     {/* Needle */}
     <line x1="80" y1="80" x2="95" y2="30" stroke="#1a1a1a" strokeWidth="2.5" strokeLinecap="round"/>
     <circle cx="80" cy="80" r="6" fill="#1a1a1a"/>
@@ -64,12 +64,12 @@ const IlluLatency = () => (
 const IlluShield = () => (
   <svg viewBox="0 0 100 110" fill="none" className={styles.illus}>
     <defs>
-      <linearGradient id="shieldGrad" x1="0" y1="0" x2="0" y2="1">
+      <linearGradient id="bento-shield-grad" x1="0" y1="0" x2="0" y2="1">
         <stop offset="0%" stopColor="#fef9c3"/>
         <stop offset="100%" stopColor="#fde68a"/>
       </linearGradient>
     </defs>
-    <path d="M50,8 L85,22 L85,55 Q85,80 50,98 Q15,80 15,55 L15,22 Z" fill="url(#shieldGrad)" stroke="#1a1a1a" strokeWidth="2"/>
+    <path d="M50,8 L85,22 L85,55 Q85,80 50,98 Q15,80 15,55 L15,22 Z" fill="url(#bento-shield-grad)" stroke="#1a1a1a" strokeWidth="2"/>
     {/* Check */}
     <path d="M34,52 L44,62 L67,39" stroke="#1a1a1a" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"/>
     {/* Lock icon inside */}
@@ -158,11 +158,8 @@ const FEATURES = [
 
 /* ── Main export ─────────────────────────────────────────────── */
 export default function BentoSection() {
-  const sectionRef = useRef<HTMLElement>(null);
-  const inView = useInView(sectionRef, { once: true, margin: '-80px' });
-
   return (
-    <section ref={sectionRef} className={styles.section}>
+    <section className={styles.section}>
 
       {/* ── Section header ── */}
       <motion.div className={styles.sectionHead} {...fadeUp(0)}>

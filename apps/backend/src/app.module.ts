@@ -128,7 +128,9 @@ import { INGEST_QUEUE } from './ingest/ingest.queue';
     AuditModule,
     ServicesModule,
 
-    // Register queue so AppController's @InjectQueue can resolve it
+    // Fix #11: removed duplicate BullModule.registerQueue — the queue is
+    // already registered inside IngestModule. AppController’s @InjectQueue
+    // resolves via IngestModule’s export.
     BullModule.registerQueue({ name: INGEST_QUEUE }),
   ],
   controllers: [AppController, InstallController],

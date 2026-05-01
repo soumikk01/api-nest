@@ -63,13 +63,27 @@ export class IngestProcessor extends WorkerHost {
 
     const { projectId, serviceId, userId, events } = job.data;
 
-    // ── Write all events in parallel ──────────────────────────────────────
-    const records = await Promise.all(
+    // ── Write events — use allSettled so one bad event doesn't abort the ────
+    // ── entire batch and trigger duplicate retries for events that succeeded ──
+    const settled = await Promise.allSettled(
       events.map((event) =>
         this.persistEvent(event, projectId, serviceId, userId),
       ),
     );
 
+    const records = settled
+      .filter(
+        (r): r is PromiseFulfilledResult<Awaited<ReturnType<typeof this.persistEvent>>> =>
+          r.status === 'fulfilled',
+      )
+      .map((r) => r.value);
+
+    const failedCount = settled.length - records.length;
+    if (failedCount > 0) {
+      this.logger.warn(
+        `[${projectId}] ${failedCount}/${settled.length} event(s) failed to persist — skipped (job ${job.id})`,
+      );
+    }
     this.logger.debug(
       `[${projectId}] persisted ${records.length} event(s) (job ${job.id})`,
     );
@@ -136,23 +150,19 @@ export class IngestProcessor extends WorkerHost {
     const timer = setTimeout(() => {
       this.statsDebounce.delete(key);
       void this.broadcastStats(projectId);
-      // Bust all data caches for this project + service
-      const bustedKeys = [
-        `stats:${projectId}`,
-        `calls:${projectId}:50`,
-        `analytics:endpoints:${projectId}`,
+      // Bust per-range analytics caches (now range-scoped)
+      void this.cache.del(
         `analytics:summary:${projectId}:1h`,
         `analytics:summary:${projectId}:24h`,
         `analytics:summary:${projectId}:7d`,
         `analytics:summary:${projectId}:30d`,
-      ];
-      if (serviceId) {
-        bustedKeys.push(
-          `stats:${projectId}:${serviceId}`,
-          `calls:${projectId}:${serviceId}:50`,
-        );
-      }
-      void this.cache.del(...bustedKeys);
+      );
+      // Bust stats and calls caches — now userId-scoped so use pattern delete
+      void this.cache.delByPattern(`stats:${projectId}:*`);
+      void this.cache.delByPattern(`calls:${projectId}:*`);
+      // Bust analytics endpoints — now range-scoped
+      void this.cache.delByPattern(`analytics:endpoints:${projectId}:*`);
+      // Bust paginated history
       void this.cache.delByPattern(`history:${projectId}:*`);
     }, STATS_DEBOUNCE_MS);
 
