@@ -53,16 +53,16 @@ export default function RegisterPage() {
     }
     setIsSubmitting(true);
     try {
-      await register(email, password, name);
-      const at = sessionStorage.getItem('access_token');
-      const rt = sessionStorage.getItem('refresh_token');
+      // register() returns { accessToken, refreshToken } directly (same as login)
+      const { accessToken: at, refreshToken: rt } = await register(email, password, name);
 
       const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000';
       const redirectUrl = new URL('/projects', baseUrl);
-      if (at) redirectUrl.searchParams.set('access_token', at);
-      if (rt) redirectUrl.searchParams.set('refresh_token', rt);
+      // Web app's useAuth reads ?at= and ?rt= — must match exactly
+      // rt is always a string from useAuth (refreshToken ?? ''), empty string = falsy = safely skipped
+      redirectUrl.searchParams.set('at', at);
+      if (rt) redirectUrl.searchParams.set('rt', rt);
 
-      sessionStorage.clear();
       window.location.href = redirectUrl.toString();
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Something went wrong. Please try again.';

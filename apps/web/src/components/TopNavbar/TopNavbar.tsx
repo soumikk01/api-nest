@@ -211,7 +211,21 @@ export default function TopNavbar() {
               <circle cx="10" cy="10" r="3" fill="currentColor"/>
             </svg>
           </span>
-          <span className={styles.brandText}>APIO</span>
+          <span className={styles.brandText}>
+            <span className={styles.brandApi}>Api</span>
+            <svg viewBox="0 0 100 100" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" className={styles.brandAiSvg}>
+              {/* Outer O ring */}
+              <path d="M 10 53 A 40 40 0 0 1 63 12" />
+              <path d="M 85 30 A 40 40 0 0 1 18 73" />
+              <circle cx="12" cy="64" r="4.5" fill="currentColor" stroke="none" />
+              {/* Inner a */}
+              <path d="M 54 60 A 12 12 0 1 1 30 60 A 12 12 0 1 1 54 60" />
+              <path d="M 54 48 L 54 66 C 54 72, 57 72, 60 72" />
+              {/* Inner i — hexagon dot echoes the main logo mark */}
+              <path d="M 75 35 L 75 72" />
+              <polygon points="75,12 80,15.5 80,22.5 75,26 70,22.5 70,15.5" fill="currentColor" stroke="none" />
+            </svg>
+          </span>
         </Link>
 
         {!isProjectsPage && !isAccountPage && (

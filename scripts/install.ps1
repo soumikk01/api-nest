@@ -1,11 +1,11 @@
 # ============================================================
 #  Apio Install Script  (Windows PowerShell)
 #  Usage:
-#    $env:APIO_TOKEN="your_token"; iwr https://apio.one/install.ps1 | iex
+#    $env:APIO_SDK_TOKEN="your_token"; iwr https://apio.one/install.ps1 | iex
 # ============================================================
 
 param(
-  [string]$Token      = $env:APIO_TOKEN,
+  [string]$Token      = $(if ($env:APIO_SDK_TOKEN) { $env:APIO_SDK_TOKEN } elseif ($env:APIO_TOKEN) { $env:APIO_TOKEN } else { "" }),
   [string]$BackendUrl = $env:APIO_BACKEND_URL
 )
 

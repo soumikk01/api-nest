@@ -97,14 +97,17 @@ public class ApiMonitorFilter implements Filter {
         }
 
         String ingestUrl = backendUrl.stripTrailing() + "/api/v1/ingest";
-        System.out.println("\n" +
-            "    ___    ____  ____   _   __           __ \n" +
-            "   /   |  / __ \\/  _/  / | / /__  _____/ /_\n" +
-            "  / /| | / /_/ // /   /  |/ / _ \\/ ___/ __/\n" +
-            " / ___ |/ ____// /   / /|  /  __(__  ) /_  \n" +
-            "/_/  |_/_/   /___/  /_/ |_/\\___/____/\\__/  \n" +
-            "\n  :: API Nest Monitor ::                          (v1.0.0)\n"
-        );
+        System.out.print("""
+
+                ___    ____  ____   _   __           __\s
+               /   |  / __ \\/  _/  / | / /__  _____/ /_
+              / /| | / /_/ // /   /  |/ / _ \\/ ___/ __/
+             / ___ |/ ____// /   / /|  /  __(__  ) /_  \s
+            /_/  |_/_/   /___/  /_/ |_/\\___/____/\\__/  \s
+
+              :: API Nest Monitor ::                          (v1.0.0)
+
+            """);
         System.out.printf("[api-monitor] ✅ Sender active → %s%n", ingestUrl);
 
         scheduler = Executors.newSingleThreadScheduledExecutor(r -> {
