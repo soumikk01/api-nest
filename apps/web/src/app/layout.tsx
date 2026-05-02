@@ -136,7 +136,7 @@ export default function RootLayout({
         {/* Favicon — SVG scales perfectly at any resolution */}
         <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
         <link rel="icon" href="/favicon.svg" sizes="any" />
-        {/* JSON-LD Structured Data — Google rich results */}
+        {/* JSON-LD Structured Data — Google + AI rich results */}
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
@@ -144,21 +144,37 @@ export default function RootLayout({
               '@context': 'https://schema.org',
               '@type': 'SoftwareApplication',
               name: 'Apio',
+              alternateName: 'Apio API Monitor',
               applicationCategory: 'DeveloperApplication',
+              applicationSubCategory: 'API Monitoring',
               operatingSystem: 'Web',
               url: 'https://apio.one',
               description:
-                'Real-time API monitoring platform. Monitor uptime, latency, and errors across all your microservices with a single command.',
+                'Apio is a real-time API monitoring platform. It gives engineering teams instant visibility into every API call — tracking uptime, latency, and error rates across Node.js, Java, Python, and Go microservices with a single command.',
+              featureList: [
+                'Real-time API request monitoring',
+                'Latency and error rate tracking',
+                'Multi-language SDK: Node.js, Java, Python, Go',
+                'Live WebSocket dashboard',
+                'One-command installation',
+                'Multi-tenant project and service management',
+              ],
+              keywords:
+                'API monitoring, real-time monitoring, API observability, microservices monitoring, uptime monitoring, developer tools',
               offers: {
                 '@type': 'Offer',
                 price: '0',
                 priceCurrency: 'USD',
+                description: 'Free tier available. No credit card required.',
               },
               creator: {
                 '@type': 'Organization',
                 name: 'Apio',
                 url: 'https://apio.one',
               },
+              sameAs: [
+                'https://github.com/soumikk01/Apio-apimonitor',
+              ],
             }),
           }}
         />

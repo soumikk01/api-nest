@@ -1,0 +1,33 @@
+# Apio — Real-time API Monitoring
+# https://apio.one
+
+Apio is a real-time API monitoring platform for engineering teams.
+It provides instant visibility into every API call across all microservices — 
+tracking uptime, latency, errors, and traffic with a single command installation.
+
+## What Apio does
+- Real-time API request monitoring (latency, status codes, error rates)
+- Multi-language support: Node.js, Java (Spring Boot), Python (FastAPI/Django), Go
+- One-command SDK installation via shell script
+- Live WebSocket dashboard with traffic visualizations
+- Project and service-level metrics with historical trends
+- JWT-secured multi-tenant architecture
+
+## Who it is for
+- Backend engineers who need instant API observability
+- DevOps teams monitoring microservices in production
+- Startups who want Datadog-level insights without Datadog pricing
+
+## How to install (Node.js example)
+```bash
+curl -sSL https://apio.one/install.sh | bash
+```
+
+## Pricing
+Free tier available. No credit card required.
+
+## Links
+- Website: https://apio.one
+- Documentation: https://apio.one/docs
+- GitHub: https://github.com/soumikk01/Apio-apimonitor
+- Sign up: https://apio.one/register
