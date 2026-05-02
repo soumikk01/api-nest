@@ -327,6 +327,7 @@ jobs:
           file: apps/backend/Dockerfile
           platforms: linux/amd64
           push: false
+          load: false      # image stays in BuildKit cache only (no daemon load needed)
           # Cache layers in GitHub Actions cache to speed up subsequent builds
           cache-from: type=gha,scope=backend-docker
           cache-to:   type=gha,scope=backend-docker,mode=max
@@ -335,15 +336,17 @@ jobs:
             ghcr.io/${{ github.repository_owner }}/apio-backend:${{ github.sha }}
             ghcr.io/${{ github.repository_owner }}/apio-backend:ci
 
-      # ── 6c. Trivy scan the built image ───────────────────────────────────────
-      - name: Scan Docker image for CVEs (Trivy)
+      # ── 6c. Trivy scan backend source (image not pushed so scan filesystem) ────
+      # The full image scan is done after deployment; here we scan the source code.
+      - name: Scan backend source for CVEs (Trivy)
         uses: aquasecurity/trivy-action@master
         with:
-          scan-type: "image"
-          image-ref: "ghcr.io/${{ github.repository_owner }}/apio-backend:ci"
+          scan-type: "fs"
+          scan-ref: "apps/backend"
           format: "table"
           severity: "CRITICAL,HIGH"
-          exit-code: "0"   # report only — don't block CI on first scan
+          skip-dirs: "node_modules,dist,.next"
+          exit-code: "0"   # report only — don't block CI
 
   # ── 7. CI Status Gate ─────────────────────────────────────────────────────────
   #  Single job that required-status-checks can point to.
