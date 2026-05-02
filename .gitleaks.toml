@@ -1,0 +1,25 @@
+# .gitleaks.toml — Gitleaks configuration
+# Allowlist patterns that are intentional placeholders, not real secrets
+
+title = "Apio Gitleaks Config"
+
+[allowlist]
+  description = "Allowlisted files and patterns"
+
+  # Ignore example/template env files — these contain placeholders, not real secrets
+  paths = [
+    '''apps/backend/\.env\.example''',
+    '''apps/web/\.env\.example''',
+    '''apps/auth/\.env\.example''',
+  ]
+
+  # Ignore known CI dummy values used in GitHub Actions workflows
+  regexes = [
+    '''ci_test_secret_not_real''',
+    '''ci_test_refresh_secret_not_real''',
+    '''mongodb://localhost:27017/apio_test''',
+    '''redis://localhost:6379''',
+  ]
+
+  # Ignore test files — they may contain dummy tokens for unit test fixtures
+  [[allowlist.commits]]
