@@ -31,8 +31,14 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Apio — Sign In",
-  description: "Sign in to your Apio account",
+  title: 'Apio — Sign In',
+  description: 'Sign in to your Apio account to access your API monitoring dashboard.',
+  robots: { index: false, follow: false }, // login pages should not be indexed
+  icons: {
+    icon: [{ url: '/favicon.svg', type: 'image/svg+xml' }],
+    apple: { url: '/favicon.svg', type: 'image/svg+xml' },
+    shortcut: '/favicon.svg',
+  },
 };
 
 export default function AuthLayout({

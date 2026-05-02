@@ -17,8 +17,10 @@ $h:  46px;
   background: var(--nav-bg);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border-bottom: 1px solid var(--nav-border);
-  box-shadow: var(--nav-shadow);
+  // No bottom border — the sidebar and navbar share the same bg,
+  // so we use a single right border on the sidebar as the only edge.
+  border-bottom: none;
+  box-shadow: none;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -26,6 +28,18 @@ $h:  46px;
   gap: 8px;
   font-family: 'Inter', sans-serif;
   font-size: 0.85rem;
+}
+
+// Thin separator only on the right edge of the sidebar column in the navbar
+// This creates the unified panel look: navbar + sidebar = one piece
+.navbarBorderRight {
+  position: absolute;
+  top: 0;
+  left: var(--sidebar-width, 64px);
+  bottom: 0;
+  width: 1px;
+  background: var(--sidebar-border);
+  pointer-events: none;
 }
 
 // ── Sides ────────────────────────────────────────────────────────

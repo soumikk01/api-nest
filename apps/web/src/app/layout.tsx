@@ -32,20 +32,85 @@ const jetbrainsMono = JetBrains_Mono({
   display: 'swap',
 });
 
+const BASE_URL = 'https://apio.one';
+
 export const metadata: Metadata = {
-  title: "Apio — Real-time API Monitoring",
-  description: "Apio gives engineering teams real-time visibility into every API call. Monitor uptime, latency, and errors across all your microservices with a single command.",
-  icons: {
-    // SVG works at all sizes, perfectly crisp in browser tabs
-    icon: [
-      { url: '/favicon.svg', type: 'image/svg+xml' },
-      { url: '/favicon.svg', sizes: '32x32',  type: 'image/svg+xml' },
-      { url: '/favicon.svg', sizes: '16x16',  type: 'image/svg+xml' },
+  metadataBase: new URL(BASE_URL),
+
+  // ── Core ───────────────────────────────────────────────────────
+  title: {
+    default: 'Apio — Real-time API Monitoring',
+    template: '%s | Apio',           // page titles become "Dashboard | Apio"
+  },
+  description:
+    'Apio gives engineering teams real-time visibility into every API call. Monitor uptime, latency, and errors across all your microservices with a single command.',
+  keywords: [
+    'API monitoring', 'real-time monitoring', 'API observability',
+    'microservices monitoring', 'uptime monitoring', 'latency tracking',
+    'error rate monitoring', 'API analytics', 'developer tools',
+    'NestJS monitoring', 'Spring Boot monitoring', 'FastAPI monitoring',
+  ],
+  authors: [{ name: 'Apio', url: BASE_URL }],
+  creator: 'Apio',
+  publisher: 'Apio',
+
+  // ── Canonical & Robots ─────────────────────────────────────────
+  alternates: { canonical: '/' },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
+
+  // ── Open Graph (Facebook, LinkedIn, Slack, Discord previews) ───
+  openGraph: {
+    type: 'website',
+    locale: 'en_US',
+    url: BASE_URL,
+    siteName: 'Apio',
+    title: 'Apio — Real-time API Monitoring',
+    description:
+      'Real-time visibility into every API call. Monitor uptime, latency, and errors across all your microservices with a single command.',
+    images: [
+      {
+        url: '/og-image.png',          // 1200×630px — create this image
+        width: 1200,
+        height: 630,
+        alt: 'Apio — Real-time API Monitoring Dashboard',
+      },
     ],
-    // Apple touch icon (home screen on iOS)
+  },
+
+  // ── Twitter / X Cards ──────────────────────────────────────────
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Apio — Real-time API Monitoring',
+    description:
+      'Monitor uptime, latency, and errors across all your microservices with a single command.',
+    images: ['/og-image.png'],
+    creator: '@apiodev',              // 🔁 Change to your Twitter handle
+  },
+
+  // ── Favicon ────────────────────────────────────────────────────
+  icons: {
+    icon: [{ url: '/favicon.svg', type: 'image/svg+xml' }],
     apple: { url: '/favicon.svg', type: 'image/svg+xml' },
-    // Shortcut fallback for older browsers
     shortcut: '/favicon.svg',
+  },
+
+  // ── PWA / App metadata ─────────────────────────────────────────
+  applicationName: 'Apio',
+  category: 'technology',
+
+  // ── Search Console Verification ────────────────────────────────
+  verification: {
+    google: 'PO-NtP-C13LizKa4nRbhBfTn_7GeLWc2lDWQwjC7BdM',
   },
 };
 
@@ -71,6 +136,32 @@ export default function RootLayout({
         {/* Favicon — SVG scales perfectly at any resolution */}
         <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
         <link rel="icon" href="/favicon.svg" sizes="any" />
+        {/* JSON-LD Structured Data — Google rich results */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              '@context': 'https://schema.org',
+              '@type': 'SoftwareApplication',
+              name: 'Apio',
+              applicationCategory: 'DeveloperApplication',
+              operatingSystem: 'Web',
+              url: 'https://apio.one',
+              description:
+                'Real-time API monitoring platform. Monitor uptime, latency, and errors across all your microservices with a single command.',
+              offers: {
+                '@type': 'Offer',
+                price: '0',
+                priceCurrency: 'USD',
+              },
+              creator: {
+                '@type': 'Organization',
+                name: 'Apio',
+                url: 'https://apio.one',
+              },
+            }),
+          }}
+        />
         {/* Material Symbols — CDN loaded, next/font doesn't support variable icon fonts */}
         {/* eslint-disable-next-line @next/next/no-page-custom-font */}
         <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
