@@ -15,18 +15,22 @@ export default function ProjectSidebar({ projectId }: Props) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const serviceIdParam = searchParams.get('serviceId');
-  const [sidebarState, setSidebarState] = useState<SidebarState>(() => {
-    if (typeof window !== 'undefined') {
-      return (localStorage.getItem('sidebarState') as SidebarState) || 'hover';
-    }
-    return 'hover';
-  });
+  const isDashboard = pathname === '/dashboard';
+
+  // Dashboard: always expanded. Every other page: hover (icons only, expand on hover)
+  const [sidebarState, setSidebarState] = useState<SidebarState>(
+    isDashboard ? 'expanded' : 'hover'
+  );
   const [showCtrl, setShowCtrl] = useState(false);
   const ctrlRef = useRef<HTMLDivElement>(null);
 
+  // Reset state on route change: expanded on dashboard, hover everywhere else
+  useEffect(() => {
+    setSidebarState(isDashboard ? 'expanded' : 'hover');
+  }, [isDashboard]);
+
   useEffect(() => {
     document.body.style.setProperty('--sidebar-width', sidebarState === 'expanded' ? '220px' : '64px');
-    localStorage.setItem('sidebarState', sidebarState);
   }, [sidebarState]);
 
   useEffect(() => {
