@@ -29,9 +29,9 @@ COPY --from=builder /app/package.json ./
 COPY --from=builder /app/src/generated ./src/generated
 COPY --from=builder /app/prisma     ./prisma
 
-# Non-root user for security
-RUN addgroup --system --gid 1001 nestjs && \
-    adduser  --system --uid 1001 nestjs
+# Non-root user for security (Debian-based image — use groupadd/useradd)
+RUN groupadd --system --gid 1001 nestjs && \
+    useradd  --system --uid 1001 --gid nestjs nestjs
 USER nestjs
 
 EXPOSE 4000
