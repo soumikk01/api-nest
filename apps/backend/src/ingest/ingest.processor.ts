@@ -73,8 +73,11 @@ export class IngestProcessor extends WorkerHost {
 
     const records = settled
       .filter(
-        (r): r is PromiseFulfilledResult<Awaited<ReturnType<typeof this.persistEvent>>> =>
-          r.status === 'fulfilled',
+        (
+          r,
+        ): r is PromiseFulfilledResult<
+          Awaited<ReturnType<typeof this.persistEvent>>
+        > => r.status === 'fulfilled',
       )
       .map((r) => r.value);
 

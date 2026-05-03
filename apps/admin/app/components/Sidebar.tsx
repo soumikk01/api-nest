@@ -1,14 +1,15 @@
 'use client';
 import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { useAiChat } from './AiChatProvider';
 
 const navItems = [
-  { href: '/dashboard', label: 'Overview',  icon: '◉' },
-  { href: '/dashboard/live',     label: 'Live Feed',   icon: '⬤', badge: 'LIVE' },
-  { href: '/dashboard/users',    label: 'Users',       icon: '👤' },
-  { href: '/dashboard/projects', label: 'Projects',    icon: '📁' },
-  { href: '/dashboard/history',  label: 'History',     icon: '🕐' },
-  { href: '/dashboard/analytics',label: 'Analytics',   icon: '📊' },
+  { href: '/dashboard',           label: 'Overview',   icon: '◉' },
+  { href: '/dashboard/live',      label: 'Live Feed',  icon: '⬤', badge: 'LIVE' },
+  { href: '/dashboard/users',     label: 'Users',      icon: '👤' },
+  { href: '/dashboard/projects',  label: 'Projects',   icon: '📁' },
+  { href: '/dashboard/history',   label: 'History',    icon: '🕐' },
+  { href: '/dashboard/analytics', label: 'Analytics',  icon: '📊' },
 ];
 
 const bottomItems = [
@@ -18,6 +19,7 @@ const bottomItems = [
 export default function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
+  const { openChat } = useAiChat();
 
   function logout() {
     localStorage.removeItem('admin_token');
@@ -55,6 +57,23 @@ export default function Sidebar() {
               </Link>
             );
           })}
+        </div>
+
+        {/* AI Assistant quick-access */}
+        <div className="sidebar-section" style={{ marginTop: '8px' }}>
+          <div className="sidebar-section-label">AI Tools</div>
+          <button
+            className="sidebar-item sidebar-ai-btn"
+            onClick={() => openChat()}
+            id="sidebar-ai-assistant-btn"
+            title="Open AI Assistant"
+          >
+            <span className="sidebar-icon">🤖</span>
+            AI Assistant
+            <span className="sidebar-badge" style={{ background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', fontSize: '9px' }}>
+              NEW
+            </span>
+          </button>
         </div>
 
         <div className="sidebar-section" style={{ marginTop: '8px' }}>

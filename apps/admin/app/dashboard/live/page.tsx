@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
+import { useAiChat } from '../../components/AiChatProvider';
 
 const WS = process.env.NEXT_PUBLIC_WS_URL ?? 'http://localhost:4000';
 const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000/api/v1';
@@ -17,10 +18,12 @@ interface LiveCall {
   path: string;
 }
 
-const MAX_FEED = 100; // keep last 100 calls in memory
+const MAX_FEED = 100;
 
 function token() {
-  return typeof window !== 'undefined' ? localStorage.getItem('access_token') ?? localStorage.getItem('admin_token') ?? '' : '';
+  return typeof window !== 'undefined'
+    ? localStorage.getItem('access_token') ?? localStorage.getItem('admin_token') ?? ''
+    : '';
 }
 
 function statusClass(code?: number) {
@@ -34,6 +37,7 @@ const latencyClass = (ms: number) =>
   ms < 200 ? 'latency-fast' : ms < 800 ? 'latency-med' : 'latency-slow';
 
 export default function LiveFeedPage() {
+  const { openChat } = useAiChat();
   const [calls, setCalls] = useState<LiveCall[]>([]);
   const [projects, setProjects] = useState<{ id: string; name: string }[]>([]);
   const [selectedProject, setSelectedProject] = useState('');
@@ -75,10 +79,7 @@ export default function LiveFeedPage() {
     sock.on('api:call', (call: LiveCall) => {
       if (pausedRef.current) return;
       setCalls((prev) => [call, ...prev].slice(0, MAX_FEED));
-      // Auto-scroll to top
-      if (feedRef.current) {
-        feedRef.current.scrollTop = 0;
-      }
+      if (feedRef.current) feedRef.current.scrollTop = 0;
     });
 
     return () => { sock.disconnect(); };
@@ -91,6 +92,19 @@ export default function LiveFeedPage() {
 
   function clearFeed() { setCalls([]); }
 
+  function handleFixWithAI(call: LiveCall) {
+    openChat({
+      endpoint: call.url || `${call.host}${call.path}`,
+      method: call.method,
+      statusCode: call.statusCode,
+      errorMessage: call.status !== 'SUCCESS' ? call.status : `HTTP ${call.statusCode ?? 'error'}`,
+      latency: call.latency,
+      timestamp: new Date(call.createdAt).toLocaleTimeString(),
+    });
+  }
+
+  const isError = (code?: number) => code != null && code >= 400;
+
   return (
     <>
       <div className="page-header">
@@ -99,7 +113,20 @@ export default function LiveFeedPage() {
           <div className="page-subtitle">Real-time stream of all intercepted HTTP calls</div>
         </div>
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-          <div className={`live-indicator`} style={{ background: connected ? 'var(--success-light)' : 'var(--danger-light)', color: connected ? 'var(--success)' : 'var(--danger)' }}>
+          <button
+            className="btn btn-primary btn-sm"
+            onClick={() => openChat()}
+            id="live-ask-ai-btn"
+          >
+            🤖 Ask AI
+          </button>
+          <div
+            className="live-indicator"
+            style={{
+              background: connected ? 'var(--success-light)' : 'var(--danger-light)',
+              color: connected ? 'var(--success)' : 'var(--danger)',
+            }}
+          >
             <div className="live-dot" style={{ background: connected ? 'var(--success)' : 'var(--danger)' }} />
             {connected ? 'Connected' : 'Disconnected'}
           </div>
@@ -123,7 +150,7 @@ export default function LiveFeedPage() {
           ))}
         </select>
         <span style={{ marginLeft: 'auto', fontSize: '12px', color: 'var(--text-muted)' }}>
-          {calls.length} calls captured
+          {calls.length} calls captured · Click 🔧 on errors for AI diagnosis
         </span>
       </div>
 
@@ -147,11 +174,18 @@ export default function LiveFeedPage() {
                   <th>URL</th>
                   <th>Status</th>
                   <th>Latency</th>
+                  <th>Action</th>
                 </tr>
               </thead>
               <tbody>
                 {calls.map((call, i) => (
-                  <tr key={call.id ?? i} style={{ opacity: paused ? 0.6 : 1 }}>
+                  <tr
+                    key={call.id ?? i}
+                    style={{
+                      opacity: paused ? 0.6 : 1,
+                      background: isError(call.statusCode) ? 'rgba(239,68,68,0.04)' : undefined,
+                    }}
+                  >
                     <td style={{ color: 'var(--text-muted)', fontSize: '11px', fontFamily: 'var(--font-mono)', whiteSpace: 'nowrap' }}>
                       {new Date(call.createdAt).toLocaleTimeString()}
                     </td>
@@ -171,6 +205,20 @@ export default function LiveFeedPage() {
                       <span className={`latency-cell ${latencyClass(call.latency)}`}>
                         {call.latency}ms
                       </span>
+                    </td>
+                    <td>
+                      {isError(call.statusCode) ? (
+                        <button
+                          className="btn-fix-ai"
+                          onClick={() => handleFixWithAI(call)}
+                          title="Get AI diagnosis for this error"
+                          id={`live-fix-ai-${call.id ?? i}`}
+                        >
+                          🔧 Fix Problem
+                        </button>
+                      ) : (
+                        <span style={{ color: 'var(--text-muted)', fontSize: '11px' }}>—</span>
+                      )}
                     </td>
                   </tr>
                 ))}

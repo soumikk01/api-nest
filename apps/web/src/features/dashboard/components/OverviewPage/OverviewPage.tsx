@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { useMonitorSocket, ApiCallEvent } from '@/hooks/useMonitorSocket';
 import { useAuth } from '@/hooks/useAuth';
 import ProjectSidebar from '@/components/ProjectSidebar/ProjectSidebar';
+import OverviewSidebar from '@/components/OverviewSidebar/OverviewSidebar';
 import { Shimmer, ShimmerBlock, ShimmerRow } from '@/components/Shimmer/Shimmer';
 import styles from './OverviewPage.module.scss';
 import {
@@ -119,6 +120,7 @@ export default function OverviewPage() {
         <div className={styles.ambientOrb2} />
         <div className={styles.gridLines} />
         <ProjectSidebar projectId={undefined} />
+        <OverviewSidebar />
         <main className={styles.content}>
           <ShimmerBlock>
             <ShimmerRow>
@@ -150,6 +152,7 @@ export default function OverviewPage() {
         <div className={styles.ambientOrb2} />
         <div className={styles.gridLines} />
         <ProjectSidebar projectId={undefined} />
+        <OverviewSidebar />
         <main className={styles.content}>
           <div className={styles.emptyState}>
             <div className={styles.emptyIcon}>
@@ -172,6 +175,7 @@ export default function OverviewPage() {
       <div className={styles.ambientOrb2} />
       <div className={styles.gridLines} />
       <ProjectSidebar projectId={projectId || undefined} />
+      <OverviewSidebar />
 
       <main className={styles.content}>
         <div className={styles.header}>
@@ -186,7 +190,7 @@ export default function OverviewPage() {
         </div>
 
         {/* Stat cards */}
-        <div className={styles.statsGrid}>
+        <div id="metrics" className={styles.statsGrid}>
           <div className={styles.statCard}>
             <span className={styles.statLabel}>Active Instances</span>
             <span className={styles.statValue}>{dbStats?.activeInstances ?? (statsLoading ? '…' : '0')}</span>
@@ -211,7 +215,7 @@ export default function OverviewPage() {
         </div>
 
         {/* Traffic feed */}
-        <div className={styles.panel}>
+        <div id="traffic" className={styles.panel}>
           <h3>Real-time Traffic Control Matrix</h3>
           <div className={styles.feedList}>
             {mergedCalls.length === 0 ? (

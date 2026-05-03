@@ -12,10 +12,10 @@ import { Type } from 'class-transformer';
 
 export class ApiCallEventDto {
   @IsString()
-  method: string;
+  method!: string;
 
   @IsString()
-  url: string;
+  url!: string;
 
   @IsOptional()
   requestHeaders?: Record<string, string>;
@@ -46,22 +46,22 @@ export class ApiCallEventDto {
 
   @IsInt()
   @Min(0)
-  latency: number; // ms
+  latency!: number; // ms
 
   @IsDateString()
-  startedAt: string;
+  startedAt!: string;
 
   @IsDateString()
-  endedAt: string;
+  endedAt!: string;
 }
 
 export class IngestDto {
   @IsString()
   @IsNotEmpty()
-  sdkToken: string; // Identifies the service (and its project/user) — no projectId needed
+  sdkToken!: string; // Identifies the service (and its project/user) — no projectId needed
 
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => ApiCallEventDto)
-  events: ApiCallEventDto[];
+  events!: ApiCallEventDto[];
 }

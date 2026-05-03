@@ -36,6 +36,21 @@ export class AuthController {
   }
 
   /**
+   * POST /auth/admin/login
+   * Issues a separate admin JWT (ADMIN_JWT_SECRET, 7d expiry).
+   * Used exclusively by the Admin Panel — tokens cannot access user-only routes.
+   */
+  @Throttle({
+    short: { ttl: 60_000, limit: 5 },
+    medium: { ttl: 60_000, limit: 5 },
+  })
+  @Post('admin/login')
+  @HttpCode(HttpStatus.OK)
+  adminLogin(@Body() dto: LoginDto) {
+    return this.authService.adminLogin(dto);
+  }
+
+  /**
    * POST /auth/refresh
    * 30 requests per 60 seconds — generous for silent token renewal across tabs
    */

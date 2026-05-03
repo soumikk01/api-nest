@@ -147,7 +147,9 @@ async function bootstrap() {
 
   // /health excluded from prefix so NGINX can probe it without auth
   // /install.ps1 and /install.sh served at root for piping: iwr http://host:4000/install.ps1 | iex
-  app.setGlobalPrefix('api/v1', { exclude: ['health', 'install.ps1', 'install.sh'] });
+  app.setGlobalPrefix('api/v1', {
+    exclude: ['health', 'install.ps1', 'install.sh'],
+  });
 
   await app.listen(port);
 

@@ -16,15 +16,26 @@ export default function AdminLoginPage() {
     setLoading(true);
     setError('');
     try {
-      const res = await fetch(`${API}/auth/login`, {
+      // /auth/admin/login issues a separate admin JWT (ADMIN_JWT_SECRET, 7d expiry)
+      const res = await fetch(`${API}/auth/admin/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
       });
-      const data = await res.json() as { accessToken?: string; message?: string };
-      if (!res.ok) throw new Error(data.message ?? 'Login failed');
+      const data = await res.json() as {
+        accessToken?: string; role?: string; email?: string;
+        name?: string; expiresIn?: string; message?: string; statusCode?: number;
+      };
+      if (!res.ok) {
+        if (res.status === 401) throw new Error('Incorrect email or password. Please try again.');
+        if (res.status === 400) throw new Error('Please enter a valid email and password.');
+        if (res.status === 429) throw new Error('Too many login attempts. Please wait a moment.');
+        throw new Error(data.message ?? 'Login failed');
+      }
+      if (data.role !== 'admin') throw new Error('This account does not have admin access.');
       localStorage.setItem('admin_token', data.accessToken!);
-      localStorage.setItem('access_token', data.accessToken!); // needed for WebSocket auth
+      localStorage.setItem('access_token', data.accessToken!);
+      localStorage.setItem('admin_expires_in', data.expiresIn ?? '7d');
       router.push('/dashboard');
     } catch (err) {
       setError((err as Error).message);
@@ -101,6 +112,19 @@ export default function AdminLoginPage() {
                 marginBottom: '16px',
               }}>
                 {error}
+                {error.includes('Incorrect email') && (
+                  <div style={{ marginTop: '6px', fontSize: '12px', color: '#6b7280' }}>
+                    Don&apos;t have an account?{' '}
+                    <a
+                      href={process.env.NEXT_PUBLIC_WEB_URL ?? 'http://localhost:3000'}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{ color: 'var(--accent)', textDecoration: 'underline' }}
+                    >
+                      Register on the main app →
+                    </a>
+                  </div>
+                )}
               </div>
             )}
 
