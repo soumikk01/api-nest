@@ -81,11 +81,16 @@ export default function SettingsPage() {
   }, []);
 
   useEffect(() => {
-    apiFetch('/users/me')
-      .then(r => r.json()).then(d => setUser(d as UserProfile))
-      .catch((e) => { if (e instanceof SessionExpiredError) setSessionExpired(true); });
-    loadKeyStatus();
-    loadPlatformKeyStatus();
+    void (async () => {
+      try {
+        const r = await apiFetch('/users/me');
+        setUser(await r.json() as UserProfile);
+      } catch (e) {
+        if (e instanceof SessionExpiredError) setSessionExpired(true);
+      }
+      await loadKeyStatus();
+      await loadPlatformKeyStatus();
+    })();
   }, [loadKeyStatus, loadPlatformKeyStatus]);
 
   // ── Connection settings (local display only) ──────────────────────────
