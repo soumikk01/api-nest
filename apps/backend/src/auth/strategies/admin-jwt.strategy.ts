@@ -20,7 +20,10 @@ export interface AdminJwtPayload {
 export class AdminJwtStrategy extends PassportStrategy(Strategy, 'admin-jwt') {
   constructor(config: ConfigService) {
     const secret = config.get<string>('ADMIN_JWT_SECRET');
-    if (!secret) throw new Error('ADMIN_JWT_SECRET env var is not set — refusing to start');
+    if (!secret)
+      throw new Error(
+        'ADMIN_JWT_SECRET env var is not set — refusing to start',
+      );
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
@@ -31,6 +34,10 @@ export class AdminJwtStrategy extends PassportStrategy(Strategy, 'admin-jwt') {
   async validate(payload: AdminJwtPayload) {
     // Ensure only admin-role tokens pass this guard
     if (payload.role !== 'admin') return null;
-    return { userId: payload.sub, email: payload.email, role: 'admin' as const };
+    return {
+      userId: payload.sub,
+      email: payload.email,
+      role: 'admin' as const,
+    };
   }
 }

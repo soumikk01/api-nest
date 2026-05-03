@@ -12,12 +12,16 @@ import { Prisma } from '../generated/prisma';
 import { PrismaService } from '../prisma/prisma.service';
 import { CacheService } from '../cache/cache.service';
 import type { AiContextDto } from './dto/ai.dto';
-import { detectProvider, testProviderKey, streamProviderChat } from './ai-providers';
+import {
+  detectProvider,
+  testProviderKey,
+  streamProviderChat,
+} from './ai-providers';
 
 // ── Cache TTLs ────────────────────────────────────────────────────────────────
-const CONVERSATION_LIST_TTL   = 60;    // 60 s  — conversation list per user
-const CONVERSATION_DETAIL_TTL = 300;   // 5 min — full conversation + messages
-const API_KEY_TTL             = 3600;  // 1 h   — resolved API key cache
+const CONVERSATION_LIST_TTL = 60; // 60 s  — conversation list per user
+const CONVERSATION_DETAIL_TTL = 300; // 5 min — full conversation + messages
+const API_KEY_TTL = 3600; // 1 h   — resolved API key cache
 
 // ── Prisma error code helpers ─────────────────────────────────────────────────
 function isPrismaUnavailable(err: unknown): boolean {
@@ -39,16 +43,22 @@ export class AiService {
 
   constructor(
     private readonly prisma: PrismaService,
-    private readonly cache:  CacheService,
+    private readonly cache: CacheService,
     private readonly config: ConfigService,
   ) {}
 
   // ── Cache key builders ────────────────────────────────────────────────────
-  private listKey(userId: string)            { return `ai:convlist:${userId}`; }
-  private detailKey(conversationId: string)  { return `ai:conv:${conversationId}`; }
-  private apiKeyCache(userId: string)        { return `ai:gemkey:${userId}`; }
-  private readonly PLATFORM_KEY_CACHE = 'ai:platform:gemkey';  // global key
-  private readonly PLATFORM_KEY_DB    = 'gemini_api_key';      // PlatformConfig.key
+  private listKey(userId: string) {
+    return `ai:convlist:${userId}`;
+  }
+  private detailKey(conversationId: string) {
+    return `ai:conv:${conversationId}`;
+  }
+  private apiKeyCache(userId: string) {
+    return `ai:gemkey:${userId}`;
+  }
+  private readonly PLATFORM_KEY_CACHE = 'ai:platform:gemkey'; // global key
+  private readonly PLATFORM_KEY_DB = 'gemini_api_key'; // PlatformConfig.key
 
   // ── Internal: resolve Gemini API key ─────────────────────────────────────
   // Priority: env GEMINI_API_KEY → Platform key (Admin Panel) → per-user key
@@ -59,16 +69,24 @@ export class AiService {
 
     // Priority 2 — Platform-wide key set in Admin Panel (cached in Redis)
     try {
-      const cachedPlatform = await this.cache.get<string>(this.PLATFORM_KEY_CACHE);
+      const cachedPlatform = await this.cache.get<string>(
+        this.PLATFORM_KEY_CACHE,
+      );
       if (cachedPlatform) return cachedPlatform;
-    } catch { /* non-fatal */ }
+    } catch {
+      /* non-fatal */
+    }
 
     try {
       const cfg = await this.prisma.platformConfig.findUnique({
         where: { key: this.PLATFORM_KEY_DB },
       });
       if (cfg?.value) {
-        try { await this.cache.set(this.PLATFORM_KEY_CACHE, cfg.value, API_KEY_TTL); } catch { /* non-fatal */ }
+        try {
+          await this.cache.set(this.PLATFORM_KEY_CACHE, cfg.value, API_KEY_TTL);
+        } catch {
+          /* non-fatal */
+        }
         return cfg.value;
       }
     } catch (err) {
@@ -80,7 +98,9 @@ export class AiService {
     try {
       const cached = await this.cache.get<string>(this.apiKeyCache(userId));
       if (cached) return cached;
-    } catch { /* non-fatal */ }
+    } catch {
+      /* non-fatal */
+    }
 
     // Priority 4 — MongoDB per-user key
     let user: { geminiApiKey: string | null } | null;
@@ -96,7 +116,9 @@ export class AiService {
           'The database is temporarily unavailable. Please try again in a moment.',
         );
       }
-      throw new InternalServerErrorException('Could not retrieve your API key. Please try again.');
+      throw new InternalServerErrorException(
+        'Could not retrieve your API key. Please try again.',
+      );
     }
 
     const key = user?.geminiApiKey;
@@ -106,57 +128,108 @@ export class AiService {
       );
     }
 
-    try { await this.cache.set(this.apiKeyCache(userId), key, API_KEY_TTL); } catch { /* non-fatal */ }
+    try {
+      await this.cache.set(this.apiKeyCache(userId), key, API_KEY_TTL);
+    } catch {
+      /* non-fatal */
+    }
     return key;
   }
 
   // ── Platform-wide key (Admin Panel managed) ───────────────────────────────
 
   async getPlatformKeyStatus(): Promise<{
-    configured: boolean; preview: string; updatedAt: Date | null; envOverride: boolean;
+    configured: boolean;
+    preview: string;
+    updatedAt: Date | null;
+    envOverride: boolean;
   }> {
     const envKey = this.config.get<string>('GEMINI_API_KEY');
     if (envKey?.trim()) {
-      return { configured: true, preview: 'Set via environment variable (GEMINI_API_KEY)', updatedAt: null, envOverride: true };
+      return {
+        configured: true,
+        preview: 'Set via environment variable (GEMINI_API_KEY)',
+        updatedAt: null,
+        envOverride: true,
+      };
     }
     try {
-      const cfg = await this.prisma.platformConfig.findUnique({ where: { key: this.PLATFORM_KEY_DB } });
-      if (!cfg?.value) return { configured: false, preview: '', updatedAt: null, envOverride: false };
-      const preview = cfg.value.slice(0, 8) + '•'.repeat(Math.max(0, cfg.value.length - 12)) + cfg.value.slice(-4);
-      return { configured: true, preview, updatedAt: cfg.updatedAt, envOverride: false };
+      const cfg = await this.prisma.platformConfig.findUnique({
+        where: { key: this.PLATFORM_KEY_DB },
+      });
+      if (!cfg?.value)
+        return {
+          configured: false,
+          preview: '',
+          updatedAt: null,
+          envOverride: false,
+        };
+      const preview =
+        cfg.value.slice(0, 8) +
+        '•'.repeat(Math.max(0, cfg.value.length - 12)) +
+        cfg.value.slice(-4);
+      return {
+        configured: true,
+        preview,
+        updatedAt: cfg.updatedAt,
+        envOverride: false,
+      };
     } catch {
-      return { configured: false, preview: '', updatedAt: null, envOverride: false };
+      return {
+        configured: false,
+        preview: '',
+        updatedAt: null,
+        envOverride: false,
+      };
     }
   }
 
   async setPlatformKey(apiKey: string, updatedBy: string): Promise<void> {
     try {
       await this.prisma.platformConfig.upsert({
-        where:  { key: this.PLATFORM_KEY_DB },
+        where: { key: this.PLATFORM_KEY_DB },
         update: { value: apiKey.trim(), updatedBy },
         create: { key: this.PLATFORM_KEY_DB, value: apiKey.trim(), updatedBy },
       });
     } catch (err) {
       this.logger.error('[AI] Failed to save platform key', err);
       throw isPrismaUnavailable(err)
-        ? new ServiceUnavailableException('Database unavailable. Please try again.')
-        : new InternalServerErrorException('Could not save the platform key. Please try again.');
+        ? new ServiceUnavailableException(
+            'Database unavailable. Please try again.',
+          )
+        : new InternalServerErrorException(
+            'Could not save the platform key. Please try again.',
+          );
     }
     // Bust Redis cache so next request picks up new key immediately
-    try { await this.cache.del(this.PLATFORM_KEY_CACHE); } catch { /* non-fatal */ }
+    try {
+      await this.cache.del(this.PLATFORM_KEY_CACHE);
+    } catch {
+      /* non-fatal */
+    }
     this.logger.log(`[AI] Platform Gemini key updated by user ${updatedBy}`);
   }
 
   async removePlatformKey(): Promise<void> {
     try {
-      await this.prisma.platformConfig.deleteMany({ where: { key: this.PLATFORM_KEY_DB } });
+      await this.prisma.platformConfig.deleteMany({
+        where: { key: this.PLATFORM_KEY_DB },
+      });
     } catch (err) {
       this.logger.error('[AI] Failed to remove platform key', err);
       throw isPrismaUnavailable(err)
-        ? new ServiceUnavailableException('Database unavailable. Please try again.')
-        : new InternalServerErrorException('Could not remove the platform key. Please try again.');
+        ? new ServiceUnavailableException(
+            'Database unavailable. Please try again.',
+          )
+        : new InternalServerErrorException(
+            'Could not remove the platform key. Please try again.',
+          );
     }
-    try { await this.cache.del(this.PLATFORM_KEY_CACHE); } catch { /* non-fatal */ }
+    try {
+      await this.cache.del(this.PLATFORM_KEY_CACHE);
+    } catch {
+      /* non-fatal */
+    }
     this.logger.log('[AI] Platform Gemini key removed');
   }
 
@@ -165,15 +238,23 @@ export class AiService {
     try {
       await this.prisma.user.update({
         where: { id: userId },
-        data:  { geminiApiKey: geminiApiKey.trim() },
+        data: { geminiApiKey: geminiApiKey.trim() },
       });
     } catch (err) {
       this.logger.error('[AI] DB error saving API key', err);
       throw isPrismaUnavailable(err)
-        ? new ServiceUnavailableException('Database unavailable. Please try again.')
-        : new InternalServerErrorException('Could not save API key. Please try again.');
+        ? new ServiceUnavailableException(
+            'Database unavailable. Please try again.',
+          )
+        : new InternalServerErrorException(
+            'Could not save API key. Please try again.',
+          );
     }
-    try { await this.cache.del(this.apiKeyCache(userId)); } catch { /* non-fatal */ }
+    try {
+      await this.cache.del(this.apiKeyCache(userId));
+    } catch {
+      /* non-fatal */
+    }
     const info = detectProvider(geminiApiKey);
     this.logger.log(`[AI] Saved ${info.name} key for user ${userId}`);
   }
@@ -183,25 +264,40 @@ export class AiService {
     try {
       await this.prisma.user.update({
         where: { id: userId },
-        data:  { geminiApiKey: null },
+        data: { geminiApiKey: null },
       });
     } catch (err) {
       this.logger.error('[AI] DB error removing API key', err);
       throw isPrismaUnavailable(err)
-        ? new ServiceUnavailableException('Database unavailable. Please try again.')
-        : new InternalServerErrorException('Could not remove API key. Please try again.');
+        ? new ServiceUnavailableException(
+            'Database unavailable. Please try again.',
+          )
+        : new InternalServerErrorException(
+            'Could not remove API key. Please try again.',
+          );
     }
-    try { await this.cache.del(this.apiKeyCache(userId)); } catch { /* non-fatal */ }
+    try {
+      await this.cache.del(this.apiKeyCache(userId));
+    } catch {
+      /* non-fatal */
+    }
     this.logger.log(`[AI] Removed Gemini key for user ${userId}`);
   }
 
   // ── Get masked key status ─────────────────────────────────────────────────
   async getApiKeyStatus(userId: string): Promise<{
-    configured: boolean; serverManaged: boolean; preview: string; provider?: string;
+    configured: boolean;
+    serverManaged: boolean;
+    preview: string;
+    provider?: string;
   }> {
     const serverKey = this.config.get<string>('GEMINI_API_KEY');
     if (serverKey?.trim()) {
-      return { configured: true, serverManaged: true, preview: 'Server-managed key' };
+      return {
+        configured: true,
+        serverManaged: true,
+        preview: 'Server-managed key',
+      };
     }
 
     let user: { geminiApiKey: string | null } | null = null;
@@ -211,7 +307,10 @@ export class AiService {
         select: { geminiApiKey: true },
       });
     } catch (err) {
-      this.logger.warn('[AI] DB error fetching key status — returning unconfigured', err);
+      this.logger.warn(
+        '[AI] DB error fetching key status — returning unconfigured',
+        err,
+      );
       // Non-fatal: return "not configured" rather than crashing
       return { configured: false, serverManaged: false, preview: '' };
     }
@@ -220,17 +319,31 @@ export class AiService {
     if (!key) return { configured: false, serverManaged: false, preview: '' };
 
     const info = detectProvider(key);
-    const preview = key.slice(0, 8) + '\u2022'.repeat(Math.max(0, key.length - 12)) + key.slice(-4);
-    return { configured: true, serverManaged: false, preview, provider: info.name };
+    const preview =
+      key.slice(0, 8) +
+      '\u2022'.repeat(Math.max(0, key.length - 12)) +
+      key.slice(-4);
+    return {
+      configured: true,
+      serverManaged: false,
+      preview,
+      provider: info.name,
+    };
   }
 
   // ── Validate a key (any provider) before saving ──────────────────────────
-  async testApiKey(apiKey: string): Promise<{ valid: boolean; message: string; provider?: string }> {
+  async testApiKey(
+    apiKey: string,
+  ): Promise<{ valid: boolean; message: string; provider?: string }> {
     return testProviderKey(apiKey);
   }
 
   // ── Start conversation (persisted to MongoDB) ─────────────────────────────
-  async startConversation(userId: string, context?: AiContextDto, mode?: 'user' | 'admin') {
+  async startConversation(
+    userId: string,
+    context?: AiContextDto,
+    mode?: 'user' | 'admin',
+  ) {
     const title = context?.endpoint
       ? `${context.method ?? 'ERR'} ${context.endpoint} — ${context.statusCode ?? '?'}`
       : 'General AI Chat';
@@ -238,15 +351,25 @@ export class AiService {
     // Embed mode into context so streamMessage can pick the right prompt
     const contextWithMode = context
       ? { ...(context as Record<string, unknown>), _mode: mode ?? 'user' }
-      : mode ? { _mode: mode } : undefined;
+      : mode
+        ? { _mode: mode }
+        : undefined;
 
-    let conversation: { id: string; userId: string; title: string | null; createdAt: Date; updatedAt: Date };
+    let conversation: {
+      id: string;
+      userId: string;
+      title: string | null;
+      createdAt: Date;
+      updatedAt: Date;
+    };
     try {
       conversation = await this.prisma.aiConversation.create({
         data: {
           userId,
           title,
-          context: contextWithMode ? (contextWithMode as unknown as Prisma.InputJsonValue) : undefined,
+          context: contextWithMode
+            ? (contextWithMode as unknown as Prisma.InputJsonValue)
+            : undefined,
         },
       });
     } catch (err) {
@@ -260,10 +383,15 @@ export class AiService {
           );
     }
 
-    try { await this.cache.del(this.listKey(userId)); } catch { /* non-fatal */ }
-    this.logger.log(`[AI] New conversation ${conversation.id} for ${userId} [mode=${mode ?? 'user'}]`);
+    try {
+      await this.cache.del(this.listKey(userId));
+    } catch {
+      /* non-fatal */
+    }
+    this.logger.log(
+      `[AI] New conversation ${conversation.id} for ${userId} [mode=${mode ?? 'user'}]`,
+    );
     return conversation;
-
   }
 
   // ── List conversations (Redis-cached) ─────────────────────────────────────
@@ -272,30 +400,45 @@ export class AiService {
     try {
       const cached = await this.cache.get<unknown[]>(cacheKey);
       if (cached) return cached;
-    } catch { /* non-fatal */ }
+    } catch {
+      /* non-fatal */
+    }
 
     let conversations: unknown[];
     try {
       conversations = await this.prisma.aiConversation.findMany({
-        where:   { userId },
+        where: { userId },
         orderBy: { updatedAt: 'desc' },
-        take:    Math.min(limit, 50),
-        select:  {
-          id: true, title: true, context: true, createdAt: true, updatedAt: true,
+        take: Math.min(limit, 50),
+        select: {
+          id: true,
+          title: true,
+          context: true,
+          createdAt: true,
+          updatedAt: true,
           messages: {
-            orderBy: { createdAt: 'desc' }, take: 1,
-            select:  { content: true, role: true, createdAt: true },
+            orderBy: { createdAt: 'desc' },
+            take: 1,
+            select: { content: true, role: true, createdAt: true },
           },
         },
       });
     } catch (err) {
       this.logger.error('[AI] Failed to list conversations', err);
       throw isPrismaUnavailable(err)
-        ? new ServiceUnavailableException('Database unavailable. Please try again.')
-        : new InternalServerErrorException('Could not load conversations. Please refresh.');
+        ? new ServiceUnavailableException(
+            'Database unavailable. Please try again.',
+          )
+        : new InternalServerErrorException(
+            'Could not load conversations. Please refresh.',
+          );
     }
 
-    try { await this.cache.set(cacheKey, conversations, CONVERSATION_LIST_TTL); } catch { /* non-fatal */ }
+    try {
+      await this.cache.set(cacheKey, conversations, CONVERSATION_LIST_TTL);
+    } catch {
+      /* non-fatal */
+    }
     return conversations;
   }
 
@@ -305,25 +448,36 @@ export class AiService {
     try {
       const cached = await this.cache.get<unknown>(cacheKey);
       if (cached) return cached;
-    } catch { /* non-fatal */ }
+    } catch {
+      /* non-fatal */
+    }
 
     let conversation: { userId: string; messages: unknown[] } | null;
     try {
-      conversation = await this.prisma.aiConversation.findUnique({
-        where:   { id: conversationId },
+      conversation = (await this.prisma.aiConversation.findUnique({
+        where: { id: conversationId },
         include: { messages: { orderBy: { createdAt: 'asc' } } },
-      }) as typeof conversation;
+      })) as typeof conversation;
     } catch (err) {
       this.logger.error('[AI] Failed to load conversation', err);
       throw isPrismaUnavailable(err)
-        ? new ServiceUnavailableException('Database unavailable. Please try again.')
-        : new InternalServerErrorException('Could not load this conversation. Please refresh.');
+        ? new ServiceUnavailableException(
+            'Database unavailable. Please try again.',
+          )
+        : new InternalServerErrorException(
+            'Could not load this conversation. Please refresh.',
+          );
     }
 
     if (!conversation) throw new NotFoundException('Conversation not found.');
-    if (conversation.userId !== userId) throw new ForbiddenException('Access denied.');
+    if (conversation.userId !== userId)
+      throw new ForbiddenException('Access denied.');
 
-    try { await this.cache.set(cacheKey, conversation, CONVERSATION_DETAIL_TTL); } catch { /* non-fatal */ }
+    try {
+      await this.cache.set(cacheKey, conversation, CONVERSATION_DETAIL_TTL);
+    } catch {
+      /* non-fatal */
+    }
     return conversation;
   }
 
@@ -332,11 +486,14 @@ export class AiService {
     let conv: { userId: string } | null;
     try {
       conv = await this.prisma.aiConversation.findUnique({
-        where: { id: conversationId }, select: { userId: true },
+        where: { id: conversationId },
+        select: { userId: true },
       });
     } catch (err) {
       throw isPrismaUnavailable(err)
-        ? new ServiceUnavailableException('Database unavailable. Please try again.')
+        ? new ServiceUnavailableException(
+            'Database unavailable. Please try again.',
+          )
         : new InternalServerErrorException('Could not find this conversation.');
     }
 
@@ -344,14 +501,27 @@ export class AiService {
     if (conv.userId !== userId) throw new ForbiddenException('Access denied.');
 
     try {
-      await this.prisma.aiConversation.delete({ where: { id: conversationId } });
+      await this.prisma.aiConversation.delete({
+        where: { id: conversationId },
+      });
     } catch (err) {
       throw isPrismaUnavailable(err)
-        ? new ServiceUnavailableException('Database unavailable. Please try again.')
-        : new InternalServerErrorException('Could not delete this conversation.');
+        ? new ServiceUnavailableException(
+            'Database unavailable. Please try again.',
+          )
+        : new InternalServerErrorException(
+            'Could not delete this conversation.',
+          );
     }
 
-    try { await this.cache.del(this.detailKey(conversationId), this.listKey(userId)); } catch { /* non-fatal */ }
+    try {
+      await this.cache.del(
+        this.detailKey(conversationId),
+        this.listKey(userId),
+      );
+    } catch {
+      /* non-fatal */
+    }
     return { deleted: true };
   }
 
@@ -362,20 +532,29 @@ export class AiService {
     userContent: string,
   ): AsyncGenerator<string> {
     // 1. Load & verify ownership
-    let conversation: { userId: string; context: unknown; messages: { role: string; content: string }[] } | null;
+    let conversation: {
+      userId: string;
+      context: unknown;
+      messages: { role: string; content: string }[];
+    } | null;
     try {
-      conversation = await this.prisma.aiConversation.findUnique({
-        where:   { id: conversationId },
+      conversation = (await this.prisma.aiConversation.findUnique({
+        where: { id: conversationId },
         include: { messages: { orderBy: { createdAt: 'asc' } } },
-      }) as typeof conversation;
+      })) as typeof conversation;
     } catch (err) {
       throw isPrismaUnavailable(err)
-        ? new ServiceUnavailableException('Database unavailable. Please try again in a moment.')
-        : new InternalServerErrorException('Could not load this conversation. Please refresh.');
+        ? new ServiceUnavailableException(
+            'Database unavailable. Please try again in a moment.',
+          )
+        : new InternalServerErrorException(
+            'Could not load this conversation. Please refresh.',
+          );
     }
 
     if (!conversation) throw new NotFoundException('Conversation not found.');
-    if (conversation.userId !== userId) throw new ForbiddenException('Access denied.');
+    if (conversation.userId !== userId)
+      throw new ForbiddenException('Access denied.');
 
     // 2. Resolve API key (env > platform key > per-user key)
     const apiKey = await this.resolveApiKey(userId);
@@ -386,11 +565,16 @@ export class AiService {
         data: { conversationId, role: 'user', content: userContent },
       });
     } catch (err) {
-      this.logger.warn('[AI] Could not save user message — continuing stream', err);
+      this.logger.warn(
+        '[AI] Could not save user message — continuing stream',
+        err,
+      );
     }
 
     // 4. Build message history + system prompt (mode stored in context._mode)
-    const ctx = conversation.context as (AiContextDto & { _mode?: string }) | null;
+    const ctx = conversation.context as
+      | (AiContextDto & { _mode?: string })
+      | null;
     const isUserMode = !ctx?._mode || ctx._mode === 'user';
     const systemPrompt = isUserMode
       ? this.buildUserSystemPrompt(ctx)
@@ -398,7 +582,7 @@ export class AiService {
 
     const messages = [
       ...conversation.messages.map((m) => ({
-        role:    m.role as 'user' | 'assistant',
+        role: m.role as 'user' | 'assistant',
         content: m.content,
       })),
       { role: 'user' as const, content: userContent },
@@ -407,7 +591,11 @@ export class AiService {
     // 5. Stream from auto-detected provider (Gemini / NVIDIA / OpenAI / Anthropic / OpenRouter)
     let fullResponse = '';
     try {
-      for await (const chunk of streamProviderChat(apiKey, messages, systemPrompt)) {
+      for await (const chunk of streamProviderChat(
+        apiKey,
+        messages,
+        systemPrompt,
+      )) {
         fullResponse += chunk;
         yield chunk;
       }
@@ -425,17 +613,22 @@ export class AiService {
           data: { conversationId, role: 'assistant', content: fullResponse },
         });
         await this.prisma.aiConversation.update({
-          where: { id: conversationId }, data: { updatedAt: new Date() },
+          where: { id: conversationId },
+          data: { updatedAt: new Date() },
         });
       } catch (err) {
         this.logger.warn('[AI] Could not persist assistant message', err);
       }
       try {
-        await this.cache.del(this.detailKey(conversationId), this.listKey(userId));
-      } catch { /* non-fatal */ }
+        await this.cache.del(
+          this.detailKey(conversationId),
+          this.listKey(userId),
+        );
+      } catch {
+        /* non-fatal */
+      }
     }
   }
-
 
   // ── Non-streaming convenience wrapper ─────────────────────────────────────
   async chat(
@@ -444,7 +637,11 @@ export class AiService {
     userContent: string,
   ): Promise<{ content: string; conversationId: string }> {
     let fullText = '';
-    for await (const chunk of this.streamMessage(userId, conversationId, userContent)) {
+    for await (const chunk of this.streamMessage(
+      userId,
+      conversationId,
+      userContent,
+    )) {
       fullText += chunk;
     }
     return { content: fullText, conversationId };
@@ -473,7 +670,8 @@ Your job is to help developers (from beginners to seniors) understand and fix AP
     if (!context) return base;
 
     return (
-      base + '\n\n' +
+      base +
+      '\n\n' +
       '---\n' +
       '**The user is looking at this specific API error in their dashboard:**\n\n' +
       `- **Endpoint:** \`${context.endpoint ?? 'Unknown'}\`\n` +
@@ -487,7 +685,9 @@ Your job is to help developers (from beginners to seniors) understand and fix AP
   }
 
   // ── System prompt — USER APP (beginner-friendly, warm, non-technical) ─────
-  private buildUserSystemPrompt(context: (AiContextDto & { _mode?: string }) | null | undefined): string {
+  private buildUserSystemPrompt(
+    context: (AiContextDto & { _mode?: string }) | null | undefined,
+  ): string {
     const base = `You are Apio AI — a helpful assistant inside the Apio API monitoring tool.
 
 You are talking to a developer who may be new to APIs or backend development. Your goal is to make them feel confident and help them solve their problem without feeling overwhelmed.
@@ -509,7 +709,8 @@ You are talking to a developer who may be new to APIs or backend development. Yo
     if (!context || !context.endpoint) return base;
 
     return (
-      base + '\n\n' +
+      base +
+      '\n\n' +
       '---\n' +
       '**Here is the API error the user is currently looking at:**\n\n' +
       `- **What was called:** \`${context.method ?? '?'} ${context.endpoint ?? 'Unknown'}\`\n` +

@@ -11,22 +11,31 @@ import {
 } from 'class-validator';
 
 export class AiContextDto {
-  @IsOptional() @IsString() @MaxLength(500)
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
   endpoint?: string;
 
-  @IsOptional() @IsString() @MaxLength(10)
+  @IsOptional()
+  @IsString()
+  @MaxLength(10)
   method?: string;
 
-  @IsOptional() @IsNumber()
+  @IsOptional()
+  @IsNumber()
   statusCode?: number;
 
-  @IsOptional() @IsString() @MaxLength(500)
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
   errorMessage?: string;
 
-  @IsOptional() @IsNumber()
+  @IsOptional()
+  @IsNumber()
   latency?: number;
 
-  @IsOptional() @IsString()
+  @IsOptional()
+  @IsString()
   timestamp?: string;
 
   // Allow Prisma to treat this as InputJsonObject
@@ -34,16 +43,20 @@ export class AiContextDto {
 }
 
 export class StartConversationDto {
-  @IsOptional() @IsObject()
+  @IsOptional()
+  @IsObject()
   context?: AiContextDto;
 
   /** 'user' = web app (beginner-friendly), 'admin' = admin panel (technical) */
-  @IsOptional() @IsString() @IsIn(['user', 'admin'])
+  @IsOptional()
+  @IsString()
+  @IsIn(['user', 'admin'])
   mode?: 'user' | 'admin';
 }
 
 export class SendMessageDto {
-  @IsString() @MaxLength(4000)
+  @IsString()
+  @MaxLength(4000)
   content!: string;
 
   @IsString()
@@ -51,14 +64,19 @@ export class SendMessageDto {
 }
 
 export class SetApiKeyDto {
-  @IsString() @MaxLength(200)
+  @IsString()
+  @MaxLength(200)
   geminiApiKey!: string;
 }
 
 export class ListConversationsDto {
-  @IsOptional() @IsInt() @Min(1) @Max(50)
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(50)
   limit?: number;
 
-  @IsOptional() @IsString()
+  @IsOptional()
+  @IsString()
   cursor?: string;
 }

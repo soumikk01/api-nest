@@ -66,20 +66,22 @@ export class AuthService {
     const jwtSecret = this.config.get<string>('JWT_SECRET');
     if (!jwtSecret) throw new Error('JWT_SECRET must be configured');
 
-    const expiry  = this.config.get<string>('ADMIN_JWT_EXPIRY', '7d');
+    const expiry = this.config.get<string>('ADMIN_JWT_EXPIRY', '7d');
     // Include role in payload so AdminGuard can verify the token type
     const payload = { sub: user.id, email: user.email, role: 'admin' as const };
 
-    const accessToken = this.jwtService.sign(
-      payload,
-      { secret: jwtSecret, expiresIn: expiry } as Parameters<typeof this.jwtService.sign>[1],
-    );
+    const accessToken = this.jwtService.sign(payload, {
+      secret: jwtSecret,
+      expiresIn: expiry,
+    } as Parameters<typeof this.jwtService.sign>[1]);
 
     // Also issue a matching refresh token so silent renewal works
     const refreshSecret = this.config.get<string>('JWT_REFRESH_SECRET');
-    const refreshToken  = refreshSecret
-      ? this.jwtService.sign(payload, { secret: refreshSecret, expiresIn: this.config.get('JWT_REFRESH_EXPIRY', '30d') } as Parameters<typeof this.jwtService.sign>[1])
-
+    const refreshToken = refreshSecret
+      ? this.jwtService.sign(payload, {
+          secret: refreshSecret,
+          expiresIn: this.config.get('JWT_REFRESH_EXPIRY', '30d'),
+        } as Parameters<typeof this.jwtService.sign>[1])
       : undefined;
 
     return {
@@ -93,7 +95,7 @@ export class AuthService {
   }
 
   private signTokens(userId: string, email: string) {
-    const jwtSecret     = this.config.get<string>('JWT_SECRET');
+    const jwtSecret = this.config.get<string>('JWT_SECRET');
     const refreshSecret = this.config.get<string>('JWT_REFRESH_SECRET');
     if (!jwtSecret || !refreshSecret) {
       throw new Error('JWT_SECRET and JWT_REFRESH_SECRET must be configured');

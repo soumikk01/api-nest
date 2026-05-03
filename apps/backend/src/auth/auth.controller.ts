@@ -50,7 +50,6 @@ export class AuthController {
     return this.authService.adminLogin(dto);
   }
 
-
   /**
    * POST /auth/refresh
    * 30 requests per 60 seconds — generous for silent token renewal across tabs

@@ -1,4 +1,9 @@
-import { Injectable, CanActivate, ExecutionContext, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  CanActivate,
+  ExecutionContext,
+  ForbiddenException,
+} from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 
 /**
@@ -15,7 +20,9 @@ export class AdminGuard extends AuthGuard('jwt') implements CanActivate {
     const isAuthenticated = await super.canActivate(context);
     if (!isAuthenticated) return false;
 
-    const request = context.switchToHttp().getRequest<{ user?: { role?: string } }>();
+    const request = context
+      .switchToHttp()
+      .getRequest<{ user?: { role?: string } }>();
     const user = request.user;
 
     // Only tokens that have been explicitly issued with role='admin' are allowed.

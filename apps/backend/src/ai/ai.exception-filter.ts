@@ -46,7 +46,10 @@ export class AiExceptionFilter implements ExceptionFilter {
     });
   }
 
-  private classify(exception: unknown): { status: number; userMessage: string } {
+  private classify(exception: unknown): {
+    status: number;
+    userMessage: string;
+  } {
     // ── NestJS HttpException (BadRequest, NotFound, Forbidden, etc.) ─────
     if (exception instanceof HttpException) {
       const res = exception.getResponse();
@@ -54,10 +57,10 @@ export class AiExceptionFilter implements ExceptionFilter {
         typeof res === 'string'
           ? res
           : (res as { message?: string | string[] }).message
-              ? Array.isArray((res as { message: string[] }).message)
-                ? (res as { message: string[] }).message.join('. ')
-                : String((res as { message: string }).message)
-              : exception.message;
+            ? Array.isArray((res as { message: string[] }).message)
+              ? (res as { message: string[] }).message.join('. ')
+              : String((res as { message: string }).message)
+            : exception.message;
 
       // Translate known AI-specific messages
       if (msg.includes('No Gemini API key')) {
@@ -77,7 +80,7 @@ export class AiExceptionFilter implements ExceptionFilter {
     if (
       errMsg.includes('PrismaClient') ||
       errMsg.includes('prisma') ||
-      errMsg.includes('P2') ||         // Prisma error codes
+      errMsg.includes('P2') || // Prisma error codes
       errMsg.includes('MongoServer') ||
       errMsg.includes('connect ECONNREFUSED')
     ) {

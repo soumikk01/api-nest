@@ -18,10 +18,10 @@ export type AiProvider =
 
 export interface ProviderInfo {
   provider: AiProvider;
-  name: string;       // Human-readable
-  model: string;      // Default model for this provider
-  badge: string;      // Short label for UI badge
-  baseUrl?: string;   // OpenAI-compatible base URL (if applicable)
+  name: string; // Human-readable
+  model: string; // Default model for this provider
+  badge: string; // Short label for UI badge
+  baseUrl?: string; // OpenAI-compatible base URL (if applicable)
 }
 
 // ── Auto-detect provider from key prefix ─────────────────────────────────────
@@ -29,34 +29,63 @@ export function detectProvider(apiKey: string): ProviderInfo {
   const k = apiKey.trim();
 
   if (k.startsWith('AIza')) {
-    return { provider: 'gemini', name: 'Google Gemini', model: 'gemini-2.0-flash', badge: 'Gemini' };
+    return {
+      provider: 'gemini',
+      name: 'Google Gemini',
+      model: 'gemini-2.0-flash',
+      badge: 'Gemini',
+    };
   }
   if (k.startsWith('nvapi-')) {
     return {
-      provider: 'nvidia', name: 'NVIDIA NIM', model: 'meta/llama-3.1-70b-instruct',
-      badge: 'NVIDIA', baseUrl: 'https://integrate.api.nvidia.com/v1',
+      provider: 'nvidia',
+      name: 'NVIDIA NIM',
+      model: 'meta/llama-3.1-70b-instruct',
+      badge: 'NVIDIA',
+      baseUrl: 'https://integrate.api.nvidia.com/v1',
     };
   }
   if (k.startsWith('sk-ant-')) {
-    return { provider: 'anthropic', name: 'Anthropic Claude', model: 'claude-3-5-haiku-20241022', badge: 'Claude' };
+    return {
+      provider: 'anthropic',
+      name: 'Anthropic Claude',
+      model: 'claude-3-5-haiku-20241022',
+      badge: 'Claude',
+    };
   }
   if (k.startsWith('sk-or-')) {
     return {
-      provider: 'openrouter', name: 'OpenRouter', model: 'openai/gpt-4o-mini',
-      badge: 'OpenRouter', baseUrl: 'https://openrouter.ai/api/v1',
+      provider: 'openrouter',
+      name: 'OpenRouter',
+      model: 'openai/gpt-4o-mini',
+      badge: 'OpenRouter',
+      baseUrl: 'https://openrouter.ai/api/v1',
     };
   }
   if (k.startsWith('sk-')) {
-    return { provider: 'openai', name: 'OpenAI', model: 'gpt-4o-mini', badge: 'OpenAI' };
+    return {
+      provider: 'openai',
+      name: 'OpenAI',
+      model: 'gpt-4o-mini',
+      badge: 'OpenAI',
+    };
   }
 
-  return { provider: 'unknown', name: 'Unknown Provider', model: '', badge: '?' };
+  return {
+    provider: 'unknown',
+    name: 'Unknown Provider',
+    model: '',
+    badge: '?',
+  };
 }
 
 // ── Internal helpers ──────────────────────────────────────────────────────────
 
 /** Shared message format used internally before converting per-provider */
-export interface ChatMessage { role: 'user' | 'assistant'; content: string; }
+export interface ChatMessage {
+  role: 'user' | 'assistant';
+  content: string;
+}
 
 // ── Test / validate a key ─────────────────────────────────────────────────────
 export async function testProviderKey(
@@ -68,25 +97,44 @@ export async function testProviderKey(
     return {
       valid: false,
       provider: 'Unknown',
-      message: '✗ Unrecognized key format. Supported: Gemini (AIzaSy...), NVIDIA (nvapi-...), OpenAI (sk-...), Anthropic (sk-ant-...), OpenRouter (sk-or-...).',
+      message:
+        '✗ Unrecognized key format. Supported: Gemini (AIzaSy...), NVIDIA (nvapi-...), OpenAI (sk-...), Anthropic (sk-ant-...), OpenRouter (sk-or-...).',
     };
   }
 
   try {
     switch (info.provider) {
-      case 'gemini':       return await testGemini(apiKey, info);
-      case 'openai':       return await testOpenAiCompat(apiKey, info);
-      case 'nvidia':       return await testOpenAiCompat(apiKey, info);
-      case 'openrouter':   return await testOpenAiCompat(apiKey, info);
-      case 'anthropic':    return await testAnthropic(apiKey, info);
-      default:             return { valid: false, provider: info.name, message: '✗ Provider not supported yet.' };
+      case 'gemini':
+        return await testGemini(apiKey, info);
+      case 'openai':
+        return await testOpenAiCompat(apiKey, info);
+      case 'nvidia':
+        return await testOpenAiCompat(apiKey, info);
+      case 'openrouter':
+        return await testOpenAiCompat(apiKey, info);
+      case 'anthropic':
+        return await testAnthropic(apiKey, info);
+      default:
+        return {
+          valid: false,
+          provider: info.name,
+          message: '✗ Provider not supported yet.',
+        };
     }
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     if (msg.includes('timeout') || msg.includes('ETIMEDOUT')) {
-      return { valid: false, provider: info.name, message: `✗ Request timed out. Check your network.` };
+      return {
+        valid: false,
+        provider: info.name,
+        message: `✗ Request timed out. Check your network.`,
+      };
     }
-    return { valid: false, provider: info.name, message: `✗ Connection failed: ${msg.slice(0, 120)}` };
+    return {
+      valid: false,
+      provider: info.name,
+      message: `✗ Connection failed: ${msg.slice(0, 120)}`,
+    };
   }
 }
 
@@ -96,17 +144,32 @@ async function testGemini(apiKey: string, info: ProviderInfo) {
     {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ contents: [{ parts: [{ text: 'Reply with one word: OK' }] }] }),
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: 'Reply with one word: OK' }] }],
+      }),
       signal: AbortSignal.timeout(10_000),
     },
   );
-  if (res.ok) return { valid: true, provider: info.name, message: `✓ ${info.name} key is valid and ready.` };
-  const err = await res.json() as { error?: { message?: string } };
+  if (res.ok)
+    return {
+      valid: true,
+      provider: info.name,
+      message: `✓ ${info.name} key is valid and ready.`,
+    };
+  const err = (await res.json()) as { error?: { message?: string } };
   const msg = err?.error?.message ?? `HTTP ${res.status}`;
   if (res.status === 400 && msg.includes('API_KEY_INVALID'))
-    return { valid: false, provider: info.name, message: '✗ Invalid Gemini API key.' };
+    return {
+      valid: false,
+      provider: info.name,
+      message: '✗ Invalid Gemini API key.',
+    };
   if (res.status === 429)
-    return { valid: false, provider: info.name, message: '✗ Rate limit hit — key is valid but busy.' };
+    return {
+      valid: false,
+      provider: info.name,
+      message: '✗ Rate limit hit — key is valid but busy.',
+    };
   return { valid: false, provider: info.name, message: `✗ ${msg}` };
 }
 
@@ -124,16 +187,44 @@ async function testOpenAiCompat(apiKey: string, info: ProviderInfo) {
     headers: { Authorization: `Bearer ${apiKey}` },
     signal: AbortSignal.timeout(10_000),
   });
-  if (res.ok) return { valid: true, provider: info.name, message: `✓ ${info.name} key is valid and ready.` };
+  if (res.ok)
+    return {
+      valid: true,
+      provider: info.name,
+      message: `✓ ${info.name} key is valid and ready.`,
+    };
   const body = await res.text().catch(() => '');
-  if (res.status === 401) return { valid: false, provider: info.name, message: `✗ Invalid ${info.name} API key.` };
-  if (res.status === 403) return { valid: false, provider: info.name, message: `✗ ${info.name} key lacks required permissions.` };
-  if (res.status === 429) return { valid: false, provider: info.name, message: `✗ Rate limit hit — key is valid but busy.` };
-  return { valid: false, provider: info.name, message: `✗ HTTP ${res.status}: ${body.slice(0, 120)}` };
+  if (res.status === 401)
+    return {
+      valid: false,
+      provider: info.name,
+      message: `✗ Invalid ${info.name} API key.`,
+    };
+  if (res.status === 403)
+    return {
+      valid: false,
+      provider: info.name,
+      message: `✗ ${info.name} key lacks required permissions.`,
+    };
+  if (res.status === 429)
+    return {
+      valid: false,
+      provider: info.name,
+      message: `✗ Rate limit hit — key is valid but busy.`,
+    };
+  return {
+    valid: false,
+    provider: info.name,
+    message: `✗ HTTP ${res.status}: ${body.slice(0, 120)}`,
+  };
 }
 
 /** Test via a minimal 1-token chat completion (used for NVIDIA, OpenRouter) */
-async function testViaCompletion(apiKey: string, info: ProviderInfo, base: string) {
+async function testViaCompletion(
+  apiKey: string,
+  info: ProviderInfo,
+  base: string,
+) {
   const extraHeaders: Record<string, string> = {};
   if (info.provider === 'openrouter') {
     extraHeaders['HTTP-Referer'] = 'https://apio.dev';
@@ -144,7 +235,7 @@ async function testViaCompletion(apiKey: string, info: ProviderInfo, base: strin
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${apiKey}`,
+      Authorization: `Bearer ${apiKey}`,
       ...extraHeaders,
     },
     body: JSON.stringify({
@@ -152,25 +243,66 @@ async function testViaCompletion(apiKey: string, info: ProviderInfo, base: strin
       max_tokens: 1,
       messages: [{ role: 'user', content: 'Hi' }],
     }),
-    signal: AbortSignal.timeout(20_000),  // completions can be slower
+    signal: AbortSignal.timeout(20_000), // completions can be slower
   });
 
-  if (res.ok) return { valid: true, provider: info.name, message: `✓ ${info.name} key is valid and ready.` };
+  if (res.ok)
+    return {
+      valid: true,
+      provider: info.name,
+      message: `✓ ${info.name} key is valid and ready.`,
+    };
 
   const body = await res.text().catch(() => '');
-  if (res.status === 401) return { valid: false, provider: info.name, message: `✗ Invalid ${info.name} API key. Double-check and try again.` };
-  if (res.status === 402) return { valid: false, provider: info.name, message: `✗ ${info.name} account has no credits. Please top up.` };
-  if (res.status === 403) return { valid: false, provider: info.name, message: `✗ ${info.name} key does not have access to model "${info.model}".` };
-  if (res.status === 429) return { valid: false, provider: info.name, message: `✗ Rate limit hit — key is valid but quota exceeded. Try again shortly.` };
-  if (res.status === 404) return { valid: false, provider: info.name, message: `✗ Model "${info.model}" not found on ${info.name}. The key may be valid — try chatting directly.` };
+  if (res.status === 401)
+    return {
+      valid: false,
+      provider: info.name,
+      message: `✗ Invalid ${info.name} API key. Double-check and try again.`,
+    };
+  if (res.status === 402)
+    return {
+      valid: false,
+      provider: info.name,
+      message: `✗ ${info.name} account has no credits. Please top up.`,
+    };
+  if (res.status === 403)
+    return {
+      valid: false,
+      provider: info.name,
+      message: `✗ ${info.name} key does not have access to model "${info.model}".`,
+    };
+  if (res.status === 429)
+    return {
+      valid: false,
+      provider: info.name,
+      message: `✗ Rate limit hit — key is valid but quota exceeded. Try again shortly.`,
+    };
+  if (res.status === 404)
+    return {
+      valid: false,
+      provider: info.name,
+      message: `✗ Model "${info.model}" not found on ${info.name}. The key may be valid — try chatting directly.`,
+    };
 
   // Extract error message if JSON
   try {
-    const json = JSON.parse(body) as { error?: { message?: string }; message?: string };
+    const json = JSON.parse(body) as {
+      error?: { message?: string };
+      message?: string;
+    };
     const msg = json?.error?.message ?? json?.message ?? `HTTP ${res.status}`;
-    return { valid: false, provider: info.name, message: `✗ ${msg.slice(0, 200)}` };
+    return {
+      valid: false,
+      provider: info.name,
+      message: `✗ ${msg.slice(0, 200)}`,
+    };
   } catch {
-    return { valid: false, provider: info.name, message: `✗ HTTP ${res.status}: ${body.slice(0, 120)}` };
+    return {
+      valid: false,
+      provider: info.name,
+      message: `✗ HTTP ${res.status}: ${body.slice(0, 120)}`,
+    };
   }
 }
 
@@ -189,12 +321,34 @@ async function testAnthropic(apiKey: string, info: ProviderInfo) {
     }),
     signal: AbortSignal.timeout(15_000),
   });
-  if (res.ok) return { valid: true, provider: info.name, message: `✓ ${info.name} key is valid and ready.` };
-  const err = await res.json().catch(() => ({})) as { error?: { message?: string; type?: string } };
+  if (res.ok)
+    return {
+      valid: true,
+      provider: info.name,
+      message: `✓ ${info.name} key is valid and ready.`,
+    };
+  const err = (await res.json().catch(() => ({}))) as {
+    error?: { message?: string; type?: string };
+  };
   const msg = err?.error?.message ?? `HTTP ${res.status}`;
-  if (res.status === 401) return { valid: false, provider: info.name, message: `✗ Invalid Anthropic API key.` };
-  if (res.status === 403) return { valid: false, provider: info.name, message: `✗ Anthropic key is inactive or lacks credit.` };
-  if (res.status === 429) return { valid: false, provider: info.name, message: `✗ Anthropic rate limit hit — key is valid.` };
+  if (res.status === 401)
+    return {
+      valid: false,
+      provider: info.name,
+      message: `✗ Invalid Anthropic API key.`,
+    };
+  if (res.status === 403)
+    return {
+      valid: false,
+      provider: info.name,
+      message: `✗ Anthropic key is inactive or lacks credit.`,
+    };
+  if (res.status === 429)
+    return {
+      valid: false,
+      provider: info.name,
+      message: `✗ Anthropic rate limit hit — key is valid.`,
+    };
   return { valid: false, provider: info.name, message: `✗ ${msg}` };
 }
 
@@ -228,8 +382,13 @@ export async function* streamProviderChat(
 
 // ── Gemini streaming ──────────────────────────────────────────────────────────
 
-interface GeminiContent  { role: 'user' | 'model'; parts: { text: string }[]; }
-interface GeminiResponse { candidates?: { content?: { parts?: { text?: string }[] } }[]; }
+interface GeminiContent {
+  role: 'user' | 'model';
+  parts: { text: string }[];
+}
+interface GeminiResponse {
+  candidates?: { content?: { parts?: { text?: string }[] } }[];
+}
 
 async function* streamGemini(
   apiKey: string,
@@ -258,9 +417,13 @@ async function* streamGemini(
   if (!res.ok) {
     const body = await res.text().catch(() => '');
     if (res.status === 400 && body.includes('API_KEY_INVALID'))
-      throw new Error('Your Gemini API key is invalid or expired. Update it in Settings → AI Configuration.');
+      throw new Error(
+        'Your Gemini API key is invalid or expired. Update it in Settings → AI Configuration.',
+      );
     if (res.status === 429)
-      throw new Error('Gemini rate limit reached. Please wait a moment and try again.');
+      throw new Error(
+        'Gemini rate limit reached. Please wait a moment and try again.',
+      );
     throw new Error(`Gemini API error (${res.status}). Please try again.`);
   }
 
@@ -272,7 +435,9 @@ async function* streamGemini(
 
 // ── OpenAI-compatible streaming (OpenAI, NVIDIA, OpenRouter) ──────────────────
 
-interface OAIChunk { choices?: { delta?: { content?: string } }[] }
+interface OAIChunk {
+  choices?: { delta?: { content?: string } }[];
+}
 
 async function* streamOpenAiCompat(
   apiKey: string,
@@ -302,22 +467,35 @@ async function* streamOpenAiCompat(
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${apiKey}`,
+      Authorization: `Bearer ${apiKey}`,
       // OpenRouter requires these headers
-      ...(info.provider === 'openrouter' ? {
-        'HTTP-Referer': 'https://apio.dev',
-        'X-Title': 'Apio AI Assistant',
-      } : {}),
+      ...(info.provider === 'openrouter'
+        ? {
+            'HTTP-Referer': 'https://apio.dev',
+            'X-Title': 'Apio AI Assistant',
+          }
+        : {}),
     },
     body: JSON.stringify(body),
   });
 
   if (!res.ok) {
     const errBody = await res.text().catch(() => '');
-    if (res.status === 401) throw new Error(`Your ${info.name} API key is invalid or expired. Update it in Settings → AI Configuration.`);
-    if (res.status === 429) throw new Error(`${info.name} rate limit reached. Please wait a moment and try again.`);
-    if (res.status === 402) throw new Error(`${info.name} account has insufficient credits. Please top up your account.`);
-    throw new Error(`${info.name} API error (${res.status}). Please try again.`);
+    if (res.status === 401)
+      throw new Error(
+        `Your ${info.name} API key is invalid or expired. Update it in Settings → AI Configuration.`,
+      );
+    if (res.status === 429)
+      throw new Error(
+        `${info.name} rate limit reached. Please wait a moment and try again.`,
+      );
+    if (res.status === 402)
+      throw new Error(
+        `${info.name} account has insufficient credits. Please top up your account.`,
+      );
+    throw new Error(
+      `${info.name} API error (${res.status}). Please try again.`,
+    );
   }
 
   yield* readSseStream(res, (json) => {
@@ -329,7 +507,10 @@ async function* streamOpenAiCompat(
 
 // ── Anthropic streaming ───────────────────────────────────────────────────────
 
-interface AnthropicEvent { type: string; delta?: { type: string; text?: string } }
+interface AnthropicEvent {
+  type: string;
+  delta?: { type: string; text?: string };
+}
 
 async function* streamAnthropic(
   apiKey: string,
@@ -354,9 +535,16 @@ async function* streamAnthropic(
   });
 
   if (!res.ok) {
-    if (res.status === 401) throw new Error('Your Anthropic API key is invalid or expired. Update it in Settings → AI Configuration.');
-    if (res.status === 429) throw new Error('Anthropic rate limit reached. Please wait a moment and try again.');
-    if (res.status === 529) throw new Error('Anthropic is overloaded. Please try again in a moment.');
+    if (res.status === 401)
+      throw new Error(
+        'Your Anthropic API key is invalid or expired. Update it in Settings → AI Configuration.',
+      );
+    if (res.status === 429)
+      throw new Error(
+        'Anthropic rate limit reached. Please wait a moment and try again.',
+      );
+    if (res.status === 529)
+      throw new Error('Anthropic is overloaded. Please try again in a moment.');
     throw new Error(`Anthropic API error (${res.status}). Please try again.`);
   }
 
@@ -375,8 +563,8 @@ async function* readSseStream(
   extract: (json: string) => string,
 ): AsyncGenerator<string> {
   const reader = res.body!.getReader();
-  const dec    = new TextDecoder();
-  let buf      = '';
+  const dec = new TextDecoder();
+  let buf = '';
 
   try {
     while (true) {
@@ -393,7 +581,9 @@ async function* readSseStream(
         try {
           const text = extract(json);
           if (text) yield text;
-        } catch { /* skip malformed frame */ }
+        } catch {
+          /* skip malformed frame */
+        }
       }
     }
   } finally {

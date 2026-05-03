@@ -18,7 +18,11 @@ import { AuthGuard } from '@nestjs/passport';
 import type { Response } from 'express';
 import { Request } from 'express';
 import { AiService } from './ai.service';
-import { StartConversationDto, SendMessageDto, SetApiKeyDto } from './dto/ai.dto';
+import {
+  StartConversationDto,
+  SendMessageDto,
+  SetApiKeyDto,
+} from './dto/ai.dto';
 import { AiExceptionFilter } from './ai.exception-filter';
 import { Throttle } from '@nestjs/throttler';
 import { AdminGuard } from '../auth/guards/admin.guard';
@@ -60,7 +64,8 @@ export class AiController {
   @Post('key/test')
   @Throttle({ long: { limit: 10, ttl: 60_000 } })
   testKey(@Body() body: { apiKey: string }) {
-    if (!body.apiKey?.trim()) throw new BadRequestException('apiKey is required');
+    if (!body.apiKey?.trim())
+      throw new BadRequestException('apiKey is required');
     return this.ai.testApiKey(body.apiKey.trim());
   }
 
@@ -79,7 +84,10 @@ export class AiController {
   @Throttle({ long: { limit: 10, ttl: 60_000 } })
   async setPlatformKey(@Req() req: AuthedRequest, @Body() dto: SetApiKeyDto) {
     await this.ai.setPlatformKey(dto.geminiApiKey, req.user.userId);
-    return { success: true, message: 'Platform API key saved. All users will now use this key.' };
+    return {
+      success: true,
+      message: 'Platform API key saved. All users will now use this key.',
+    };
   }
 
   /** DELETE /api/v1/ai/platform-key — remove platform key (admin only) */
@@ -94,18 +102,21 @@ export class AiController {
 
   /** GET /api/v1/ai/conversations */
   @Get('conversations')
-  listConversations(
-    @Req() req: AuthedRequest,
-    @Query('limit') limit?: string,
-  ) {
+  listConversations(@Req() req: AuthedRequest, @Query('limit') limit?: string) {
     const parsedLimit = limit ? parseInt(limit, 10) : 20;
-    return this.ai.listConversations(req.user.userId, isNaN(parsedLimit) ? 20 : parsedLimit);
+    return this.ai.listConversations(
+      req.user.userId,
+      isNaN(parsedLimit) ? 20 : parsedLimit,
+    );
   }
 
   /** POST /api/v1/ai/conversations — start a new thread */
   @Post('conversations')
   @HttpCode(HttpStatus.CREATED)
-  startConversation(@Req() req: AuthedRequest, @Body() dto: StartConversationDto) {
+  startConversation(
+    @Req() req: AuthedRequest,
+    @Body() dto: StartConversationDto,
+  ) {
     return this.ai.startConversation(req.user.userId, dto.context, dto.mode);
   }
 
