@@ -8,6 +8,7 @@ import { Moon, Sun, Droplets, Monitor, User, ClipboardList, MessageSquare } from
 import { useAuth } from '@/hooks/useAuth';
 import { useTheme } from '@/hooks/useTheme';
 import { AVATARS } from '@/features/dashboard/components/AccountPage/avatars';
+import { openAiPanel } from '@/components/AiChatPanel/AiChatPanel';
 import styles from './TopNavbar.module.scss';
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000/api/v1';
@@ -367,20 +368,25 @@ export default function TopNavbar() {
           </svg>
         </button>
 
-        <button 
-          className={styles.iconBtn} 
-          title="Updates & Features"
-          onClick={() => {
-            const params = new URLSearchParams(searchParams.toString());
-            params.set('panel', 'updates');
-            window.history.replaceState(null, '', `${pathname}?${params.toString()}`);
-            window.dispatchEvent(new PopStateEvent('popstate'));
-          }}
+        {/* AI Assistant — hexagon button */}
+        <button
+          className={styles.iconBtn}
+          title="Apio AI Assistant"
+          id="topnav-ai-btn"
+          onClick={() => openAiPanel()}
+          style={{ position: 'relative' }}
         >
           <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" width="16" height="16">
             <polygon points="10,1 19,6 19,14 10,19 1,14 1,6" />
             <path d="M10 5 Q10 10, 15 10 Q10 10, 10 15 Q10 10, 5 10 Q10 10, 10 5 Z" fill="#3b82f6" stroke="none" />
           </svg>
+          {/* pulse dot */}
+          <span style={{
+            position: 'absolute', top: '5px', right: '5px',
+            width: '6px', height: '6px', borderRadius: '50%',
+            background: 'var(--accent)', display: 'block',
+            animation: 'ai-topnav-pulse 2s ease-in-out infinite',
+          }} />
         </button>
 
 

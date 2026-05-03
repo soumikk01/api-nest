@@ -275,3 +275,10 @@ body {
   mask-image: linear-gradient(to bottom, transparent, black, transparent);
   animation: matrix-scroll 20s linear infinite;
 }
+
+/* ── AI TopNav button pulse ── */
+@keyframes ai-topnav-pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50%       { transform: scale(1.5); opacity: 0.4; }
+}
+

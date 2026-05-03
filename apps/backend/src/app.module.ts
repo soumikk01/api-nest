@@ -19,6 +19,7 @@ import { AuditModule } from './audit/audit.module';
 import { AppController } from './app.controller';
 import { InstallController } from './app.controller';
 import { ServicesModule } from './services/services.module';
+import { AiModule } from './ai/ai.module';
 import { INGEST_QUEUE } from './ingest/ingest.queue';
 
 @Module({
@@ -127,6 +128,7 @@ import { INGEST_QUEUE } from './ingest/ingest.queue';
     AnalyticsModule,
     AuditModule,
     ServicesModule,
+    AiModule,
 
     // Fix #11: removed duplicate BullModule.registerQueue — the queue is
     // already registered inside IngestModule. AppController’s @InjectQueue

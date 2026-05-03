@@ -12,20 +12,23 @@ datasource db {
 //  USER
 // ──────────────────────────────────────────────
 model User {
-  id        String   @id @default(auto()) @map("_id") @db.ObjectId
-  email     String   @unique
-  password  String
-  name      String?
-  avatar    Int      @default(0)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id             String   @id @default(auto()) @map("_id") @db.ObjectId
+  email          String   @unique
+  password       String
+  name           String?
+  avatar         Int      @default(0)
+  geminiApiKey   String?  // per-user Gemini API key (encrypted at rest by MongoDB)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
-  projects       Project[]
-  projectMembers ProjectMember[]
-  apiCalls       ApiCall[]
-  alertRules     AlertRule[]
-  auditLogs      AuditLog[]
+  projects        Project[]
+  projectMembers  ProjectMember[]
+  apiCalls        ApiCall[]
+  alertRules      AlertRule[]
+  auditLogs       AuditLog[]
+  aiConversations AiConversation[]
 }
+
 
 // ──────────────────────────────────────────────
 //  PROJECT
@@ -203,4 +206,54 @@ model AuditLog {
   @@index([userId])
   @@index([projectId])
   @@index([createdAt])
+}
+
+// ──────────────────────────────────────────────
+//  AI CONVERSATION  (one thread per troubleshooting session)
+// ──────────────────────────────────────────────
+model AiConversation {
+  id     String @id @default(auto()) @map("_id") @db.ObjectId
+  userId String @db.ObjectId
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  title   String?  // auto-set from first message
+  context Json?    // { endpoint, method, statusCode, errorMessage, latency, timestamp }
+
+  messages  AiMessage[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([userId, updatedAt])
+}
+
+// ──────────────────────────────────────────────
+//  AI MESSAGE  (individual turn in a conversation)
+// ──────────────────────────────────────────────
+model AiMessage {
+  id             String         @id @default(auto()) @map("_id") @db.ObjectId
+  conversationId String         @db.ObjectId
+  conversation   AiConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  role    String  // "user" | "assistant"
+  content String
+
+  createdAt DateTime @default(now())
+
+  @@index([conversationId])
+  @@index([conversationId, createdAt])
+}
+
+// ──────────────────────────────────────────────
+//  PLATFORM CONFIG
+//  Global key-value store for admin-managed
+//  platform settings (e.g. Gemini API key).
+// ──────────────────────────────────────────────
+model PlatformConfig {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  key       String   @unique   // e.g. "gemini_api_key"
+  value     String             // encrypted / sensitive value
+  updatedAt DateTime @updatedAt
+  updatedBy String?            // userId of last admin who changed it
 }

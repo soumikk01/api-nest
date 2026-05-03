@@ -11,7 +11,7 @@ import { Type } from 'class-transformer';
 export class QueryHistoryDto {
   @IsString()
   @IsNotEmpty()
-  projectId: string;
+  projectId!: string;
 
   @IsOptional()
   @Type(() => Number)

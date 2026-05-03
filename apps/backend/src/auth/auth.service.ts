@@ -50,9 +50,49 @@ export class AuthService {
     return this.signTokens(user.id, user.email);
   }
 
+  // ── Admin Login ───────────────────────────────────────────────────────────
+  // Issues a long-lived token (ADMIN_JWT_EXPIRY, default 7d) using the same
+  // JWT_SECRET as regular users — so it works with ALL existing guards without
+  // any extra strategies or module changes.
+  async adminLogin(dto: LoginDto) {
+    const user = await this.prisma.user.findUnique({
+      where: { email: dto.email },
+    });
+    if (!user) throw new UnauthorizedException('Invalid credentials');
+
+    const passwordMatch = await bcrypt.compare(dto.password, user.password);
+    if (!passwordMatch) throw new UnauthorizedException('Invalid credentials');
+
+    const jwtSecret = this.config.get<string>('JWT_SECRET');
+    if (!jwtSecret) throw new Error('JWT_SECRET must be configured');
+
+    const expiry  = this.config.get<string>('ADMIN_JWT_EXPIRY', '7d');
+    // Include role in payload so AdminGuard can verify the token type
+    const payload = { sub: user.id, email: user.email, role: 'admin' as const };
+
+    const accessToken = this.jwtService.sign(
+      payload,
+      { secret: jwtSecret, expiresIn: expiry } as Parameters<typeof this.jwtService.sign>[1],
+    );
+
+    // Also issue a matching refresh token so silent renewal works
+    const refreshSecret = this.config.get<string>('JWT_REFRESH_SECRET');
+    const refreshToken  = refreshSecret
+      ? this.jwtService.sign(payload, { secret: refreshSecret, expiresIn: this.config.get('JWT_REFRESH_EXPIRY', '30d') } as Parameters<typeof this.jwtService.sign>[1])
+
+      : undefined;
+
+    return {
+      accessToken,
+      refreshToken,
+      role: 'admin',
+      email: user.email,
+      name: user.name,
+      expiresIn: expiry,
+    };
+  }
+
   private signTokens(userId: string, email: string) {
-    // Fix #6: fail hard if secrets are missing — signing with undefined secret
-    // produces tokens that some JWT libs accept without verification.
     const jwtSecret     = this.config.get<string>('JWT_SECRET');
     const refreshSecret = this.config.get<string>('JWT_REFRESH_SECRET');
     if (!jwtSecret || !refreshSecret) {
@@ -63,12 +103,12 @@ export class AuthService {
 
     const accessToken = this.jwtService.sign(payload, {
       secret: jwtSecret,
-      expiresIn: this.config.get('JWT_EXPIRY', '15m'),
+      expiresIn: this.config.get('JWT_EXPIRY', '1h'),
     });
 
     const refreshToken = this.jwtService.sign(payload, {
       secret: refreshSecret,
-      expiresIn: this.config.get('JWT_REFRESH_EXPIRY', '7d'),
+      expiresIn: this.config.get('JWT_REFRESH_EXPIRY', '30d'),
     });
 
     return { accessToken, refreshToken };
