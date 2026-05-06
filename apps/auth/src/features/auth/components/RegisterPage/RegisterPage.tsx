@@ -31,7 +31,6 @@ export default function RegisterPage() {
   const [error, setError] = useState('');
   const [isShaking, setIsShaking] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
 
   const handleInvalid = () => {
     setIsShaking(true);

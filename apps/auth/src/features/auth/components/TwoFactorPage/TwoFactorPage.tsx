@@ -18,6 +18,43 @@ const SpringBackground = () => (
   </div>
 );
 
+// ── Extracted outside component to avoid 'cannot create during render' error ──
+function ErrorBanner({ errorMsg }: { errorMsg: string }) {
+  if (!errorMsg) return null;
+  return (
+    <div className={loginStyles.errorBanner}>
+      <svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16" style={{ flexShrink: 0, marginTop: 2 }}>
+        <path fillRule="evenodd" d="M18 10a8 8 0 1 1-16 0 8 8 0 0 1 16 0zm-8-5a.75.75 0 0 1 .75.75v4.5a.75.75 0 0 1-1.5 0v-4.5A.75.75 0 0 1 10 5zm0 10a1 1 0 1 0 0-2 1 1 0 0 0 0 2z" clipRule="evenodd" />
+      </svg>
+      {errorMsg}
+    </div>
+  );
+}
+
+function MethodBadge({ lockedMethod }: { lockedMethod: Method }) {
+  return (
+    <div className={styles.methodBadge}>
+      {lockedMethod === 'totp' ? (
+        <>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="13" height="13">
+            <rect x="5" y="2" width="14" height="20" rx="2"/>
+            <path d="M12 18h.01" strokeLinecap="round" strokeWidth="2.5"/>
+          </svg>
+          Authenticator App
+        </>
+      ) : (
+        <>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="13" height="13">
+            <rect x="2" y="4" width="20" height="16" rx="2"/>
+            <path d="M22 6l-10 7L2 6" strokeLinecap="round"/>
+          </svg>
+          Email OTP
+        </>
+      )}
+    </div>
+  );
+}
+
 type Method = 'totp' | 'email-otp';
 
 export default function TwoFactorPage() {
@@ -47,7 +84,7 @@ export default function TwoFactorPage() {
 
   const redirectToDashboard = () => {
     const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000';
-    window.location.href = `${appUrl}/projects`;
+    window.location.assign(`${appUrl}/projects`);
   };
 
   // ── Submit TOTP ──────────────────────────────────────────────────────────
@@ -156,16 +193,6 @@ export default function TwoFactorPage() {
     </div>
   );
 
-  // ── Error banner ─────────────────────────────────────────────────────────
-  const ErrorBanner = () => errorMsg ? (
-    <div className={loginStyles.errorBanner}>
-      <svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16" style={{ flexShrink: 0, marginTop: 2 }}>
-        <path fillRule="evenodd" d="M18 10a8 8 0 1 1-16 0 8 8 0 0 1 16 0zm-8-5a.75.75 0 0 1 .75.75v4.5a.75.75 0 0 1-1.5 0v-4.5A.75.75 0 0 1 10 5zm0 10a1 1 0 1 0 0-2 1 1 0 0 0 0 2z" clipRule="evenodd" />
-      </svg>
-      {errorMsg}
-    </div>
-  ) : null;
-
   // ── Descriptive subtitle per method & state ──────────────────────────────
   const subtitle =
     lockedMethod === 'totp'
@@ -173,29 +200,6 @@ export default function TwoFactorPage() {
       : emailSent
         ? 'Check your inbox — enter the 6-digit code we just sent.'
         : 'Click below and we\'ll send a one-time code to your email.';
-
-  // ── Method icon ──────────────────────────────────────────────────────────
-  const MethodBadge = () => (
-    <div className={styles.methodBadge}>
-      {lockedMethod === 'totp' ? (
-        <>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="13" height="13">
-            <rect x="5" y="2" width="14" height="20" rx="2"/>
-            <path d="M12 18h.01" strokeLinecap="round" strokeWidth="2.5"/>
-          </svg>
-          Authenticator App
-        </>
-      ) : (
-        <>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="13" height="13">
-            <rect x="2" y="4" width="20" height="16" rx="2"/>
-            <path d="M22 6l-10 7L2 6" strokeLinecap="round"/>
-          </svg>
-          Email OTP
-        </>
-      )}
-    </div>
-  );
 
   return (
     <div className={`${loginStyles.page} ${loginStyles.dark}`}>
@@ -217,7 +221,7 @@ export default function TwoFactorPage() {
                   </svg>
                 </div>
                 <h1 className={loginStyles.cardTitle}>Two-Factor Verification</h1>
-                <MethodBadge />
+                <MethodBadge lockedMethod={lockedMethod} />
                 <p className={loginStyles.cardSub} style={{ marginTop: '0.5rem' }}>{subtitle}</p>
               </div>
 
@@ -225,7 +229,7 @@ export default function TwoFactorPage() {
               {lockedMethod === 'totp' && (
                 <form style={{ width: '100%' }} onSubmit={e => { e.preventDefault(); void handleSubmit(); }} noValidate>
                   {renderOtpBoxes()}
-                  <ErrorBanner />
+                  <ErrorBanner errorMsg={errorMsg} />
                   <GooeyButton
                     type="submit"
                     className={`${loginStyles.submitBtn} ${styles.submitBtn}`}
@@ -255,7 +259,7 @@ export default function TwoFactorPage() {
                 <div style={{ width: '100%' }}>
                   {!emailSent ? (
                     <>
-                      <ErrorBanner />
+                      <ErrorBanner errorMsg={errorMsg} />
                       <GooeyButton
                         type="button"
                         className={`${loginStyles.submitBtn} ${styles.submitBtn}`}
@@ -290,7 +294,7 @@ export default function TwoFactorPage() {
                       </div>
 
                       {renderOtpBoxes()}
-                      <ErrorBanner />
+                      <ErrorBanner errorMsg={errorMsg} />
 
                       <GooeyButton
                         type="submit"

@@ -1,6 +1,6 @@
 'use client';
 
-import { animate, motion, useMotionValue } from 'motion/react';
+import { animate, motion, useMotionValue, type AnimationPlaybackControls } from 'motion/react';
 import { useEffect, useRef, useState, useId, ButtonHTMLAttributes } from 'react';
 import styles from './GooeyButton.module.scss';
 
@@ -58,7 +58,7 @@ const GooeyButton = ({ children, className = '', wrapperClassName = '', isLoadin
     }, [displacementScale]);
 
     useEffect(() => {
-        let controls: any;
+        let controls: AnimationPlaybackControls | undefined;
         if (isHovered && !isLoading && !props.disabled) {
             controls = animate(displacementScale, [0, 8, -6, 5, -4, 0], {
                 duration: 3,

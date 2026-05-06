@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import ButtonLogoSpinner from '@/components/ButtonLogoSpinner/ButtonLogoSpinner';
@@ -26,21 +26,18 @@ export default function LoginPage() {
 
   const { login, loginWithGoogle, loginWithGitHub } = useAuth();
 
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState(() => {
+    if (typeof window === 'undefined') return '';
+    return localStorage.getItem('apio_last_email') ?? '';
+  });
+  const [lastUsedEmail] = useState(() => {
+    if (typeof window === 'undefined') return '';
+    return localStorage.getItem('apio_last_email') ?? '';
+  });
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isShaking, setIsShaking] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [lastUsedEmail, setLastUsedEmail] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-
-  useEffect(() => {
-    const saved = localStorage.getItem('apio_last_email');
-    if (saved) {
-      setEmail(saved);
-      setLastUsedEmail(saved);
-    }
-  }, []);
 
   const handleInvalid = () => {
     setIsShaking(true);

@@ -28,10 +28,7 @@ function VerifyEmailContent() {
   const [errorMsg, setErrorMsg] = useState('');
 
   useEffect(() => {
-    if (!token) {
-      setStatus('no-token');
-      return;
-    }
+    if (!token) return;
 
     // Call BetterAuth verify-email endpoint with the token from the email link
     (async () => {
