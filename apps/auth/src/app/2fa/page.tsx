@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import TwoFactorPage from '@/features/auth/components/TwoFactorPage/TwoFactorPage';
 
 export const metadata = {
@@ -6,5 +7,9 @@ export const metadata = {
 };
 
 export default function Page() {
-  return <TwoFactorPage />;
+  return (
+    <Suspense>
+      <TwoFactorPage />
+    </Suspense>
+  );
 }
