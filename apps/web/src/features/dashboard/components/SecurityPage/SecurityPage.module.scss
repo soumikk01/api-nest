@@ -1,0 +1,373 @@
+// ══════════════════════════════════════════════════════════
+//  SECURITY PAGE — premium 2FA management, theme-aware
+// ══════════════════════════════════════════════════════════
+$accent: var(--accent);
+$r-lg:   24px;
+$r-md:   16px;
+$r-sm:   10px;
+
+// ── Page shell ───────────────────────────────────────────
+.content {
+  width: 100%; max-width: 780px; margin: 0 auto;
+  padding: 3.5rem 2rem; position: relative; z-index: 5;
+}
+.header {
+  margin-bottom: 2rem;
+  h1 { font-size: 1.6rem; font-weight: 700; color: var(--text-primary); margin: 0; }
+  p  { font-size: 0.9rem; color: var(--text-muted); margin: 0.25rem 0 0; }
+}
+
+// ── Skeleton loading ──────────────────────────────────────
+.skeletonCard {
+  height: 180px; border-radius: $r-lg;
+  background: var(--bg-overlay);
+  border: 1px solid var(--border);
+  margin-bottom: 1.25rem;
+  animation: shimmerPulse 1.5s ease-in-out infinite alternate;
+}
+@keyframes shimmerPulse {
+  from { opacity: 0.6; }
+  to   { opacity: 1; }
+}
+
+// ── Panel ─────────────────────────────────────────────────
+.panel {
+  background: var(--bg-overlay);
+  backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+  border: 1px solid var(--border);
+  border-radius: $r-lg; padding: 1.75rem;
+  margin-bottom: 1.25rem;
+  transition: border-color 0.2s;
+  &:hover { border-color: var(--border-hover, rgba(255,255,255,0.12)); }
+}
+.panelHeader {
+  display: flex; align-items: flex-start; gap: 1rem; margin-bottom: 1.5rem;
+  h3 {
+    font-size: 1rem; font-weight: 700; color: var(--text-primary);
+    margin: 0 0 0.2rem;
+  }
+}
+.panelIcon {
+  width: 40px; height: 40px; border-radius: $r-sm; flex-shrink: 0;
+  background: rgba(99,102,241,0.12); border: 1px solid rgba(99,102,241,0.25);
+  display: flex; align-items: center; justify-content: center;
+  color: #818cf8;
+}
+.panelSub {
+  font-size: 0.84rem; color: var(--text-muted); margin: 0;
+  line-height: 1.6;
+}
+.statusBadge {
+  margin-left: auto; flex-shrink: 0;
+  padding: 0.3rem 0.75rem; border-radius: 999px;
+  font-size: 0.75rem; font-weight: 700; letter-spacing: 0.03em;
+  align-self: flex-start; margin-top: 2px;
+}
+.statusOn {
+  background: rgba(34, 197, 94, 0.15);
+  border: 1px solid rgba(34, 197, 94, 0.35);
+  color: #4ade80;
+}
+.statusOff {
+  background: rgba(107,114,128,0.15);
+  border: 1px solid rgba(107,114,128,0.3);
+  color: #9ca3af;
+}
+
+// ── Method cards grid ────────────────────────────────────
+.methodGrid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;
+  @media (max-width: 600px) { grid-template-columns: 1fr; }
+}
+.methodCard {
+  border: 1px solid var(--border);
+  border-radius: $r-md; padding: 1.25rem;
+  display: flex; flex-direction: column; gap: 0.75rem;
+  transition: border-color 0.2s, background 0.2s;
+  background: rgba(255,255,255,0.02);
+  &:hover { border-color: rgba(99,102,241,0.35); background: rgba(99,102,241,0.04); }
+}
+.methodCardActive {
+  border-color: rgba(99,102,241,0.5) !important;
+  background: rgba(99,102,241,0.07) !important;
+}
+.methodIcon {
+  width: 44px; height: 44px; border-radius: $r-sm;
+  background: rgba(255,255,255,0.04); border: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  color: #818cf8;
+}
+.methodName  { font-size: 0.9rem; font-weight: 700; color: var(--text-primary); margin: 0; }
+.methodDesc  { font-size: 0.8rem; color: var(--text-muted); line-height: 1.5; margin: 0; }
+.methodInfo  { flex: 1; }
+.methodBadge {
+  align-self: flex-start; padding: 0.2rem 0.6rem; border-radius: 999px;
+  font-size: 0.72rem; font-weight: 700;
+  background: rgba(34,197,94,0.12); border: 1px solid rgba(34,197,94,0.3);
+  color: #4ade80;
+}
+.methodBtn {
+  align-self: flex-start; padding: 0.4rem 1rem;
+  border-radius: $r-sm; border: 1px solid rgba(99,102,241,0.4);
+  background: rgba(99,102,241,0.1); color: #818cf8;
+  font-size: 0.82rem; font-weight: 600; cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  &:hover { background: rgba(99,102,241,0.2); border-color: rgba(99,102,241,0.6); }
+}
+
+// ── Disable row ───────────────────────────────────────────
+.disableRow {
+  margin-top: 1.25rem; padding-top: 1.25rem;
+  border-top: 1px solid var(--border);
+}
+.dangerBtn {
+  display: inline-flex; align-items: center; gap: 0.5rem;
+  padding: 0.5rem 1rem; border-radius: $r-sm;
+  border: 1px solid rgba(239,68,68,0.3); background: rgba(239,68,68,0.08);
+  color: #f87171; font-size: 0.82rem; font-weight: 600; cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  &:hover { background: rgba(239,68,68,0.15); border-color: rgba(239,68,68,0.5); }
+}
+
+// ── Step box ──────────────────────────────────────────────
+.stepBox {
+  margin-top: 1.5rem; padding-top: 1.5rem;
+  border-top: 1px solid var(--border);
+}
+.stepTitle {
+  display: flex; align-items: center; gap: 0.6rem;
+  font-size: 0.95rem; font-weight: 700; color: var(--text-primary);
+  margin-bottom: 0.5rem;
+}
+.dangerTitle { color: #f87171; }
+.stepSub { font-size: 0.84rem; color: var(--text-muted); margin: 0 0 1.25rem; }
+
+// ── Fields ────────────────────────────────────────────────
+.fieldGroup { display: flex; flex-direction: column; gap: 0.4rem; margin-bottom: 1rem; }
+.fieldLabel  { font-size: 0.8rem; font-weight: 600; color: var(--text-muted); }
+.passwordWrap { position: relative; display: flex; align-items: center; }
+.input {
+  width: 100%; padding: 0.65rem 0.875rem; border-radius: $r-sm;
+  border: 1px solid var(--border); background: rgba(255,255,255,0.04);
+  color: var(--text-primary); font-size: 0.9rem;
+  outline: none; transition: border-color 0.15s, box-shadow 0.15s;
+  &:focus { border-color: rgba(99,102,241,0.6); box-shadow: 0 0 0 3px rgba(99,102,241,0.12); }
+  &::placeholder { color: var(--text-faint); }
+}
+.dangerInput:focus {
+  border-color: rgba(239,68,68,0.5) !important;
+  box-shadow: 0 0 0 3px rgba(239,68,68,0.1) !important;
+}
+.codeInput {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  letter-spacing: 0.3em; font-size: 1.4rem;
+  text-align: center; padding: 0.75rem 1rem;
+}
+
+// ── OTP 6-digit boxes ──────────────────────────────────────
+.otpRow {
+  display: flex; gap: 0.5rem; align-items: center;
+  justify-content: flex-start;
+  // Separator between 3rd and 4th boxes
+  > input:nth-child(3) { margin-right: 0.875rem; }
+}
+.otpCell {
+  width: 52px; height: 64px;
+  border-radius: 12px; border: 1.5px solid var(--border);
+  background: rgba(255,255,255,0.04);
+  color: var(--text-primary);
+  font-family: 'SF Mono', 'Fira Code', 'JetBrains Mono', monospace;
+  font-size: 1.75rem; font-weight: 700;
+  text-align: center; outline: none; caret-color: #818cf8;
+  transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
+  &::placeholder { color: rgba(255,255,255,0.15); font-size: 1.5rem; }
+  &:focus {
+    border-color: rgba(99,102,241,0.7);
+    box-shadow: 0 0 0 3px rgba(99,102,241,0.15);
+    background: rgba(99,102,241,0.04);
+  }
+  @media (max-width: 480px) { width: 42px; height: 56px; font-size: 1.4rem; }
+}
+.otpCellFilled {
+  border-color: rgba(99,102,241,0.5);
+  background: rgba(99,102,241,0.06);
+}
+.otpCellError {
+  border-color: rgba(239,68,68,0.5) !important;
+  box-shadow: 0 0 0 3px rgba(239,68,68,0.1) !important;
+}
+
+.eyeBtn {
+  position: absolute; right: 0.75rem; background: none; border: none;
+  color: var(--text-faint); cursor: pointer; padding: 0.25rem;
+  display: flex; align-items: center;
+  &:hover { color: var(--text-muted); }
+}
+
+// ── Step actions ──────────────────────────────────────────
+.stepActions {
+  display: flex; align-items: center; gap: 0.75rem;
+  margin-top: 1.25rem;
+}
+.primaryBtn {
+  display: inline-flex; align-items: center; gap: 0.5rem;
+  padding: 0.6rem 1.4rem; border-radius: $r-sm;
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  color: #fff; font-size: 0.87rem; font-weight: 700;
+  border: none; cursor: pointer;
+  transition: opacity 0.15s, transform 0.1s;
+  box-shadow: 0 2px 12px rgba(99,102,241,0.35);
+  &:hover:not(:disabled) { opacity: 0.92; transform: translateY(-1px); }
+  &:active { transform: translateY(0); }
+  &:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+}
+.cancelBtn {
+  padding: 0.6rem 1.2rem; border-radius: $r-sm;
+  background: rgba(255,255,255,0.05); border: 1px solid var(--border);
+  color: var(--text-muted); font-size: 0.87rem; font-weight: 600; cursor: pointer;
+  transition: background 0.15s;
+  &:hover { background: rgba(255,255,255,0.08); }
+}
+.dangerSolidBtn {
+  display: inline-flex; align-items: center; gap: 0.5rem;
+  padding: 0.6rem 1.4rem; border-radius: $r-sm;
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  color: #fff; font-size: 0.87rem; font-weight: 700;
+  border: none; cursor: pointer; transition: opacity 0.15s;
+  box-shadow: 0 2px 12px rgba(239,68,68,0.3);
+  &:hover:not(:disabled) { opacity: 0.9; }
+  &:disabled { opacity: 0.5; cursor: not-allowed; }
+}
+
+// ── Spinner ───────────────────────────────────────────────
+.spinner {
+  display: inline-block; width: 14px; height: 14px; border-radius: 50%;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-top-color: #fff;
+  animation: spin 0.7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+// ── Messages ──────────────────────────────────────────────
+.errorMsg {
+  display: flex; align-items: center; gap: 0.5rem;
+  padding: 0.6rem 0.875rem; border-radius: $r-sm;
+  background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.25);
+  color: #f87171; font-size: 0.82rem; margin-top: 0.5rem;
+}
+.successBanner {
+  display: flex; align-items: center; gap: 0.6rem;
+  padding: 0.875rem 1.25rem; border-radius: $r-md;
+  background: rgba(34,197,94,0.1); border: 1px solid rgba(34,197,94,0.25);
+  color: #4ade80; font-size: 0.87rem; font-weight: 600;
+  margin-bottom: 1.25rem;
+}
+.disableWarning {
+  font-size: 0.85rem; color: #fca5a5; margin: 0 0 1.25rem;
+  padding: 0.75rem 1rem; border-radius: $r-sm;
+  background: rgba(239,68,68,0.07); border: 1px solid rgba(239,68,68,0.2);
+}
+
+// ── QR section ────────────────────────────────────────────
+.qrSection {
+  display: grid; grid-template-columns: 200px 1fr; gap: 1.5rem;
+  margin-bottom: 0.5rem;
+  @media (max-width: 580px) { grid-template-columns: 1fr; }
+}
+.qrBox {
+  width: 200px; height: 200px; border-radius: $r-md;
+  border: 2px solid var(--border); overflow: hidden;
+  background: #111; display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.qrImage { display: block; width: 100%; height: 100%; }
+.qrPlaceholder { color: var(--text-faint); font-size: 0.8rem; text-align: center; padding: 1rem; }
+.qrInstructions { display: flex; flex-direction: column; gap: 0.6rem; justify-content: center; }
+.instructionStep {
+  display: flex; align-items: flex-start; gap: 0.6rem;
+  font-size: 0.84rem; color: var(--text-muted); margin: 0;
+  strong { color: var(--text-primary); }
+}
+.stepNum {
+  width: 22px; height: 22px; border-radius: 50%; flex-shrink: 0;
+  background: rgba(99,102,241,0.15); border: 1px solid rgba(99,102,241,0.3);
+  color: #818cf8; font-size: 0.75rem; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+}
+.manualKeyLabel { font-size: 0.75rem; color: var(--text-faint); margin-top: 0.5rem; }
+.manualKey {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.8rem; color: #818cf8; letter-spacing: 0.15em;
+  background: rgba(99,102,241,0.08); border: 1px solid rgba(99,102,241,0.2);
+  border-radius: 6px; padding: 0.4rem 0.6rem;
+  word-break: break-all;
+}
+
+// ── Email OTP success ────────────────────────────────────
+.emailOtpSuccess {
+  display: flex; flex-direction: column; align-items: center; gap: 0.75rem;
+  text-align: center; padding: 1.5rem;
+  p { font-size: 0.9rem; color: var(--text-muted); margin: 0; }
+  strong { color: var(--text-primary); }
+}
+.emailIcon { color: #818cf8; }
+.emailOtpNote { font-size: 0.82rem !important; color: var(--text-faint) !important; }
+
+// ── 2FA success step ──────────────────────────────────────
+.successStep {
+  display: flex; flex-direction: column; align-items: center; gap: 0.75rem;
+  text-align: center; padding: 1.5rem 1rem;
+  h4 { font-size: 1.1rem; font-weight: 700; color: var(--text-primary); margin: 0; }
+  p  { font-size: 0.87rem; color: var(--text-muted); margin: 0; max-width: 340px; }
+}
+.successIcon {
+  width: 64px; height: 64px; border-radius: 50%;
+  background: rgba(34,197,94,0.12); border: 2px solid rgba(34,197,94,0.3);
+  display: flex; align-items: center; justify-content: center;
+  color: #4ade80;
+  animation: popIn 0.4s cubic-bezier(0.34,1.56,0.64,1);
+}
+@keyframes popIn {
+  from { transform: scale(0.4); opacity: 0; }
+  to   { transform: scale(1); opacity: 1; }
+}
+
+// ── Sessions panel ────────────────────────────────────────
+.sessionItem {
+  display: flex; align-items: center; gap: 0.875rem;
+  padding: 0.875rem 1rem; border-radius: $r-sm;
+  background: rgba(34,197,94,0.05); border: 1px solid rgba(34,197,94,0.15);
+}
+.sessionDot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: #4ade80; flex-shrink: 0;
+  box-shadow: 0 0 6px #4ade80;
+  animation: pulse 2s ease-in-out infinite;
+}
+@keyframes pulse {
+  0%, 100% { box-shadow: 0 0 6px #4ade80; }
+  50%       { box-shadow: 0 0 12px #4ade80, 0 0 20px rgba(74,222,128,0.3); }
+}
+.sessionInfo { flex: 1; display: flex; flex-direction: column; gap: 2px; }
+.sessionName { font-size: 0.87rem; font-weight: 600; color: var(--text-primary); }
+.sessionMeta { font-size: 0.78rem; color: var(--text-faint); }
+.sessionActive {
+  font-size: 0.75rem; font-weight: 700; color: #4ade80;
+  padding: 0.2rem 0.6rem; border-radius: 999px;
+  background: rgba(34,197,94,0.12); border: 1px solid rgba(34,197,94,0.25);
+}
+
+// ── Tip panel ─────────────────────────────────────────────
+.tipPanel {
+  display: flex; gap: 0.875rem; align-items: flex-start;
+  background: rgba(99,102,241,0.04);
+  border-color: rgba(99,102,241,0.2);
+}
+.tipIcon {
+  width: 36px; height: 36px; border-radius: $r-sm; flex-shrink: 0;
+  background: rgba(99,102,241,0.1); border: 1px solid rgba(99,102,241,0.2);
+  display: flex; align-items: center; justify-content: center;
+  color: #818cf8; margin-top: 2px;
+}
+.tipTitle { font-size: 0.87rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.3rem; }
+.tipText  { font-size: 0.82rem; color: var(--text-muted); margin: 0; line-height: 1.6; }

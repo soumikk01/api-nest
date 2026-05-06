@@ -36,7 +36,10 @@ export default function AccountLayout({ children }: { children: React.ReactNode 
             Profile & Tokens
           </Link>
 
-          <Link href="#" className={styles.navItem}>
+          <Link
+            href="/projects/account/security"
+            className={`${styles.navItem} ${pathname === '/projects/account/security' ? styles.activeNavItem : ''}`}
+          >
             <Shield size={14} />
             Security
           </Link>

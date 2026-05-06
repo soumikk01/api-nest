@@ -1,0 +1,169 @@
+// ══════════════════════════════════════════════════════════
+//  TWO FACTOR PAGE — premium login 2FA challenge
+// ══════════════════════════════════════════════════════════
+
+.page {
+  min-height: 100vh; display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(160deg, #0a0a0f 0%, #0d0f1a 50%, #070a0d 100%);
+  padding: 2rem; position: relative; overflow: hidden;
+  font-family: 'Inter', sans-serif;
+}
+
+.bgGlow {
+  position: fixed; inset: 0; pointer-events: none; z-index: 0;
+  background:
+    radial-gradient(ellipse 60% 40% at 70% 20%, rgba(99,102,241,0.12) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 40% at 20% 80%, rgba(139,92,246,0.08) 0%, transparent 60%);
+}
+
+.card {
+  position: relative; z-index: 1;
+  width: 100%; max-width: 420px;
+  background: rgba(255,255,255,0.035);
+  backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 24px; padding: 2.5rem 2rem;
+  box-shadow: 0 32px 80px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.04);
+  display: flex; flex-direction: column; align-items: center;
+}
+
+.logoRow {
+  display: flex; align-items: center; gap: 0.5rem;
+  margin-bottom: 1.75rem; width: 100%;
+}
+.logo {
+  width: 30px; height: 30px; border-radius: 8px;
+  background: rgba(99,102,241,0.15); border: 1px solid rgba(99,102,241,0.3);
+  display: flex; align-items: center; justify-content: center;
+  color: #818cf8;
+}
+.logoText { font-size: 0.95rem; font-weight: 700; color: #e5e7eb; }
+
+.shieldIcon {
+  width: 72px; height: 72px; border-radius: 50%; margin: 0 auto 1.25rem;
+  background: linear-gradient(135deg, rgba(99,102,241,0.15), rgba(139,92,246,0.1));
+  border: 1.5px solid rgba(99,102,241,0.3);
+  display: flex; align-items: center; justify-content: center;
+  color: #818cf8;
+  animation: floatShield 3s ease-in-out infinite;
+}
+@keyframes floatShield {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-4px); }
+}
+
+.title {
+  font-size: 1.4rem; font-weight: 800; color: #f3f4f6;
+  text-align: center; margin: 0 0 0.4rem;
+}
+.sub {
+  font-size: 0.84rem; color: #9ca3af; text-align: center; margin: 0 0 1.5rem;
+  line-height: 1.6; width: 100%;
+}
+
+// ── Method badge (static pill, not tabs) ────────────────
+.methodBadge {
+  display: inline-flex; align-items: center; gap: 0.4rem;
+  margin: 0 auto 1rem;
+  padding: 0.35rem 0.875rem; border-radius: 999px;
+  background: rgba(99,102,241,0.12); border: 1px solid rgba(99,102,241,0.3);
+  color: #818cf8; font-size: 0.78rem; font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+// ── OTP 6-digit boxes ──────────────────────────────────────
+.otpRow {
+  display: flex; gap: 0.5rem; align-items: center; justify-content: center;
+  margin-bottom: 1rem; width: 100%;
+  > input:nth-child(3) { margin-right: 0.875rem; }
+}
+.otpCell {
+  width: 52px; height: 64px;
+  border-radius: 12px; border: 1.5px solid rgba(255,255,255,0.1);
+  background: rgba(255,255,255,0.04);
+  color: #f3f4f6;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 1.75rem; font-weight: 700;
+  text-align: center; outline: none; caret-color: #818cf8;
+  transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+  
+  &:-webkit-autofill,
+  &:-webkit-autofill:hover, 
+  &:-webkit-autofill:focus, 
+  &:-webkit-autofill:active {
+    transition: background-color 5000s ease-in-out 0s, color 5000s ease-in-out 0s !important;
+  }
+
+  &::placeholder { color: rgba(255,255,255,0.15); font-size: 1.5rem; }
+  &:focus {
+    border-color: rgba(99,102,241,0.6);
+    box-shadow: 0 0 0 4px rgba(99,102,241,0.1);
+    background: rgba(99,102,241,0.04);
+  }
+  @media (max-width: 480px) { width: 44px; height: 56px; font-size: 1.5rem; }
+}
+.otpCellFilled {
+  border-color: rgba(99,102,241,0.4);
+  background: rgba(99,102,241,0.05);
+}
+.otpCellError {
+  border-color: rgba(239,68,68,0.5) !important;
+  box-shadow: 0 0 0 4px rgba(239,68,68,0.1) !important;
+}
+
+// legacy (unused but kept to avoid SCSS errors if referenced elsewhere)
+.codeInputWrap { position: relative; margin-bottom: 0.875rem; width: 100%; }
+.codeCheck { position: absolute; right: 1rem; top: 50%; transform: translateY(-50%); color: #4ade80; display: flex; }
+
+.shake {
+  filter: url(#error-jello);
+}
+
+// ── Error banner ──────────────────────────────────────────
+.errorBanner {
+  display: flex; align-items: center; gap: 0.5rem;
+  padding: 0.65rem 0.875rem; border-radius: 10px;
+  background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.25);
+  color: #f87171; font-size: 0.82rem; margin-bottom: 0.875rem;
+}
+
+// ── Submit button ─────────────────────────────────────────
+.submitBtn {
+  margin-bottom: 0.75rem;
+  --btn-bg: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  --btn-text: #fff;
+}
+.spinner {
+  display: inline-block; width: 16px; height: 16px; border-radius: 50%;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-top-color: #fff;
+  animation: spin 0.7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+// ── Resend & email sent ───────────────────────────────────
+.resendBtn {
+  width: 100%; padding: 0.6rem; border-radius: 10px;
+  background: transparent; border: 1px solid rgba(255,255,255,0.08);
+  color: #6b7280; font-size: 0.83rem; font-weight: 600; cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+  &:hover { color: #9ca3af; border-color: rgba(255,255,255,0.14); }
+}
+.emailSentNote {
+  display: flex; align-items: center; gap: 0.5rem;
+  padding: 0.65rem 0.875rem; border-radius: 10px;
+  background: rgba(99,102,241,0.08); border: 1px solid rgba(99,102,241,0.25);
+  color: #818cf8; font-size: 0.82rem; margin-bottom: 0.875rem;
+}
+
+// ── Footer ────────────────────────────────────────────────
+.footer {
+  text-align: center; margin-top: 1.5rem; width: 100%;
+  border-top: 1px solid rgba(255,255,255,0.06);
+  padding-top: 1.25rem;
+}
+.backLink {
+  font-size: 0.83rem; color: #6b7280; text-decoration: none;
+  transition: color 0.15s;
+  &:hover { color: #9ca3af; }
+}

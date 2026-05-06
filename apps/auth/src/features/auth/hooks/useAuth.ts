@@ -1,152 +1,194 @@
+'use client';
+
 import { useState, useEffect, useCallback } from 'react';
-import { fetchWithAuth, ensureValidToken, authStorage } from '@/lib/fetchWithAuth';
+import { authClient } from '@/lib/auth-client';
 
-const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000/api/v1';
+const BETTER_AUTH_BASE =
+  // NEXT_PUBLIC_API_URL already contains /api/v1, so we only append /auth/better
+  `${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000/api/v1'}/auth/better`;
 
+// ── Error sanitizer ───────────────────────────────────────────────────────────
+// Strips raw HTTP paths / network details — shows professional messages instead.
+function sanitizeError(raw: string | null | undefined, fallback: string): string {
+  if (!raw) return fallback;
+  if (
+    raw.startsWith('Cannot POST') ||
+    raw.startsWith('Cannot GET') ||
+    raw.includes('/api/') ||
+    raw.includes('fetch failed') ||
+    raw.includes('NetworkError') ||
+    raw.includes('Failed to fetch')
+  ) return fallback;
+  return raw;
+}
+
+// ── Types ─────────────────────────────────────────────────────────────────────
 interface AuthUser {
   id: string;
   email: string;
   name?: string;
-  sdkToken: string;
-  avatar: number;
+  image?: string | null;
 }
 
 interface AuthState {
   user: AuthUser | null;
-  accessToken: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
 }
 
+// ── useAuth ───────────────────────────────────────────────────────────────────
+// Wraps BetterAuth client for all auth operations:
+// login, register, logout, OAuth (Google/GitHub), forgot password.
+// BetterAuth manages sessions via HTTP-only cookies — no manual token handling.
 export function useAuth() {
   const [state, setState] = useState<AuthState>({
     user: null,
-    accessToken: null,
     isAuthenticated: false,
     isLoading: true,
   });
 
-  // ── On mount: restore session from sessionStorage (per-tab) ───────────
+  // ── Restore session on mount ───────────────────────────────────────────────
   useEffect(() => {
     let cancelled = false;
 
-    (async () => {
-      // ensureValidToken reads from sessionStorage — empty in a new tab
-      const validToken = await ensureValidToken();
-
-      if (!validToken) {
-        if (!cancelled) {
-          setState({ user: null, accessToken: null, isAuthenticated: false, isLoading: false });
-        }
-        return;
+    authClient.getSession().then(({ data }) => {
+      if (cancelled) return;
+      if (data?.user) {
+        setState({ user: data.user as AuthUser, isAuthenticated: true, isLoading: false });
+      } else {
+        setState({ user: null, isAuthenticated: false, isLoading: false });
       }
-
-      try {
-        const res = await fetch(`${API}/users/me`, {
-          headers: { Authorization: `Bearer ${validToken}` },
-        });
-        if (!res.ok) throw new Error('Failed to load profile');
-        const user = await res.json() as AuthUser;
-        if (!cancelled) {
-          setState({ user, accessToken: validToken, isAuthenticated: true, isLoading: false });
-        }
-      } catch {
-        if (!cancelled) {
-          authStorage.clear();
-          setState({ user: null, accessToken: null, isAuthenticated: false, isLoading: false });
-        }
-      }
-    })();
+    }).catch(() => {
+      if (!cancelled) setState({ user: null, isAuthenticated: false, isLoading: false });
+    });
 
     return () => { cancelled = true; };
   }, []);
 
-  // ── Login ──────────────────────────────────────────────────────────────
+  // ── Login (email + password) ───────────────────────────────────────────────
   const login = useCallback(async (email: string, password: string) => {
-    const res = await fetch(`${API}/auth/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password }),
-    });
-    const data = await res.json() as {
-      accessToken?: string;
-      refreshToken?: string;
-      message?: string;
-      statusCode?: number;
-    };
+    const { data, error } = await authClient.signIn.email({ email, password });
 
-    if (!res.ok) {
-      // Map backend error codes to human-friendly messages
-      const status = res.status;
-      if (status === 401 || status === 403) throw new Error('Incorrect email or password.');
-      if (status === 429) throw new Error('Too many attempts. Please wait a moment and try again.');
-      if (status >= 500) throw new Error('Server error. Please try again in a few seconds.');
-      throw new Error(data.message ?? 'Sign in failed. Please try again.');
+    if (error) {
+      if (error.status === 401 || error.status === 403)
+        throw new Error('Incorrect email or password.');
+      if (error.status === 429)
+        throw new Error('Too many login attempts. Please wait a moment and try again.');
+      throw new Error(sanitizeError(error.message, 'Sign in failed. Please try again.'));
     }
 
-    const accessToken = data.accessToken;
-    const refreshToken = data.refreshToken;
-    if (!accessToken) throw new Error('Sign in failed. Please try again.');
+    if (!data?.user) throw new Error('Sign in failed. Please try again.');
 
-    // Do NOT store tokens in auth app's localStorage (localhost:3001).
-    // The web app (localhost:3000) has a SEPARATE localStorage — it cannot
-    // read ours. Tokens are passed via URL params on redirect instead.
-    return { accessToken, refreshToken: refreshToken ?? '' };
+    setState({ user: data.user as AuthUser, isAuthenticated: true, isLoading: false });
+
+    // Redirect to web dashboard — BetterAuth session cookie is shared via backend
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000';
+    window.location.href = `${baseUrl}/projects`;
   }, []);
 
-  // ── Register ───────────────────────────────────────────────────────────
+  // ── Register (email + password) ────────────────────────────────────────────
   const register = useCallback(async (email: string, password: string, name?: string) => {
-    const res = await fetch(`${API}/auth/register`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password, name }),
+    const { data, error } = await authClient.signUp.email({
+      email,
+      password,
+      name: name ?? email.split('@')[0],
     });
-    const data = await res.json() as {
-      accessToken?: string;
-      refreshToken?: string;
-      message?: string;
-    };
-    if (!res.ok) {
-      const s = res.status;
-      if (s === 409) throw new Error('An account with this email already exists.');
-      if (s === 429) throw new Error('Too many attempts. Please wait a moment and try again.');
-      if (s >= 500) throw new Error('Server error. Please try again in a few seconds.');
-      throw new Error(data.message ?? 'Registration failed. Please try again.');
+
+    if (error) {
+      if (error.status === 409 || error.message?.toLowerCase().includes('already'))
+        throw new Error('An account with this email already exists.');
+      if (error.status === 422 || error.message?.toLowerCase().includes('disposable') || error.message?.toLowerCase().includes('invalid email'))
+        throw new Error(error.message ?? 'Please use a valid email address.');
+      if (error.status === 429)
+        throw new Error('Too many attempts. Please wait a moment and try again.');
+      throw new Error(sanitizeError(error.message, 'Registration failed. Please try again.'));
     }
 
-    const accessToken = data.accessToken;
-    const refreshToken = data.refreshToken;
-    if (!accessToken) throw new Error('Server did not return an access token');
+    if (!data?.user) throw new Error('Registration failed. Please try again.');
 
-    // Return tokens directly — RegisterPage will pass them via ?at=&rt= to the web app
-    return { accessToken, refreshToken: refreshToken ?? '' };
+    setState({ user: data.user as AuthUser, isAuthenticated: true, isLoading: false });
+
+    // Redirect to web dashboard after successful registration
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000';
+    window.location.href = `${baseUrl}/projects`;
   }, []);
 
-  // ── Logout ─────────────────────────────────────────────────────────────
-  const logout = useCallback(() => {
-    authStorage.clear();
-    setState({ user: null, accessToken: null, isAuthenticated: false, isLoading: false });
+  // ── OAuth — Google ─────────────────────────────────────────────────────────
+  const loginWithGoogle = useCallback(async () => {
+    await authClient.signIn.social({
+      provider: 'google',
+      callbackURL: `${process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'}/projects`,
+    });
+  }, []);
+
+  // ── OAuth — GitHub ─────────────────────────────────────────────────────────
+  const loginWithGitHub = useCallback(async () => {
+    await authClient.signIn.social({
+      provider: 'github',
+      callbackURL: `${process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'}/projects`,
+    });
+  }, []);
+
+  // ── Forgot Password — send reset email ────────────────────────────────────
+  // Direct fetch avoids BetterAuth TS2349 plugin type-inference collision
+  const sendPasswordResetEmail = useCallback(async (email: string) => {
+    const redirectTo =
+      `${process.env.NEXT_PUBLIC_AUTH_URL ?? 'http://localhost:3001'}/reset-password`;
+    const res = await fetch(`${BETTER_AUTH_BASE}/forget-password`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ email, redirectTo }),
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({})) as { message?: string };
+      throw new Error(data.message ?? 'Failed to send reset email. Please try again.');
+    }
+  }, []);
+
+  // ── Reset Password (from email link) ──────────────────────────────────────
+  const resetPassword = useCallback(async (newPassword: string, token: string) => {
+    const res = await fetch(`${BETTER_AUTH_BASE}/reset-password`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ newPassword, token }),
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({})) as { message?: string };
+      throw new Error(data.message ?? 'Failed to reset password. Please try again.');
+    }
+  }, []);
+
+  // ── Logout ─────────────────────────────────────────────────────────────────
+  const logout = useCallback(async () => {
+    await authClient.signOut();
+    setState({ user: null, isAuthenticated: false, isLoading: false });
   }, []);
 
   const logoutWithTransition = useCallback((router: { push: (url: string) => void }) => {
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new Event('show-logout-transition'));
-      setTimeout(() => {
-        logout();
+      setTimeout(async () => {
+        await authClient.signOut();
+        setState({ user: null, isAuthenticated: false, isLoading: false });
         router.push('/');
-      }, 1200); // Wait for the animation to play
+      }, 1200);
     } else {
       logout();
       router.push('/');
     }
   }, [logout]);
 
-  // ── Get CLI command (uses auto-refresh) ───────────────────────────────
-  const getCliCommand = useCallback(async () => {
-    const res = await fetchWithAuth(`${API}/users/me/command`);
-    if (!res.ok) throw new Error('Failed to fetch CLI command');
-    return res.json() as Promise<{ command: string; token: string; instructions: string }>;
-  }, []);
-
-  return { ...state, login, register, logout, logoutWithTransition, getCliCommand };
+  return {
+    ...state,
+    login,
+    register,
+    loginWithGoogle,
+    loginWithGitHub,
+    sendPasswordResetEmail,
+    resetPassword,
+    logout,
+    logoutWithTransition,
+  };
 }

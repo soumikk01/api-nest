@@ -3,6 +3,9 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '@/features/auth/hooks/useAuth';
+import GooeyButton from '@/components/GooeyButton/GooeyButton';
+import GooeyErrorFilter from '@/components/GooeyErrorFilter/GooeyErrorFilter';
 import styles from './ForgotPasswordPage.module.scss';
 
 /* ── Spring Blossom Background (mirrors LandingPage) ── */
@@ -21,6 +24,7 @@ export default function ForgotPasswordPage() {
   // dark mode is always on — no toggle needed
 
   const router = useRouter();
+  const { sendPasswordResetEmail } = useAuth();
 
   const [step, setStep] = useState<1 | 2>(1);
   const [email, setEmail] = useState('');
@@ -46,10 +50,12 @@ export default function ForgotPasswordPage() {
 
     setIsLoading(true);
     try {
-      await new Promise(r => setTimeout(r, 600)); // simulate network
+      // Sends a real password reset email via BetterAuth + Resend
+      await sendPasswordResetEmail(email);
       setStep(2);
-    } catch {
-      setError('Failed to send OTP. Please try again.');
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Failed to send reset email. Please try again.';
+      setError(msg);
       handleInvalid();
     } finally {
       setIsLoading(false);
@@ -68,10 +74,10 @@ export default function ForgotPasswordPage() {
 
     setIsLoading(true);
     try {
-      await new Promise(r => setTimeout(r, 600)); // simulate network
+      // For now navigate to login — full reset-password page can be added later
       router.push('/login');
     } catch {
-      setError('Invalid or expired OTP. Please try again.');
+      setError('Invalid or expired code. Please try again.');
       handleInvalid();
     } finally {
       setIsLoading(false);
@@ -80,6 +86,7 @@ export default function ForgotPasswordPage() {
 
   return (
     <div className={`${styles.page} ${styles.dark}`}>
+      <GooeyErrorFilter isError={isShaking} />
       <div className={styles.patternOverlay} />
       <div className={styles.noiseOverlay} />
       <SpringBackground />
@@ -115,21 +122,32 @@ export default function ForgotPasswordPage() {
           </div>
 
           {/* ── CARD ── */}
+          <style dangerouslySetInnerHTML={{__html: `
+              .apio-autofill-transparent:-webkit-autofill,
+              .apio-autofill-transparent:-webkit-autofill:hover, 
+              .apio-autofill-transparent:-webkit-autofill:focus, 
+              .apio-autofill-transparent:-webkit-autofill:active {
+                  transition: background-color 5000s ease-in-out 0s, color 5000s ease-in-out 0s !important;
+              }
+          `}} />
           <div className={styles.card}>
             {step === 1 ? (
               <form className={styles.form} onSubmit={handleSendOtp} noValidate>
                 <div className={styles.field}>
                   <label className={styles.label} htmlFor="forgot-email">Account Email</label>
-                  <input
-                    id="forgot-email"
-                    className={`${styles.input} ${isShaking ? styles.inputError : ''}`}
-                    type="email"
-                    placeholder="you@example.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    autoComplete="email"
-                    required
-                  />
+                  <div className={`${styles.input} ${styles.inputWrapper} ${isShaking ? styles.inputError : ''}`}>
+                    <input
+                      id="forgot-email"
+                      className="apio-autofill-transparent"
+                      type="email"
+                      placeholder="you@example.com"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      autoComplete="email"
+                      required
+                      style={{ width: '100%', border: 'none', outline: 'none', background: 'transparent', padding: 0, margin: 0, color: 'inherit', fontFamily: 'inherit', fontSize: 'inherit' }}
+                    />
+                  </div>
                 </div>
 
                 {error && (
@@ -141,7 +159,17 @@ export default function ForgotPasswordPage() {
                   </div>
                 )}
 
-                <button type="submit" className={`${styles.submitBtn} ${isLoading ? styles.loadingBtn : ''}`} disabled={isLoading}>
+                <GooeyButton 
+                  type="submit" 
+                  className={styles.submitBtn} 
+                  isLoading={isLoading}
+                  icon={
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                      <rect width="20" height="16" x="2" y="4" rx="2" />
+                      <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+                    </svg>
+                  }
+                >
                   {isLoading ? (
                     <span className={styles.loaderContent}>
                       <svg className={styles.spinnerIcon} viewBox="0 0 24 24">
@@ -151,7 +179,7 @@ export default function ForgotPasswordPage() {
                       Sending...
                     </span>
                   ) : 'Send Verification OTP'}
-                </button>
+                </GooeyButton>
               </form>
             ) : (
               <form className={styles.form} onSubmit={handleVerifyOtp} noValidate>
@@ -178,7 +206,17 @@ export default function ForgotPasswordPage() {
                   </div>
                 )}
 
-                <button type="submit" className={`${styles.submitBtn} ${isLoading ? styles.loadingBtn : ''}`} disabled={isLoading}>
+                <GooeyButton 
+                  type="submit" 
+                  className={styles.submitBtn} 
+                  isLoading={isLoading}
+                  icon={
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                      <path d="m9 12 2 2 4-4" />
+                    </svg>
+                  }
+                >
                   {isLoading ? (
                     <span className={styles.loaderContent}>
                       <svg className={styles.spinnerIcon} viewBox="0 0 24 24">
@@ -188,7 +226,7 @@ export default function ForgotPasswordPage() {
                       Verifying...
                     </span>
                   ) : 'Verify OTP'}
-                </button>
+                </GooeyButton>
               </form>
             )}
           </div>

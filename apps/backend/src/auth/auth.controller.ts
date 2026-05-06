@@ -1,8 +1,19 @@
-import { Controller, Post, Body, HttpCode, HttpStatus } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Get,
+  Body,
+  HttpCode,
+  HttpStatus,
+  Req,
+  UnauthorizedException,
+} from '@nestjs/common';
+
 import { Throttle, SkipThrottle } from '@nestjs/throttler';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
+import { auth } from './better-auth';
 
 @Controller('auth')
 export class AuthController {
@@ -62,5 +73,27 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   refresh(@Body('refreshToken') refreshToken: string) {
     return this.authService.refresh(refreshToken);
+  }
+
+  /**
+   * GET /auth/session-token
+   * Bridge endpoint: reads BetterAuth session cookie → issues JWT access+refresh tokens.
+   * Called by apps/web on mount to exchange a BetterAuth cookie session for JWT
+   * so that all existing /api/v1/* endpoints (which use JwtAuthGuard) keep working.
+   * No throttle needed — it only works if a valid BetterAuth cookie exists.
+   */
+  @SkipThrottle()
+  @Get('session-token')
+  async sessionToken(@Req() req: { headers: Record<string, string | string[] | undefined> }) {
+    // Convert Express request headers to the format BetterAuth expects
+    const headers = new Headers();
+    Object.entries(req.headers).forEach(([k, v]) => {
+      if (v) headers.set(k, Array.isArray(v) ? v.join(',') : v);
+    });
+
+    const session = await auth.api.getSession({ headers });
+    if (!session?.user?.email) throw new UnauthorizedException('No active session');
+
+    return this.authService.sessionToken(session.user.email);
   }
 }

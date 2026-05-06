@@ -6,10 +6,21 @@
     "deleteOutDir": false,
     "assets": [
       {
-        "include": "generated/prisma/**/*",
+        "include": "generated/prisma/**/*.js",
+        "outDir": "./dist",
+        "watchAssets": false
+      },
+      {
+        "include": "generated/prisma/**/*.d.ts",
+        "outDir": "./dist",
+        "watchAssets": false
+      },
+      {
+        "include": "generated/prisma/**/*.json",
         "outDir": "./dist",
         "watchAssets": false
       }
     ]
   }
 }
+

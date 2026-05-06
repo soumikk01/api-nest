@@ -42,9 +42,11 @@ export class AuthService {
     const user = await this.prisma.user.findUnique({
       where: { email: dto.email },
     });
-    if (!user) throw new UnauthorizedException('Invalid credentials');
+    if (!user || !user.password)
+      throw new UnauthorizedException('Invalid credentials');
 
-    const passwordMatch = await bcrypt.compare(dto.password, user.password);
+    // user.password is guaranteed non-null by the guard above
+    const passwordMatch = await bcrypt.compare(dto.password, user.password!);
     if (!passwordMatch) throw new UnauthorizedException('Invalid credentials');
 
     return this.signTokens(user.id, user.email);
@@ -60,7 +62,11 @@ export class AuthService {
     });
     if (!user) throw new UnauthorizedException('Invalid credentials');
 
-    const passwordMatch = await bcrypt.compare(dto.password, user.password);
+    if (!user.password)
+      throw new UnauthorizedException('Invalid credentials');
+
+    // user.password is guaranteed non-null by the guard above
+    const passwordMatch = await bcrypt.compare(dto.password, user.password!);
     if (!passwordMatch) throw new UnauthorizedException('Invalid credentials');
 
     const jwtSecret = this.config.get<string>('JWT_SECRET');
@@ -125,5 +131,16 @@ export class AuthService {
     } catch {
       throw new UnauthorizedException('Invalid or expired refresh token');
     }
+  }
+
+  /**
+   * Exchange a BetterAuth session (via cookie) for JWT tokens.
+   * Called by GET /auth/session-token in the controller.
+   * Finds the user in DB by email (from BetterAuth session) and issues tokens.
+   */
+  async sessionToken(email: string) {
+    const user = await this.prisma.user.findUnique({ where: { email } });
+    if (!user) throw new UnauthorizedException('User not found');
+    return this.signTokens(user.id, user.email);
   }
 }

@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/features/auth/hooks/useAuth';
-import { authStorage } from '@/lib/fetchWithAuth';
 
 interface AuthGuardProps {
   children: React.ReactNode;
@@ -11,54 +10,39 @@ interface AuthGuardProps {
 /**
  * AuthGuard — wraps every protected dashboard page.
  *
- * ## Hydration-safe approach
+ * ## Flow (BetterAuth + JWT bridge)
  *
- * `localStorage` is only available in the browser. Reading it synchronously
- * on the first render causes a server/client HTML mismatch because the server
- * always sees `false` while the client sees the real token state.
- *
- * Fix: start with `mounted = false` so both server and client render the same
- * initial output (nothing). After the first client-side paint, `useEffect`
- * fires, we read localStorage, and we decide whether to show children or
- * redirect — all without any mismatch.
- *
- * This means there is a single frame of blank screen on first load, which is
- * invisible in practice because Next.js streaming and the browser paint happen
- * together. Every *subsequent* navigation within the session is instant because
- * the component is already mounted and the second useEffect below fires
- * synchronously with the stored token.
+ * 1. Server renders nothing (avoids hydration mismatch — no localStorage on server)
+ * 2. After first client paint, useAuth runs:
+ *    a. If BetterAuth cookie exists → exchanges for JWT → loads profile → shows children
+ *    b. If no cookie AND no JWT in localStorage → redirects to /login
+ * 3. Subsequent navigations within the session are instant (JWT already in localStorage)
  */
 export default function AuthGuard({ children }: AuthGuardProps) {
-  const { isLoading, user } = useAuth();
-
-  // Must be false on first render so server and client HTML match.
-  // Updated to the real value in useEffect (client-only).
-  const [hasToken, setHasToken] = useState(false);
+  const { isLoading, isAuthenticated } = useAuth();
   const [mounted, setMounted] = useState(false);
 
-  useEffect(() => {
-    setHasToken(authStorage.hasSession());
-    setMounted(true);
-  }, []);
+  // Prevent SSR mismatch — nothing rendered on server
+  useEffect(() => { setMounted(true); }, []);
 
-  // Redirect when auth resolves with no session
+  // Redirect when auth check finishes with no session
   useEffect(() => {
-    if (!mounted) return;
-    if (!isLoading && !user && !hasToken) {
-      window.location.href = `${process.env.NEXT_PUBLIC_AUTH_URL ?? 'http://localhost:3001'}/login`;
+    if (!mounted || isLoading) return;
+    if (!isAuthenticated) {
+      const authUrl = process.env.NEXT_PUBLIC_AUTH_URL ?? 'http://localhost:3001';
+      window.location.href = `${authUrl}/login`;
     }
-  }, [mounted, isLoading, user, hasToken]);
+  }, [mounted, isLoading, isAuthenticated]);
 
-  // ── Before mount: render nothing (matches SSR output perfectly) ──────────
+  // ── Before mount: render nothing (matches SSR output) ────────────────────
   if (!mounted) return null;
 
-  // ── No token + still loading: redirect is pending, show nothing ──────────
-  if (!hasToken && isLoading) return null;
+  // ── Auth check running: wait ──────────────────────────────────────────────
+  if (isLoading) return null;
 
-  // ── Auth confirmed failed: redirect already firing ───────────────────────
-  if (!isLoading && !user && !hasToken) return null;
+  // ── Not authenticated: redirect firing ───────────────────────────────────
+  if (!isAuthenticated) return null;
 
-  // ── Token exists or auth check still running: render children ───────────
-  // Pages render their own skeleton/shimmer while their data loads.
+  // ── Authenticated: render children ───────────────────────────────────────
   return <>{children}</>;
 }
