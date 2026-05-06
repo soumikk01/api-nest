@@ -1,42 +1,44 @@
-import { baseTemplate, ctaButton, footerNote } from './base.template';
+import { baseTemplate, ctaButton, footerNote, divider } from './base.template';
 
-/**
- * Welcome email sent after successful registration.
- * @param name       - user's display name
- * @param dashUrl    - link to the Apio dashboard
- */
 export function welcomeTemplate(name: string, dashUrl: string): string {
   const content = `
-    <h2 style="margin:0 0 8px;font-size:24px;font-weight:800;color:#fff;letter-spacing:-0.5px;">
-      Welcome to Apio, ${name}! 🎉
-    </h2>
-    <p style="margin:0 0 24px;font-size:14px;color:#8b8ba7;line-height:1.7;">
-      Your account is ready. You can now start monitoring your APIs in real time,
-      set up alerts, and track performance across all your services.
+    <!-- Heading -->
+    <h1 style="margin:0 0 6px;font-size:22px;font-weight:700;color:#0c0c10;letter-spacing:-0.3px;">
+      Welcome, ${name}!
+    </h1>
+    <p style="margin:0 0 28px;font-size:14px;color:#6b6b80;line-height:1.6;">
+      Your Apio account is ready. Start monitoring your APIs in real time.
     </p>
 
-    <!-- Feature highlights -->
-    <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:28px;">
-      ${featureRow('📡', 'Real-time monitoring', 'Track every API request as it happens.')}
-      ${featureRow('🔔', 'Instant alerts', 'Get notified the moment something breaks.')}
-      ${featureRow('📊', 'Analytics dashboard', 'Understand trends across all your endpoints.')}
+    <!-- Feature list -->
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0"
+           border="0" style="margin-bottom:28px;">
+      ${row('📡', 'Real-time monitoring', 'Track every API request as it happens.')}
+      ${row('🔔', 'Instant alerts', 'Get notified the moment something breaks.')}
+      ${row('📊', 'Analytics', 'Understand trends across all your endpoints.')}
     </table>
+
+    ${divider()}
 
     ${ctaButton('Go to Dashboard', dashUrl)}
 
-    ${footerNote('You\'re receiving this email because you just created an Apio account. If this wasn\'t you, please contact us at <a href="mailto:support@apio.one" style="color:#6366f1;text-decoration:none;">support@apio.one</a>.')}
+    ${footerNote(
+      "You received this because you just created an Apio account. " +
+      "Questions? Reply to this email or visit " +
+      '<a href="https://apio.one" style="color:#6366f1;text-decoration:none;">apio.one</a>.'
+    )}
   `;
-
   return baseTemplate(content);
 }
 
-function featureRow(icon: string, title: string, desc: string): string {
+function row(icon: string, title: string, desc: string): string {
   return `
     <tr>
-      <td style="padding:8px 0;vertical-align:top;width:36px;font-size:18px;">${icon}</td>
-      <td style="padding:8px 0 8px 10px;vertical-align:top;">
-        <strong style="font-size:14px;color:#fff;display:block;margin-bottom:2px;">${title}</strong>
-        <span style="font-size:13px;color:#8b8ba7;">${desc}</span>
+      <td valign="top" style="padding:6px 0;width:28px;font-size:16px;">${icon}</td>
+      <td valign="top" style="padding:6px 0 6px 10px;">
+        <span style="display:block;font-size:13px;font-weight:600;color:#0c0c10;
+                     margin-bottom:1px;">${title}</span>
+        <span style="font-size:12px;color:#9090a0;">${desc}</span>
       </td>
     </tr>`;
 }
