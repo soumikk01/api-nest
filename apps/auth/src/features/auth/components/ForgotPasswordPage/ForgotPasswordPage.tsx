@@ -54,7 +54,7 @@ export default function ForgotPasswordPage() {
       await sendPasswordResetEmail(email);
       setStep(2);
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Failed to send reset email. Please try again.';
+      const msg = err instanceof Error ? err.message : 'Failed to send verification OTP. Please try again.';
       setError(msg);
       handleInvalid();
     } finally {

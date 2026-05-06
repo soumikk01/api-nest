@@ -134,7 +134,7 @@ export function useAuth() {
   const sendPasswordResetEmail = useCallback(async (email: string) => {
     const redirectTo =
       `${process.env.NEXT_PUBLIC_AUTH_URL ?? 'http://localhost:3001'}/reset-password`;
-    const res = await fetch(`${BETTER_AUTH_BASE}/forget-password`, {
+    const res = await fetch(`${BETTER_AUTH_BASE}/request-password-reset`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
@@ -142,7 +142,7 @@ export function useAuth() {
     });
     if (!res.ok) {
       const data = await res.json().catch(() => ({})) as { message?: string };
-      throw new Error(data.message ?? 'Failed to send reset email. Please try again.');
+      throw new Error(data.message ?? 'Failed to send verification OTP. Please try again.');
     }
   }, []);
 
