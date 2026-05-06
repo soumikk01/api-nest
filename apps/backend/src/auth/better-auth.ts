@@ -1,4 +1,3 @@
-// @ts-nocheck — Bun resolves zod from .bun/ cache causing TS2742. Runtime is correct.
 import { betterAuth } from 'better-auth';
 import { prismaAdapter } from '@better-auth/prisma-adapter';
 import { emailOTP, twoFactor } from 'better-auth/plugins';
@@ -41,12 +40,12 @@ function fixIdOnCreate(model: Record<string, unknown>): Record<string, unknown> 
             const newId = randomBytes(12).toString('hex');
             data.id = newId;
           }
-          return target.create(args);
+          return (target.create as (args: Record<string, unknown>) => unknown)(args);
         };
       }
       // Bind all other methods so Prisma internals keep correct 'this'
       const val = (target as Record<string, unknown>)[prop as string];
-      return typeof val === 'function' ? (val as Function).bind(target) : val;
+      return typeof val === 'function' ? (val as (...args: unknown[]) => unknown).bind(target) : val;
     },
   });
 }
@@ -60,7 +59,7 @@ const prisma = new Proxy(_rawPrisma, {
     if (['user', 'session', 'account', 'verification', 'twoFactor'].includes(prop) && typeof value === 'object' && value !== null) {
       return fixIdOnCreate(value as Record<string, unknown>);
     }
-    return typeof value === 'function' ? (value as Function).bind(target) : value;
+    return typeof value === 'function' ? (value as (...args: unknown[]) => unknown).bind(target) : value;
   },
 }) as PrismaClient;
 
