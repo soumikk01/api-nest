@@ -241,7 +241,7 @@ export default function SecurityPage() {
           <div>
             <h3>Two-Factor Authentication</h3>
             <p className={styles.panelSub}>
-              Add an extra layer of security to your account. When enabled, you'll be asked
+              Add an extra layer of security to your account. When enabled, you&apos;ll be asked
               for a second verification step each time you sign in.
             </p>
           </div>
@@ -402,7 +402,7 @@ export default function SecurityPage() {
               </div>
               <div className={styles.qrInstructions}>
                 <p className={styles.instructionStep}><span className={styles.stepNum}>1</span> Open <strong>Google Authenticator</strong>, Authy, or any TOTP app</p>
-                <p className={styles.instructionStep}><span className={styles.stepNum}>2</span> Tap <strong>"+"</strong> → <strong>"Scan QR code"</strong></p>
+                <p className={styles.instructionStep}><span className={styles.stepNum}>2</span> Tap <strong>&quot;+&quot;</strong> {'->'} <strong>&quot;Scan QR code&quot;</strong></p>
                 <p className={styles.instructionStep}><span className={styles.stepNum}>3</span> Scan the QR code on the left</p>
                 {totpSecret && (
                   <>
@@ -579,7 +579,7 @@ export default function SecurityPage() {
               </svg>
             </div>
             <h4>Two-Factor Authentication Active!</h4>
-            <p>Your account is now protected. You'll need to verify your identity each time you log in.</p>
+            <p>Your account is now protected. You&apos;ll need to verify your identity each time you log in.</p>
             <button className={styles.primaryBtn} onClick={() => { setStep('idle'); setSuccessMsg(''); }}>
               Done
             </button>
