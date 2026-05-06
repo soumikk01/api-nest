@@ -2,6 +2,9 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as nodemailer from 'nodemailer';
 import type { Transporter } from 'nodemailer';
+import { passwordResetTemplate } from './templates/password-reset.template';
+import { otpTemplate, OtpType } from './templates/otp.template';
+import { welcomeTemplate } from './templates/welcome.template';
 
 @Injectable()
 export class EmailService {
@@ -14,23 +17,26 @@ export class EmailService {
   constructor(private config: ConfigService) {
     const user = config.get<string>('SMTP_USER');
     const pass = config.get<string>('SMTP_PASS');
+    const host = config.get<string>('SMTP_HOST', 'smtp.hostinger.com');
+    const port = config.get<number>('SMTP_PORT', 465);
 
     if (user && pass) {
       this.transporter = nodemailer.createTransport({
-        service: 'gmail',
+        host,
+        port,
+        secure: port === 465,   // true for 465 (SSL), false for 587 (STARTTLS)
         auth: { user, pass },
       });
       this.enabled = true;
-      this.logger.log(`Email service ready (Nodemailer → Gmail: ${user})`);
+      this.logger.log(`Email service ready (${host}:${port} as ${user})`);
     } else {
       this.enabled = false;
       this.logger.warn(
-        'Email service DISABLED — SMTP_USER / SMTP_PASS not set in .env. ' +
-        'Add your Gmail address and App Password to enable transactional emails.',
+        'Email service DISABLED — SMTP_USER / SMTP_PASS not set in .env.',
       );
     }
 
-    this.from = config.get('EMAIL_FROM', user ?? 'noreply@apio.one');
+    this.from = config.get('EMAIL_FROM', 'noreply@apio.one');
   }
 
   // ── Internal send helper ────────────────────────────────────────────────────
@@ -50,26 +56,7 @@ export class EmailService {
       await this.send(
         to,
         `Reset your ${this.appName} password`,
-        `
-        <div style="font-family:Inter,sans-serif;max-width:520px;margin:auto;padding:32px;background:#0a0a0a;border-radius:12px">
-          <div style="margin-bottom:24px">
-            <span style="font-size:18px;font-weight:700;color:#fff">${this.appName}</span>
-          </div>
-          <h2 style="color:#fff;font-size:22px;margin:0 0 12px">Reset your password</h2>
-          <p style="color:#aaa;font-size:14px;line-height:1.6;margin:0 0 24px">
-            We received a request to reset the password for <strong style="color:#fff">${to}</strong>.
-            Click the button below to set a new password.
-          </p>
-          <a href="${resetUrl}"
-             style="display:inline-block;padding:12px 28px;background:#6366f1;color:#fff;border-radius:8px;text-decoration:none;font-weight:600;font-size:14px;margin-bottom:24px">
-            Reset Password &rarr;
-          </a>
-          <p style="color:#555;font-size:12px;margin:0">
-            This link expires in <strong>1 hour</strong>.<br/>
-            If you didn't request a reset, you can safely ignore this email.
-          </p>
-        </div>
-        `,
+        passwordResetTemplate(to, resetUrl),
       );
     } catch (err) {
       this.logger.error(`Failed to send password reset email to ${to}`, err);
@@ -81,43 +68,19 @@ export class EmailService {
   async sendOtp(
     to: string,
     otp: string,
-    type: 'sign-in' | 'email-verification' | 'forget-password',
+    type: OtpType,
   ): Promise<void> {
     if (!this.enabled) {
       this.logger.debug(`[email disabled] would send OTP (${type}) to ${to}`);
       return;
     }
-    const subjects: Record<string, string> = {
+    const subjects: Record<OtpType, string> = {
       'sign-in':            `Your ${this.appName} sign-in code`,
       'email-verification': `Verify your ${this.appName} account`,
       'forget-password':    `Your ${this.appName} password reset code`,
     };
-    const headings: Record<string, string> = {
-      'sign-in':            'Sign-in verification code',
-      'email-verification': 'Email verification code',
-      'forget-password':    'Password reset code',
-    };
     try {
-      await this.send(
-        to,
-        subjects[type] ?? `Your ${this.appName} code`,
-        `
-        <div style="font-family:Inter,sans-serif;max-width:520px;margin:auto;padding:32px;background:#0a0a0a;border-radius:12px">
-          <div style="margin-bottom:24px">
-            <span style="font-size:18px;font-weight:700;color:#fff">${this.appName}</span>
-          </div>
-          <h2 style="color:#fff;font-size:22px;margin:0 0 12px">${headings[type] ?? 'Verification code'}</h2>
-          <p style="color:#aaa;font-size:14px;margin:0 0 24px">Use the code below to continue:</p>
-          <div style="background:#1a1a2e;border:1px solid #6366f1;border-radius:10px;padding:20px;text-align:center;margin-bottom:24px">
-            <span style="font-size:36px;font-weight:800;letter-spacing:12px;color:#6366f1">${otp}</span>
-          </div>
-          <p style="color:#555;font-size:12px;margin:0">
-            This code expires in <strong>10 minutes</strong>.<br/>
-            If you didn't request this, ignore this email.
-          </p>
-        </div>
-        `,
-      );
+      await this.send(to, subjects[type], otpTemplate(otp, type));
     } catch (err) {
       this.logger.error(`Failed to send OTP email to ${to}`, err);
       throw err;
@@ -130,27 +93,9 @@ export class EmailService {
       this.logger.debug(`[email disabled] would send welcome email to ${to}`);
       return;
     }
-    const dashUrl = this.config.get('FRONTEND_URL', 'https://apio.one');
+    const dashUrl = this.config.get('FRONTEND_URL', 'https://apio.one') + '/projects';
     try {
-      await this.send(
-        to,
-        `Welcome to ${this.appName}! 🎉`,
-        `
-        <div style="font-family:Inter,sans-serif;max-width:520px;margin:auto;padding:32px;background:#0a0a0a;border-radius:12px">
-          <div style="margin-bottom:24px">
-            <span style="font-size:18px;font-weight:700;color:#fff">${this.appName}</span>
-          </div>
-          <h2 style="color:#fff;font-size:22px;margin:0 0 12px">Welcome, ${name}! 👋</h2>
-          <p style="color:#aaa;font-size:14px;line-height:1.6;margin:0 0 24px">
-            Your account is ready. Start monitoring your APIs in seconds.
-          </p>
-          <a href="${dashUrl}/projects"
-             style="display:inline-block;padding:12px 28px;background:#6366f1;color:#fff;border-radius:8px;text-decoration:none;font-weight:600;font-size:14px">
-            Go to Dashboard &rarr;
-          </a>
-        </div>
-        `,
-      );
+      await this.send(to, `Welcome to ${this.appName}! 🎉`, welcomeTemplate(name, dashUrl));
     } catch (err) {
       // Welcome email is non-critical — log but don't throw
       this.logger.warn(`Failed to send welcome email to ${to}: ${(err as Error).message}`);

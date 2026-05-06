@@ -7,6 +7,8 @@ import { validateEmail } from './email-validator';
 import { randomBytes } from 'crypto';
 import * as bcrypt from 'bcryptjs';
 import * as nodemailer from 'nodemailer';
+import { passwordResetTemplate } from '../email/templates/password-reset.template';
+import { otpTemplate, OtpType } from '../email/templates/otp.template';
 
 // ── Prisma client (singleton — shared with the rest of the app) ───────────────
 // BetterAuth 1.6.9 generates random base-62 string IDs that are not valid
@@ -67,10 +69,15 @@ const prisma = new Proxy(_rawPrisma, {
 const _smtpUser = process.env.SMTP_USER;
 const _smtpPass = process.env.SMTP_PASS;
 
+const _smtpHost = process.env.SMTP_HOST ?? 'smtp.hostinger.com';
+const _smtpPort = Number(process.env.SMTP_PORT ?? 465);
+
 const smtpTransporter =
   _smtpUser && _smtpPass
     ? nodemailer.createTransport({
-        service: 'gmail',
+        host: _smtpHost,
+        port: _smtpPort,
+        secure: _smtpPort === 465,
         auth: { user: _smtpUser, pass: _smtpPass },
       })
     : null;
@@ -126,24 +133,7 @@ const _auth: any = betterAuth({
       await sendMail(
         user.email,
         'Reset your Apio password',
-        `
-          <div style="font-family:Inter,sans-serif;max-width:520px;margin:auto;padding:32px;background:#0a0a0a;border-radius:12px">
-            <div style="margin-bottom:24px">
-              <span style="font-size:18px;font-weight:700;color:#fff">Apio</span>
-            </div>
-            <h2 style="color:#fff;font-size:22px;margin:0 0 12px">Reset your password</h2>
-            <p style="color:#aaa;font-size:14px;line-height:1.6;margin:0 0 24px">
-              We received a request to reset the password for <strong style="color:#fff">${user.email}</strong>.
-            </p>
-            <a href="${url}"
-               style="display:inline-block;padding:12px 28px;background:#6366f1;color:#fff;border-radius:8px;text-decoration:none;font-weight:600;font-size:14px;margin-bottom:24px">
-              Reset Password &rarr;
-            </a>
-            <p style="color:#555;font-size:12px;margin:0">
-              This link expires in <strong>1 hour</strong>. If you didn't request a reset, ignore this email.
-            </p>
-          </div>
-        `,
+        passwordResetTemplate(user.email, url),
       );
     },
   },
@@ -180,31 +170,12 @@ const _auth: any = betterAuth({
     // Email OTP — for magic link / passwordless (optional, can enable later)
     emailOTP({
       async sendVerificationOTP({ email, otp, type }) {
-        const subjects: Record<string, string> = {
+        const subjects: Record<OtpType, string> = {
           'sign-in':            'Your Apio sign-in code',
           'email-verification': 'Verify your Apio account',
           'forget-password':    'Your Apio password reset code',
         };
-        await sendMail(
-          email,
-          subjects[type] ?? 'Your Apio code',
-          `
-            <div style="font-family:Inter,sans-serif;max-width:520px;margin:auto;padding:32px;background:#0a0a0a;border-radius:12px">
-              <div style="margin-bottom:24px">
-                <span style="font-size:18px;font-weight:700;color:#fff">Apio</span>
-              </div>
-              <h2 style="color:#fff;font-size:22px;margin:0 0 12px">Verification code</h2>
-              <p style="color:#aaa;font-size:14px;margin:0 0 24px">Use the code below to continue:</p>
-              <div style="background:#1a1a2e;border:1px solid #6366f1;border-radius:10px;padding:20px;text-align:center;margin-bottom:24px">
-                <span style="font-size:36px;font-weight:800;letter-spacing:12px;color:#6366f1">${otp}</span>
-              </div>
-              <p style="color:#555;font-size:12px;margin:0">
-                This code expires in <strong>10 minutes</strong>.<br/>
-                If you didn't request this, ignore this email.
-              </p>
-            </div>
-          `,
-        );
+        await sendMail(email, subjects[type] ?? 'Your Apio code', otpTemplate(otp, type as OtpType));
       },
     }),
   ],
