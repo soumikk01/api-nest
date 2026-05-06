@@ -2,11 +2,11 @@
 import { betterAuth } from 'better-auth';
 import { prismaAdapter } from '@better-auth/prisma-adapter';
 import { emailOTP, twoFactor } from 'better-auth/plugins';
-import { WrapsEmail } from '@wraps.dev/email';
 import { PrismaClient } from '../generated/prisma';
 import { validateEmail } from './email-validator';
 import { randomBytes } from 'crypto';
 import * as bcrypt from 'bcryptjs';
+import * as nodemailer from 'nodemailer';
 
 // ── Prisma client (singleton — shared with the rest of the app) ───────────────
 // BetterAuth 1.6.9 generates random base-62 string IDs that are not valid
@@ -63,17 +63,32 @@ const prisma = new Proxy(_rawPrisma, {
   },
 }) as PrismaClient;
 
-// ── Wraps email client (AWS SES via @wraps.dev/email) ────────────────────────
-const wrapsEmail = new WrapsEmail({
-  region: process.env.AWS_REGION ?? 'us-east-1',
-  credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID ?? '',
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY ?? '',
-    ...(process.env.AWS_SESSION_TOKEN ? { sessionToken: process.env.AWS_SESSION_TOKEN } : {}),
-  },
-});
+// ── Nodemailer transporter (Gmail SMTP — mirrors EmailService) ───────────────
+const _smtpUser = process.env.SMTP_USER;
+const _smtpPass = process.env.SMTP_PASS;
 
-const FROM_EMAIL = process.env.EMAIL_FROM ?? 'noreply@apio.one';
+const smtpTransporter =
+  _smtpUser && _smtpPass
+    ? nodemailer.createTransport({
+        service: 'gmail',
+        auth: { user: _smtpUser, pass: _smtpPass },
+      })
+    : null;
+
+async function sendMail(to: string, subject: string, html: string): Promise<void> {
+  if (!smtpTransporter) {
+    console.warn(`[BetterAuth] Email not sent to ${to} — SMTP_USER/SMTP_PASS not configured.`);
+    return;
+  }
+  await smtpTransporter.sendMail({
+    from: process.env.EMAIL_FROM ?? _smtpUser ?? 'noreply@apio.one',
+    to,
+    subject,
+    html,
+  });
+}
+
+const FROM_EMAIL = process.env.EMAIL_FROM ?? _smtpUser ?? 'noreply@apio.one';
 const APP_URL = process.env.BETTER_AUTH_URL ?? 'http://localhost:4000';
 
 // ── BetterAuth instance ───────────────────────────────────────────────────────
@@ -108,11 +123,10 @@ const _auth: any = betterAuth({
     // (which store $2a$ bcrypt hashes) work on first sign-in.
     password: passwordBcrypt,
     sendResetPassword: async ({ user, url }: { user: { email: string }; url: string }) => {
-      await wrapsEmail.send({
-        from: FROM_EMAIL,
-        to: user.email,
-        subject: 'Reset your Apio password',
-        html: `
+      await sendMail(
+        user.email,
+        'Reset your Apio password',
+        `
           <div style="font-family:Inter,sans-serif;max-width:520px;margin:auto;padding:32px;background:#0a0a0a;border-radius:12px">
             <div style="margin-bottom:24px">
               <span style="font-size:18px;font-weight:700;color:#fff">Apio</span>
@@ -130,7 +144,7 @@ const _auth: any = betterAuth({
             </p>
           </div>
         `,
-      });
+      );
     },
   },
 
@@ -171,11 +185,10 @@ const _auth: any = betterAuth({
           'email-verification': 'Verify your Apio account',
           'forget-password':    'Your Apio password reset code',
         };
-        await wrapsEmail.send({
-          from: FROM_EMAIL,
-          to: email,
-          subject: subjects[type] ?? 'Your Apio code',
-          html: `
+        await sendMail(
+          email,
+          subjects[type] ?? 'Your Apio code',
+          `
             <div style="font-family:Inter,sans-serif;max-width:520px;margin:auto;padding:32px;background:#0a0a0a;border-radius:12px">
               <div style="margin-bottom:24px">
                 <span style="font-size:18px;font-weight:700;color:#fff">Apio</span>
@@ -191,7 +204,7 @@ const _auth: any = betterAuth({
               </p>
             </div>
           `,
-        });
+        );
       },
     }),
   ],
