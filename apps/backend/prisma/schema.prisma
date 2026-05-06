@@ -9,24 +9,104 @@ datasource db {
 }
 
 // ──────────────────────────────────────────────
-//  USER
+//  USER  (BetterAuth-compatible)
 // ──────────────────────────────────────────────
 model User {
   id             String   @id @default(auto()) @map("_id") @db.ObjectId
   email          String   @unique
-  password       String
+  emailVerified  Boolean  @default(false)   // required by BetterAuth
+  password       String?                    // nullable — OAuth users have no password
   name           String?
-  avatar         Int      @default(0)
+  image          String?                    // avatar URL from OAuth providers
+  avatar         Int      @default(0)       // legacy numeric avatar selector
   geminiApiKey   String?  // per-user Gemini API key (encrypted at rest by MongoDB)
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
+  // Required by BetterAuth twoFactor plugin
+  twoFactorEnabled Boolean @default(false)
+
+  // BetterAuth relations
+  sessions        Session[]
+  accounts        Account[]
+  twoFactors      TwoFactor[]
+
+  // App relations
   projects        Project[]
   projectMembers  ProjectMember[]
   apiCalls        ApiCall[]
   alertRules      AlertRule[]
   auditLogs       AuditLog[]
   aiConversations AiConversation[]
+}
+
+// ──────────────────────────────────────────────
+//  SESSION  (BetterAuth managed)
+// ──────────────────────────────────────────────
+model Session {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  expiresAt DateTime
+  token     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ipAddress String?
+  userAgent String?
+  userId    String   @db.ObjectId
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+// ──────────────────────────────────────────────
+//  ACCOUNT  (OAuth provider links per user)
+// ──────────────────────────────────────────────
+model Account {
+  id                    String    @id @default(auto()) @map("_id") @db.ObjectId
+  accountId             String    // provider's user ID (sub)
+  providerId            String    // "google" | "github" | "credential"
+  userId                String    @db.ObjectId
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?   // hashed password for credential provider
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@index([userId])
+  @@unique([providerId, accountId])
+}
+
+// ──────────────────────────────────────────────
+//  VERIFICATION  (email verify / reset tokens)
+// ──────────────────────────────────────────────
+model Verification {
+  id         String    @id @default(auto()) @map("_id") @db.ObjectId
+  identifier String    // email address
+  value      String    // the token/OTP value
+  expiresAt  DateTime
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  @@index([identifier])
+}
+
+// ──────────────────────────────────────────────
+//  TWO FACTOR  (BetterAuth twoFactor plugin)
+//  Required by the twoFactor plugin — stores
+//  TOTP secrets and backup codes per user.
+// ──────────────────────────────────────────────
+model TwoFactor {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  secret      String   // TOTP secret (encrypted)
+  backupCodes String   // comma-separated one-time backup codes
+  userId      String   @unique @db.ObjectId
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // BetterAuth 1.6.9 twoFactor plugin sends this field on create
+  verified    Boolean  @default(false)
 }
 
 

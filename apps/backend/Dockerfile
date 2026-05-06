@@ -4,20 +4,19 @@
 # ─────────────────────────────────────────────────────────────────────────────
 
 # ── Stage 1: Build ────────────────────────────────────────────────────────────
-FROM oven/bun:1.3 AS builder
+FROM oven/bun:1.3.10 AS builder
 WORKDIR /app
 
-# Install deps first (layer cache: only re-runs if package.json changes)
+# Install deps first (layer cache: only re-runs if package.json / bun.lock changes)
 COPY package.json bun.lock ./
-RUN bun install --frozen-lockfile
+RUN bun install
 
 # Copy source + generate Prisma client
 COPY . .
-RUN bunx prisma generate
-RUN bun run build
+RUN bunx prisma generate && bun run build
 
 # ── Stage 2: Production image ─────────────────────────────────────────────────
-FROM oven/bun:1.3-slim AS runner
+FROM oven/bun:1.3.10-slim AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production

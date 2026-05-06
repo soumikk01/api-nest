@@ -258,6 +258,16 @@ $r-lg:   24px;
   display: flex;
   flex-direction: column;
   gap: 6px;
+  opacity: 0;
+  animation: fieldAppear 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+
+  &:nth-child(1) { animation-delay: 0.15s; }
+  &:nth-child(2) { animation-delay: 0.25s; }
+}
+
+@keyframes fieldAppear {
+  0% { opacity: 0; transform: translateY(12px) scale(0.98); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
 }
 
 .label {
@@ -265,6 +275,39 @@ $r-lg:   24px;
   font-weight: 600;
   letter-spacing: 0.04em;
   color: $text-muted;
+}
+
+.lastUsedTag {
+  margin-left: 0.5rem;
+  padding: 2px 6px;
+  background: rgba(34, 197, 94, 0.15);
+  color: #4ade80;
+  border-radius: 4px;
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0;
+  vertical-align: middle;
+}
+
+.passwordWrapper, .inputWrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.passwordWrapper .input {
+  padding-right: 2.6rem;
+}
+
+.eyeBtnWrap {
+  position: absolute;
+  right: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  z-index: 2;
 }
 
 .input {
@@ -283,6 +326,13 @@ $r-lg:   24px;
   transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
   box-sizing: border-box;
 
+  &:-webkit-autofill,
+  &:-webkit-autofill:hover, 
+  &:-webkit-autofill:focus, 
+  &:-webkit-autofill:active {
+    transition: background-color 5000s ease-in-out 0s, color 5000s ease-in-out 0s !important;
+  }
+
   &::placeholder { color: rgba(107, 107, 107, 0.45); }
 
   &:focus {
@@ -292,16 +342,9 @@ $r-lg:   24px;
   }
 }
 
-@keyframes shake {
-  10%, 90% { transform: translate3d(-1px, 0, 0); }
-  20%, 80% { transform: translate3d(2px, 0, 0); }
-  30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
-  40%, 60% { transform: translate3d(4px, 0, 0); }
-}
-
 .inputError {
   border-color: #ef4444 !important;
-  animation: shake 0.6s cubic-bezier(.36,.07,.19,.97) both;
+  filter: url(#error-jello);
   background: rgba(239, 68, 68, 0.04) !important;
   color: #ef4444 !important;
 }
@@ -323,37 +366,9 @@ $r-lg:   24px;
 }
 
 .submitBtn {
-  display: block;
-  width: 100%;
-  text-align: center;
   margin-top: 0.6rem;
-  padding: 0.9rem 1rem;
-  border-radius: $pill;
-  background: $text-main;
-  color: #fff;
-  font-family: 'Inter', sans-serif;
-  font-size: 0.95rem;
-  font-weight: 600;
-  text-decoration: none;
-  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1), background 0.2s;
-  position: relative;
-  overflow: hidden;
-
-  &:hover:not(:disabled) {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
-  }
-
-  &:active:not(:disabled) {
-    transform: translateY(1px);
-    box-shadow: 0 2px 5px rgba(26, 26, 26, 0.1);
-  }
-
-  &.loadingBtn {
-    opacity: 0.85;
-    cursor: default;
-    transform: scale(0.98);
-  }
+  opacity: 0;
+  animation: fieldAppear 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards 0.35s;
 }
 
 .loaderContent {
@@ -386,6 +401,8 @@ $r-lg:   24px;
   align-items: center;
   margin: 1.5rem 0 1rem;
   gap: 1rem;
+  opacity: 0;
+  animation: fieldAppear 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards 0.45s;
 }
 
 .dividerLine {
@@ -405,10 +422,17 @@ $r-lg:   24px;
   display: flex;
   gap: 1rem;
   margin-bottom: 0.5rem;
+  opacity: 0;
+  animation: fieldAppear 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards 0.55s;
+}
+
+.oauthBtnWrapper {
+  flex: 1;
+  --glow-color: rgba(255, 255, 255, 0.1);
 }
 
 .oauthBtn {
-  flex: 1;
+  width: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -422,15 +446,6 @@ $r-lg:   24px;
   font-size: 0.9rem;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.2s, transform 0.2s;
-
-  &:hover {
-    background: rgba(26, 26, 26, 0.04);
-  }
-  
-  &:active {
-    transform: scale(0.98);
-  }
 }
 
 // ── Bottom links ───────────────────────────────
@@ -556,12 +571,6 @@ $dm-glass:  rgba(22, 22, 28, 0.82);
       background-blend-mode: normal;
       box-shadow: 0 0 0 3px rgba(255,255,255,0.04);
     }
-  }
-
-  .submitBtn {
-    background: $dm-text;
-    color: $dm-bg;
-    &:hover { box-shadow: 0 8px 24px rgba(255,255,255,0.14); }
   }
 
   .forgotLinkInline {

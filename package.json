@@ -25,5 +25,8 @@
   "engines": {
     "bun": ">=1.1.0",
     "node": ">=18"
+  },
+  "dependencies": {
+    "@better-auth/infra": "^0.2.5"
   }
 }

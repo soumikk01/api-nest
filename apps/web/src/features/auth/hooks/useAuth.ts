@@ -1,7 +1,25 @@
+/**
+ * useAuth — apps/web
+ *
+ * Session strategy (BetterAuth + JWT bridge):
+ *  1. Login happens in apps/auth (BetterAuth sets HTTP-only session cookie)
+ *  2. apps/web calls GET /api/v1/auth/session-token with credentials:include
+ *     → backend reads cookie → issues JWT tokens → stored in localStorage
+ *  3. All existing /api/v1/* calls use JWT via fetchWithAuth (unchanged)
+ *  4. On logout → clear BetterAuth session + clear localStorage
+ *
+ * This gives you:
+ *  ✅ Secure HTTP-only cookie session (BetterAuth)
+ *  ✅ XSS-safe login (no tokens in URL params)
+ *  ✅ All existing API routes work unchanged (JWT Bearer still used)
+ *  ✅ Google/GitHub OAuth works (redirects back with cookie set)
+ */
+
 import { useState, useEffect, useCallback } from 'react';
 import { fetchWithAuth, authStorage } from '@/lib/fetchWithAuth';
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000/api/v1';
+const AUTH_URL = process.env.NEXT_PUBLIC_AUTH_URL ?? 'http://localhost:3001';
 
 interface AuthUser {
   id: string;
@@ -24,20 +42,12 @@ function syncAvatarToStorage(avatar: number) {
   }
 }
 
-/**
- * Module-level singleton promise prevents duplicate /users/me calls when
- * multiple components mount simultaneously. Crucially, it is reset to null
- * BEFORE each new login/logout so stale state can never block a fresh session.
- */
+// Singleton: prevent duplicate /users/me calls across concurrent component mounts
 let _profilePromise: Promise<AuthUser> | null = null;
-
-function resetProfilePromise() {
-  _profilePromise = null;
-}
+function resetProfilePromise() { _profilePromise = null; }
 
 async function fetchProfile(): Promise<AuthUser> {
   if (_profilePromise) return _profilePromise;
-
   _profilePromise = (async () => {
     try {
       const res = await fetchWithAuth(`${API}/users/me`);
@@ -52,8 +62,32 @@ async function fetchProfile(): Promise<AuthUser> {
       _profilePromise = null;
     }
   })();
-
   return _profilePromise;
+}
+
+/**
+ * Exchange a BetterAuth session cookie for JWT tokens.
+ * Returns true if tokens were obtained and stored.
+ */
+async function exchangeSessionForJwt(): Promise<boolean> {
+  try {
+    const res = await fetch(`${API}/auth/session-token`, {
+      method: 'GET',
+      credentials: 'include', // send the BetterAuth cookie
+    });
+    if (!res.ok) return false;
+
+    const data = await res.json() as { accessToken?: string; refreshToken?: string };
+    if (!data.accessToken) return false;
+
+    authStorage.clear();
+    resetProfilePromise();
+    authStorage.setAccessToken(data.accessToken);
+    if (data.refreshToken) authStorage.setRefreshToken(data.refreshToken);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 export function useAuth() {
@@ -64,64 +98,63 @@ export function useAuth() {
     isLoading: true,
   });
 
-  // ── Session restore on mount ─────────────────────────────────────────────
+  // ── Session restore on mount ───────────────────────────────────────────────
   useEffect(() => {
     let cancelled = false;
 
     (async () => {
-      // ── 1. Cross-app token handoff ────────────────────────────────────────
-      // The auth app (localhost:3001) and web app (localhost:3000) live on
-      // DIFFERENT origins, so localStorage is NOT shared between them.
-      // On login, the auth app passes fresh tokens via URL ?at=&rt= params.
-      // We must:
-      //   a) ALWAYS clear any stale tokens first when new URL tokens arrive
-      //   b) Save the new tokens to THIS origin's localStorage
-      //   c) Strip them from the URL (security: no history leak)
-      if (typeof window !== 'undefined') {
-        const params = new URLSearchParams(window.location.search);
-        const urlAt = params.get('at');
-        const urlRt = params.get('rt');
-
-        if (urlAt) {
-          // New login: wipe stale tokens from previous user/session FIRST
-          // This is critical for multi-user scenarios (User A logs out,
-          // User B logs in — we cannot let User A's stale tokens persist)
-          authStorage.clear();
-          resetProfilePromise(); // Reset singleton so old fetch doesn't block new login
-
-          authStorage.setAccessToken(urlAt);
-          if (urlRt) authStorage.setRefreshToken(urlRt);
-
-          // Strip tokens from URL immediately — never expose in browser history
-          params.delete('at');
-          params.delete('rt');
-          const clean = params.toString() ? `?${params.toString()}` : '';
-          window.history.replaceState({}, '', window.location.pathname + clean + window.location.hash);
+      // ── Step 1: Try to exchange BetterAuth cookie for JWT ─────────────────
+      // This happens when:
+      //   a) User just logged in via apps/auth (BetterAuth set the cookie)
+      //   b) User refreshed the page (cookie still valid, localStorage may be empty)
+      //   c) OAuth redirect back to apps/web (cookie set by OAuth callback)
+      //
+      // If the exchange fails (no cookie / expired) and localStorage also has
+      // no token → user is logged out.
+      const hasLocalJwt = authStorage.hasSession();
+      if (!hasLocalJwt) {
+        // No local JWT → try to get one from BetterAuth cookie
+        const gotJwt = await exchangeSessionForJwt();
+        if (!gotJwt) {
+          // No cookie session either → fully logged out
+          if (!cancelled) {
+            setState({ user: null, accessToken: null, isAuthenticated: false, isLoading: false });
+          }
+          return;
         }
       }
 
-      // ── 2. Check if session exists ────────────────────────────────────────
-      if (!authStorage.hasSession()) {
-        if (!cancelled) setState({ user: null, accessToken: null, isAuthenticated: false, isLoading: false });
-        return;
-      }
-
-      // ── 3. Load user profile (fetchWithAuth auto-refreshes expired AT) ────
+      // ── Step 2: Load user profile with the JWT ────────────────────────────
       try {
         const user = await fetchProfile();
         if (user.avatar !== undefined) syncAvatarToStorage(user.avatar);
         const freshToken = authStorage.getAccessToken();
-        if (!cancelled) setState({ user, accessToken: freshToken, isAuthenticated: true, isLoading: false });
+        if (!cancelled) {
+          setState({ user, accessToken: freshToken, isAuthenticated: true, isLoading: false });
+        }
       } catch (err: unknown) {
         if (!cancelled) {
           const e = err as { status?: number; message?: string };
           const is401 = e?.status === 401 || e?.message === '401';
+
           if (is401) {
-            // Refresh token also expired/revoked — hard logout
+            // JWT expired → try once more to get fresh tokens from cookie
+            const renewed = await exchangeSessionForJwt();
+            if (renewed) {
+              try {
+                const user = await fetchProfile();
+                if (user.avatar !== undefined) syncAvatarToStorage(user.avatar);
+                if (!cancelled) {
+                  setState({ user, accessToken: authStorage.getAccessToken(), isAuthenticated: true, isLoading: false });
+                }
+                return;
+              } catch { /* fall through to logout */ }
+            }
+            // Cookie also expired → hard logout
             authStorage.clear();
             setState({ user: null, accessToken: null, isAuthenticated: false, isLoading: false });
           } else {
-            // Transient (5xx, 429, offline) — keep user logged in, profile unavailable temporarily
+            // Transient error (5xx, offline) — keep user logged in
             console.warn('[useAuth] Transient profile error, keeping session:', e?.message);
             setState({ user: null, accessToken: authStorage.getAccessToken(), isAuthenticated: true, isLoading: false });
           }
@@ -132,74 +165,29 @@ export function useAuth() {
     return () => { cancelled = true; };
   }, []);
 
-  // ── Login ────────────────────────────────────────────────────────────────
-  // NOTE: This login() is called from the AUTH APP (localhost:3001),
-  // not from the web app. The web app receives tokens via URL params above.
-  const login = useCallback(async (email: string, password: string) => {
-    const res = await fetch(`${API}/auth/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password }),
-    });
-    const data = await res.json() as { accessToken?: string; refreshToken?: string; message?: string };
-
-    if (!res.ok) {
-      const s = res.status;
-      if (s === 401 || s === 403) throw new Error('Incorrect email or password.');
-      if (s === 429) throw new Error('Too many attempts. Please wait a moment and try again.');
-      if (s >= 500) throw new Error('Server error. Please try again in a few seconds.');
-      throw new Error(data.message ?? 'Sign in failed. Please try again.');
-    }
-
-    const { accessToken, refreshToken } = data;
-    if (!accessToken) throw new Error('Sign in failed. Please try again.');
-
-    return { accessToken, refreshToken: refreshToken ?? '' };
-  }, []);
-
-  // ── Register ─────────────────────────────────────────────────────────────
-  const register = useCallback(async (email: string, password: string, name?: string) => {
-    const res = await fetch(`${API}/auth/register`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password, name }),
-    });
-    const data = await res.json() as { accessToken?: string; refreshToken?: string; message?: string };
-
-    if (!res.ok) {
-      const s = res.status;
-      if (s === 409) throw new Error('An account with this email already exists.');
-      if (s === 429) throw new Error('Too many attempts. Please wait a moment and try again.');
-      if (s >= 500) throw new Error('Server error. Please try again in a few seconds.');
-      throw new Error(data.message ?? 'Registration failed. Please try again.');
-    }
-
-    const { accessToken, refreshToken } = data;
-    if (!accessToken) throw new Error('Registration failed. Please try again.');
-
-    return { accessToken, refreshToken: refreshToken ?? '' };
-  }, []);
-
-  // ── Logout ───────────────────────────────────────────────────────────────
-  const logout = useCallback(() => {
-    resetProfilePromise(); // Prevent stale singleton from blocking next login
+  // ── Logout ─────────────────────────────────────────────────────────────────
+  const logout = useCallback(async () => {
+    resetProfilePromise();
     authStorage.clear();
+    // Sign out from BetterAuth (clears cookie)
+    await fetch(`${API.replace('/api/v1', '')}/api/v1/auth/better/sign-out`, {
+      method: 'POST',
+      credentials: 'include',
+    }).catch(() => { /* best-effort */ });
     setState({ user: null, accessToken: null, isAuthenticated: false, isLoading: false });
   }, []);
 
   const logoutWithTransition = useCallback(() => {
-    const authUrl = process.env.NEXT_PUBLIC_AUTH_URL ?? 'http://localhost:3001';
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new Event('show-logout-transition'));
-      setTimeout(() => {
-        logout();
-        window.location.href = `${authUrl}/login`;
+      setTimeout(async () => {
+        await logout();
+        window.location.href = `${AUTH_URL}/login`;
       }, 1200);
     } else {
       logout();
     }
   }, [logout]);
 
-
-  return { ...state, login, register, logout, logoutWithTransition };
+  return { ...state, logout, logoutWithTransition };
 }
