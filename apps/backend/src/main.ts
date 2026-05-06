@@ -114,6 +114,16 @@ async function bootstrap() {
     ok('JWT', 'Secrets loaded');
   }
 
+  // ── 6. BetterAuth secret ──────────────────────────────────────────────
+  if (!process.env.BETTER_AUTH_SECRET) {
+    fail(
+      'BetterAuth',
+      'BETTER_AUTH_SECRET not set — sessions can be forged! Set a strong secret in .env',
+    );
+  } else {
+    ok('BetterAuth', 'Secret loaded');
+  }
+
   console.log(`${c.gray}  ─────────────────────────────────────────${c.reset}`);
 
   // ── Security headers ──────────────────────────────────────────────────

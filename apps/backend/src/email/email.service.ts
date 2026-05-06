@@ -17,7 +17,7 @@ export class EmailService {
   constructor(private config: ConfigService) {
     const user = config.get<string>('SMTP_USER');
     const pass = config.get<string>('SMTP_PASS');
-    const host = config.get<string>('SMTP_HOST', 'smtp.hostinger.com');
+    const host = config.get<string>('SMTP_HOST', 'smtp.resend.com');
     const port = config.get<number>('SMTP_PORT', 465);
 
     if (user && pass) {

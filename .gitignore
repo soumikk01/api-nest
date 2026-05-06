@@ -19,7 +19,8 @@ out/
 
 # production
 build/
-dist/
+**/dist/
+**/.nest/
 
 # misc
 .DS_Store

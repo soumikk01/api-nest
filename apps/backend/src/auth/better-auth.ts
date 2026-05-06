@@ -39,7 +39,6 @@ function fixIdOnCreate(model: Record<string, unknown>): Record<string, unknown> 
           const data = args?.data as Record<string, unknown> | undefined;
           if (data?.id && typeof data.id === 'string' && !OBJECT_ID_RE.test(data.id)) {
             const newId = randomBytes(12).toString('hex');
-            console.log(`[BetterAuth] ObjectId fix: "${data.id}" → "${newId}"`);
             data.id = newId;
           }
           return target.create(args);
@@ -69,7 +68,7 @@ const prisma = new Proxy(_rawPrisma, {
 const _smtpUser = process.env.SMTP_USER;
 const _smtpPass = process.env.SMTP_PASS;
 
-const _smtpHost = process.env.SMTP_HOST ?? 'smtp.hostinger.com';
+const _smtpHost = process.env.SMTP_HOST ?? 'smtp.resend.com';
 const _smtpPort = Number(process.env.SMTP_PORT ?? 465);
 
 const smtpTransporter =
@@ -88,7 +87,7 @@ async function sendMail(to: string, subject: string, html: string): Promise<void
     return;
   }
   await smtpTransporter.sendMail({
-    from: process.env.EMAIL_FROM ?? _smtpUser ?? 'noreply@apio.one',
+    from: FROM_EMAIL,
     to,
     subject,
     html,
@@ -96,6 +95,7 @@ async function sendMail(to: string, subject: string, html: string): Promise<void
 }
 
 const FROM_EMAIL = process.env.EMAIL_FROM ?? _smtpUser ?? 'noreply@apio.one';
+// ↑ Used in sendMail() above — keeps EMAIL_FROM consistent with EmailService
 const APP_URL = process.env.BETTER_AUTH_URL ?? 'http://localhost:4000';
 
 // ── BetterAuth instance ───────────────────────────────────────────────────────
